@@ -1,0 +1,35 @@
+{
+  "NETW-107-001RL": {
+    "crn": "10421",
+    "course": "NETW-107",
+    "title": "Introduction to Security",
+    "credits": 3,
+    "instructors": ["Michael Qaissaunee"],
+    "campus": "LINC",
+    "mode": "inperson",
+    "partOfTerm": "15W",
+    "startDate": "2026-09-09",
+    "endDate": "2026-12-22",
+    "meetings": [
+      {"days": "M",  "start": "2:00 PM", "end": "3:15 PM", "building": "MAS", "room": "212", "type": "LEC"},
+      {"days": "W",  "start": "2:00 PM", "end": "4:45 PM", "building": "MAS", "room": "118", "type": "LAB"}
+    ]
+  },
+  "ELEC-103-001RL": {
+    "crn": "10455",
+    "title": "Electrical Skills and Techniques",
+    "credits": 4,
+    "instructors": ["Michael Qaissaunee"],
+    "campus": "LINC",
+    "meetings": [
+      {"days": "T", "start": "9:00 AM", "end": "12:50 PM", "building": "MAS", "room": "118"}
+    ]
+  },
+  "PHIL-999-001RL": {
+    "course": "PHIL-999",
+    "title": "Section only the scrape knows about",
+    "credits": 3,
+    "instructors": ["Test Instructor"],
+    "meetings": [{"days": "TuTh", "start": "10:00", "end": "11:15", "room": "TBA"}]
+  }
+}
