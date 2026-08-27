@@ -117,6 +117,10 @@ textarea{min-height:60px;resize:vertical}
 .daybox label:has(input:checked){background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .daybox label:has(input:focus-visible){outline:3px solid var(--accent);outline-offset:2px}
 
+.btn.pt-toggle{min-width:44px;letter-spacing:.03em}
+.btn.pt-toggle.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.load-line{margin-top:14px;padding:7px 10px;border:1px solid var(--line-2);border-radius:7px;
+  background:var(--surface-2);font-size:.82rem;color:var(--ink-2)}
 .custom-item{border:1px solid var(--line);border-radius:8px;padding:9px 10px;margin-bottom:7px;display:flex;gap:9px;align-items:flex-start;background:var(--surface)}
 .custom-item .t{flex:1;font-size:.84rem}
 .empty{font-size:.82rem;color:var(--ink-3);padding:8px 0}
@@ -196,6 +200,7 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
   .blk b{font-size:8pt}
   .blk .l2,.blk .l3{font-size:7pt;opacity:1}
   table.tbl{font-size:8.5pt}
+  .load-line{background:#fff!important;border:1px solid #888!important;font-size:9pt;break-inside:avoid}
   table.tbl tr{break-inside:avoid}
   .aside-list{break-inside:avoid}
   .sheet-head{break-after:avoid}
@@ -209,7 +214,7 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
 <header class="topbar">
   <div class="brand">
     <h1>Faculty Schedule Builder</h1>
-    <span class="sub">Brookdale Community College · School of STEAM</span>
+    <span class="sub">Brookdale Community College</span>
   </div>
   <div class="status" id="dataStatus" aria-live="polite"></div>
 </header>
@@ -308,6 +313,9 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
         <label class="check"><input type="checkbox" id="optWeekend"> Always show Saturday and Sunday</label>
         <label class="check"><input type="checkbox" id="optColor" checked> Color-code courses (kept in print)</label>
         <label class="check"><input type="checkbox" id="optTable" checked> Include the course detail table</label>
+        <label class="check"><input type="checkbox" id="optLoad" checked> Show teaching load summary</label>
+        <div class="field" style="margin-top:8px"><label for="fLoadBase">Load baseline in credits (lower it if you have release time)</label>
+          <input type="number" id="fLoadBase" min="0" max="30" step="0.5" value="15"></div>
         <label class="check"><input type="checkbox" id="opt24"> Use 24-hour times</label>
         <div class="field" style="margin-top:8px"><label for="optDensity">Grid height</label>
           <select id="optDensity">
@@ -384,11 +392,12 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
   var state = {
     faculty: [],
     include: {},      // sectionId -> bool
+    pt: {},           // sectionId -> true when taught as overload / PT
     overrides: {},    // sectionId -> {days,start,end,room,title,mode}
     custom: [],       // {id,label,type,days,start,end,loc}
-    profile: {name:"",title:"",dept:"",office:"",phone:"",email:"",zoom:"",termLabel:"",termStart:"",termEnd:"",notes:""},
+    profile: {name:"",title:"",dept:"",office:"",phone:"",email:"",zoom:"",termLabel:"",termStart:"",termEnd:"",notes:"",loadBase:"15"},
     pot: "ALL",
-    opts: {code:true, credits:true, weekend:false, color:true, table:true, h24:false, density:58}
+    opts: {code:true, credits:true, weekend:false, color:true, table:true, h24:false, load:true, density:58}
   };
 
   /* ===== small helpers ===== */
@@ -427,7 +436,7 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
     try{
       var raw=localStorage.getItem(STORAGE_KEY); if(!raw) return;
       var s=JSON.parse(raw); if(!s||typeof s!=="object") return;
-      ["faculty","include","overrides","custom","profile","opts","pot"].forEach(function(k){
+      ["faculty","include","pt","overrides","custom","profile","opts","pot"].forEach(function(k){
         if(s[k]!=null){ if(k==="profile"||k==="opts"){ Object.assign(state[k], s[k]); } else { state[k]=s[k]; } }
       });
     }catch(e){}
@@ -474,8 +483,8 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
         if(st==null || !m.d || !m.d.length) return;
         if(en==null || en<=st) en=st+60;
         m.d.forEach(function(d){
-          out.push({day:d, start:st, end:en, kind:"course", color:color, colorVar:cvar, est:!!m.est,
-            title:e.course, sub:(state.opts.code?e.id.replace(e.course+"-",""):"")+(m.rm?(state.opts.code?" · ":"")+m.rm:""),
+          out.push({day:d, start:st, end:en, kind:"course", color:color, colorVar:cvar, est:!!m.est, pt:!!state.pt[s.id],
+            title:e.course, sub:(state.opts.code?e.id.replace(e.course+"-",""):"")+(m.rm?(state.opts.code?" · ":"")+m.rm:"")+(state.pt[s.id]?" · PT":""),
             sub2:e.title, room:m.rm, sectionId:e.id});
         });
       });
@@ -565,9 +574,17 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
       if(e.meetings.some(function(m){return m.est;})) meta.appendChild(el("span","tag est","est. end time"));
       if(e.mode!=="inperson") meta.appendChild(el("span","tag async", MODE_LABEL[e.mode]||e.mode));
       lab.appendChild(meta);
+      var ptb=el("button","btn sm ghost pt-toggle","PT"); ptb.type="button";
+      ptb.setAttribute("aria-pressed", state.pt[s.id] ? "true" : "false");
+      ptb.title="Mark as an overload / part-time section, excluded from load";
+      if(state.pt[s.id]) ptb.classList.add("on");
+      ptb.addEventListener("click", function(){
+        if(state.pt[s.id]) { delete state.pt[s.id]; } else { state.pt[s.id]=true; }
+        renderAll(); save();
+      });
       var edit=el("button","btn sm ghost","Edit"); edit.type="button";
       edit.addEventListener("click", function(){ wrap.classList.toggle("editing"); });
-      head.appendChild(cb); head.appendChild(lab); head.appendChild(edit);
+      head.appendChild(cb); head.appendChild(lab); head.appendChild(ptb); head.appendChild(edit);
       wrap.appendChild(head);
       wrap.appendChild(buildEditor(s));
       box.appendChild(wrap);
@@ -743,11 +760,33 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
     wrap.appendChild(grid);
     return wrap;
   }
+  function loadSummary(list){
+    var base = parseFloat(state.profile.loadBase);
+    if(isNaN(base)) base = 15;
+    var load = 0, over = 0;
+    list.forEach(function(e){
+      var cr = parseFloat(e.credits) || 0;
+      if(state.pt[e.id]) { over += cr; } else { load += cr; }
+    });
+    return {base:base, load:load, over:over};
+  }
+  function buildLoadLine(list){
+    var L = loadSummary(list);
+    if(!L.load && !L.over) return null;
+    var box = el("div","load-line");
+    var txt = "Teaching load: " + L.load + " of " + L.base + " credits";
+    if(L.load < L.base) txt += " (" + (Math.round((L.base - L.load)*10)/10) + " under)";
+    if(L.over) txt += " · PT / overload: " + L.over + " credit" + (L.over===1?"":"s");
+    box.appendChild(el("span",null,txt));
+    return box;
+  }
   function buildTable(list){
     var t=el("table","tbl");
     var thead=el("thead"), tr=el("tr");
+    var anyPt = list.some(function(e){ return state.pt[e.id]; });
     var cols=["Section","Course","Meets","Room","Mode"];
     if(state.opts.credits) cols.splice(2,0,"Cr");
+    if(anyPt) cols.push("Load");
     cols.forEach(function(c){ tr.appendChild(el("th",null,c)); });
     thead.appendChild(tr); t.appendChild(thead);
     var tb=el("tbody");
@@ -763,6 +802,7 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
       r.appendChild(el("td",null, e.meetings.map(function(m){return m.rm;}).filter(Boolean).join(", ") || (e.campus||"")));
       var mode=MODE_LABEL[e.mode]||"In person";
       r.appendChild(el("td",null, (mode||"In person")+(e.pot!=="15W"?" · "+e.pot:"")));
+      if(anyPt) r.appendChild(el("td",null, state.pt[e.id] ? "PT" : "Load"));
       tb.appendChild(r);
     });
     t.appendChild(tb);
@@ -809,8 +849,13 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
       ul.appendChild(tb); box.appendChild(ul); sheet.appendChild(box);
     }
 
+    var allSec = scheduledSections(state.faculty.length>1 ? name : null);
+    if(state.opts.load){
+      var ll = buildLoadLine(allSec);
+      if(ll) sheet.appendChild(ll);
+    }
     if(state.opts.table){
-      var sec=scheduledSections(state.faculty.length>1 ? name : null);
+      var sec=allSec;
       if(sec.length){
         var tbox=el("div","aside-list");
         tbox.appendChild(el("h3",null,"Courses"));
@@ -900,17 +945,17 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
     toast(n+" recurring events exported");
   }
   function exportCsv(){
-    var rows=[["Type","Section","Course","Days","Start","End","Room","Mode","Part of term","Credits","CRN"]];
+    var rows=[["Type","Section","Course","Days","Start","End","Room","Mode","Part of term","Credits","Load","CRN"]];
     scheduledSections(null).forEach(function(e){
       if(!e.meetings.length){
-        rows.push(["Course",e.id,e.title,"","","","",MODE_LABEL[e.mode]||"In person",e.pot,e.credits||"",e.crn||""]);
+        rows.push(["Course",e.id,e.title,"","","","",MODE_LABEL[e.mode]||"In person",e.pot,e.credits||"",state.pt[e.id]?"PT":"Load",e.crn||""]);
       }
       e.meetings.forEach(function(m){
-        rows.push(["Course",e.id,e.title,(m.d||[]).join(""),m.s||"",m.e||"",m.rm||"",MODE_LABEL[e.mode]||"In person",e.pot,e.credits||"",e.crn||""]);
+        rows.push(["Course",e.id,e.title,(m.d||[]).join(""),m.s||"",m.e||"",m.rm||"",MODE_LABEL[e.mode]||"In person",e.pot,e.credits||"",state.pt[e.id]?"PT":"Load",e.crn||""]);
       });
     });
     state.custom.forEach(function(c){
-      rows.push([c.type==="oh"?"Office hours":"Other",c.label||"","",(c.days||[]).join(""),c.start||"",c.end||"",c.loc||"","","","",""]);
+      rows.push([c.type==="oh"?"Office hours":"Other",c.label||"","",(c.days||[]).join(""),c.start||"",c.end||"",c.loc||"","","","","",""]);
     });
     var csv=rows.map(function(r){ return r.map(function(v){
       v=String(v==null?"":v); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v;
@@ -1012,17 +1057,18 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
   /* ===== wiring ===== */
   function bindProfile(){
     var map={fName:"name",fTitle:"title",fDept:"dept",fOffice:"office",fPhone:"phone",fEmail:"email",
-             fZoom:"zoom",fTermLabel:"termLabel",fTermStart:"termStart",fTermEnd:"termEnd",fNotes:"notes"};
+             fZoom:"zoom",fTermLabel:"termLabel",fTermStart:"termStart",fTermEnd:"termEnd",fNotes:"notes",
+             fLoadBase:"loadBase"};
     Object.keys(map).forEach(function(id){
       var node=$(id); node.value=state.profile[map[id]]||"";
       node.addEventListener("input", function(){
         state.profile[map[id]]=node.value; save();
-        if(["fName","fTitle","fDept","fOffice","fPhone","fEmail","fZoom","fTermLabel","fNotes"].indexOf(id)>-1) renderSheets();
+        if(["fName","fTitle","fDept","fOffice","fPhone","fEmail","fZoom","fTermLabel","fNotes","fLoadBase"].indexOf(id)>-1) renderSheets();
       });
     });
   }
   function bindOptions(){
-    var map={optCode:"code",optCredits:"credits",optWeekend:"weekend",optColor:"color",optTable:"table",opt24:"h24"};
+    var map={optCode:"code",optCredits:"credits",optWeekend:"weekend",optColor:"color",optTable:"table",optLoad:"load",opt24:"h24"};
     Object.keys(map).forEach(function(id){
       var node=$(id); node.checked=!!state.opts[map[id]];
       node.addEventListener("change", function(){ state.opts[map[id]]=node.checked; save(); renderAll(); });
