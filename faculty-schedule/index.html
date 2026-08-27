@@ -256,11 +256,11 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
         <div class="results" id="facResults" role="listbox" aria-label="Matching instructors"></div>
         <div class="chips" id="facChips" aria-live="polite"></div>
         <p class="hint">Chairs: add several names to print one sheet per person.</p>
-        <div class="field" style="margin-top:10px">
+        <div class="field" id="potField" style="margin-top:10px">
           <label for="potFilter">Parts of term to include</label>
           <select id="potFilter">
-            <option value="15W">15-week sections only</option>
-            <option value="ALL" selected>All parts of term (7-week, 11-week shown with dates)</option>
+            <option value="15W" selected>15-week sections only</option>
+            <option value="ALL">All parts of term (7-week, 11-week shown with dates)</option>
           </select>
         </div>
       </div>
@@ -439,7 +439,7 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
     custom: [],       // {id,label,type,days,start,end,loc}
     release: [],      // {id, credits, reason} — release time / extra compensation
     profile: {name:"",title:"",dept:"",office:"",phone:"",email:"",zoom:"",termLabel:"",termStart:"",termEnd:"",notes:"",loadBase:"15",released:"",releasedFor:""},
-    pot: "ALL",
+    pot: "15W",
     opts: {code:true, credits:true, weekend:false, color:true, table:true, h24:false, load:true, sign:false, fit:true, density:58}
   };
 
@@ -1276,7 +1276,20 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
     if(stamp) bits.push(el("span","pill","schedule data as of "+stamp));
     if(d.meetingSource!=="scrape") bits.push(el("span","pill warn","end times estimated"));
     if(d.demo) bits.push(el("span","pill warn","sample data — "+(label||"embedded")));
+    // The control only earns its place once the feed has more than one part of
+    // term. The filter itself stays wired up either way.
+    var pots = {};
+    (d.sections || []).forEach(function(s){ if(s.pot) pots[s.pot] = 1; });
+    var potList = Object.keys(pots).sort();
+    $("potField").hidden = potList.length < 2;
+    if(potList.length < 2){
+      state.pot = "15W";
+      $("potFilter").value = "15W";
+    } else {
+      bits.push(el("span","pill", potList.join(" · ")));
+    }
     bits.forEach(function(b){ st.appendChild(b); });
+
     if(!state.profile.termLabel && d.termLabel){ state.profile.termLabel=d.termLabel; $("fTermLabel").value=d.termLabel; }
     renderAll();
   }
