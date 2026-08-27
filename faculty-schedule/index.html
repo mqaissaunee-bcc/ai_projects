@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Faculty Schedule Builder — Brookdale Community College</title>
+<meta name="description" content="Build a printable weekly teaching schedule from the published course schedule. Add office hours and contact information, then export as PDF, calendar file, image, or spreadsheet.">
+<style>
+:root{
+  --bg:#f6f5f2; --surface:#ffffff; --surface-2:#f0eeea; --ink:#1b1c1e; --ink-2:#4a4d52;
+  --ink-3:#6f7378; --line:#d9d5cd; --line-2:#c4bfb4;
+  --accent:#1f4e79; --accent-ink:#ffffff; --accent-soft:#e6eef6;
+  --warn:#8a5a00; --warn-soft:#fdf3df; --ok:#1f6b4a; --danger:#9b2226;
+  --c1:#1f4e79; --c2:#5c4b8a; --c3:#1f6b4a; --c4:#8a5a00; --c5:#7a3b52; --c6:#2f6f7d;
+  --oh:#4a4d52;
+  --radius:10px; --shadow:0 1px 2px rgba(0,0,0,.06),0 4px 14px rgba(0,0,0,.05);
+  --sans:"IBM Plex Sans","Segoe UI",system-ui,-apple-system,Helvetica,Arial,sans-serif;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#15171a; --surface:#1d2024; --surface-2:#24282d; --ink:#eceef1; --ink-2:#c0c5cc;
+    --ink-3:#98a0a8; --line:#343a41; --line-2:#454c55;
+    --accent:#7fb2e0; --accent-ink:#10141a; --accent-soft:#22303d;
+    --warn:#e8b563; --warn-soft:#332a19; --ok:#7fc9a4; --danger:#e88b8e;
+    --c1:#5b8fc4; --c2:#9b8bd0; --c3:#5faa87; --c4:#c99a4e; --c5:#c07f9a; --c6:#5fa6b5;
+    --oh:#9aa2ab;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%}
+.skip-link{position:absolute;left:-9999px;top:0;background:var(--accent);color:var(--accent-ink);padding:10px 14px;z-index:100}
+.skip-link:focus{left:8px;top:8px}
+h1,h2,h3{font-family:var(--serif);font-weight:600;line-height:1.2;margin:0}
+h1{font-size:clamp(1.25rem,2.4vw,1.6rem)}
+h2{font-size:1.05rem}
+h3{font-size:.95rem}
+a{color:var(--accent)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+/* ---------- app shell ---------- */
+.topbar{background:var(--surface);border-bottom:1px solid var(--line);padding:10px 16px;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
+.brand{display:flex;flex-direction:column;gap:2px}
+.brand .sub{font-size:.78rem;color:var(--ink-3)}
+.status{font-size:.78rem;color:var(--ink-2);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pill{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:999px;padding:2px 9px;font-size:.74rem;background:var(--surface-2);color:var(--ink-2)}
+.pill.warn{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
+.layout{display:grid;grid-template-columns:minmax(320px,380px) 1fr;gap:0;align-items:start}
+@media (max-width:960px){.layout{grid-template-columns:1fr}}
+.sidebar{border-right:1px solid var(--line);background:var(--surface);min-height:100vh;padding:14px}
+@media (max-width:960px){.sidebar{min-height:0;border-right:0;border-bottom:1px solid var(--line)}}
+.stage{padding:16px;min-width:0}
+
+details.panel{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);margin-bottom:10px;overflow:hidden}
+details.panel>summary{list-style:none;cursor:pointer;padding:11px 12px;display:flex;align-items:center;gap:9px;min-height:44px;font-weight:600;background:var(--surface-2)}
+details.panel>summary::-webkit-details-marker{display:none}
+details.panel>summary::after{content:"▸";margin-left:auto;color:var(--ink-3);transition:transform .15s}
+details.panel[open]>summary::after{transform:rotate(90deg)}
+.panel-num{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:.75rem;font-weight:700;flex:none}
+.panel-body{padding:12px;border-top:1px solid var(--line)}
+.count-chip{font-size:.72rem;color:var(--ink-3);font-weight:400}
+
+label{display:block;font-size:.78rem;font-weight:600;color:var(--ink-2);margin:0 0 3px}
+input[type=text],input[type=email],input[type=tel],input[type=time],input[type=date],input[type=search],input[type=number],select,textarea{
+  width:100%;padding:8px 9px;border:1px solid var(--line-2);border-radius:7px;background:var(--surface);min-height:40px}
+textarea{min-height:60px;resize:vertical}
+.field{margin-bottom:9px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
+.hint{font-size:.74rem;color:var(--ink-3);margin:4px 0 0}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:8px 13px;border-radius:8px;
+  border:1px solid var(--line-2);background:var(--surface-2);color:var(--ink);font-weight:600;font-size:.85rem}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent}
+.btn.sm{min-height:32px;padding:4px 9px;font-size:.78rem}
+.btn.danger{color:var(--danger);border-color:var(--line-2)}
+.btn-row{display:flex;flex-wrap:wrap;gap:8px}
+.check{display:flex;gap:8px;align-items:flex-start;font-size:.85rem;font-weight:400;color:var(--ink);margin:0 0 7px;cursor:pointer}
+.check input{margin-top:3px;width:17px;height:17px;flex:none;accent-color:var(--accent)}
+
+/* faculty picker */
+.results{max-height:230px;overflow:auto;border:1px solid var(--line);border-radius:8px;margin-top:8px}
+.results button{display:block;width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid var(--line);padding:9px 10px;font-size:.85rem;min-height:40px}
+.results button:last-child{border-bottom:0}
+.results button:hover,.results button:focus{background:var(--accent-soft)}
+.results .meta{display:block;font-size:.73rem;color:var(--ink-3)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--accent-soft);border:1px solid var(--accent);color:var(--ink);
+  border-radius:999px;padding:3px 5px 3px 11px;font-size:.8rem}
+.chip button{border:0;background:transparent;color:var(--ink-2);font-size:1rem;line-height:1;min-width:26px;min-height:26px;border-radius:50%}
+.chip button:hover{background:var(--surface);color:var(--danger)}
+
+/* section list */
+.sec{border:1px solid var(--line);border-radius:8px;margin-bottom:7px;background:var(--surface)}
+.sec-head{display:flex;gap:9px;align-items:flex-start;padding:9px 10px}
+.sec-head input[type=checkbox]{margin-top:3px;width:17px;height:17px;flex:none;accent-color:var(--accent)}
+.sec-title{flex:1;min-width:0;font-size:.84rem}
+.sec-title b{display:block;font-weight:600}
+.sec-meta{font-size:.74rem;color:var(--ink-3);display:flex;flex-wrap:wrap;gap:4px 8px;margin-top:2px}
+.tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;border:1px solid var(--line-2);border-radius:4px;padding:0 4px;color:var(--ink-3)}
+.tag.est{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
+.tag.async{background:var(--surface-2)}
+.sec-edit{border-top:1px solid var(--line);padding:10px;background:var(--surface-2);display:none}
+.sec.editing .sec-edit{display:block}
+.pattern+.pattern{border-top:1px dashed var(--line-2);padding-top:9px;margin-top:9px}
+.daybox{display:flex;flex-wrap:wrap;gap:5px}
+.daybox label{display:inline-flex;align-items:center;justify-content:center;min-width:40px;min-height:40px;border:1px solid var(--line-2);
+  border-radius:7px;font-size:.8rem;font-weight:600;cursor:pointer;background:var(--surface);margin:0}
+.daybox input{position:absolute;opacity:0;width:0;height:0}
+.daybox input:checked+span{color:var(--accent-ink)}
+.daybox label:has(input:checked){background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.daybox label:has(input:focus-visible){outline:3px solid var(--accent);outline-offset:2px}
+
+.custom-item{border:1px solid var(--line);border-radius:8px;padding:9px 10px;margin-bottom:7px;display:flex;gap:9px;align-items:flex-start;background:var(--surface)}
+.custom-item .t{flex:1;font-size:.84rem}
+.empty{font-size:.82rem;color:var(--ink-3);padding:8px 0}
+
+/* ---------- printable sheet ---------- */
+.sheet{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:18px;margin:0 auto 18px;max-width:1100px}
+.sheet+.sheet{margin-top:18px}
+.sheet-head{display:flex;flex-wrap:wrap;gap:10px 20px;justify-content:space-between;align-items:flex-start;
+  border-bottom:2px solid var(--ink);padding-bottom:9px;margin-bottom:12px}
+.sheet-head .who h2{font-family:var(--serif);font-size:1.4rem}
+.sheet-head .who .role{font-size:.85rem;color:var(--ink-2)}
+.sheet-head .contact{font-size:.8rem;color:var(--ink-2);text-align:right;line-height:1.45}
+@media (max-width:600px){.sheet-head .contact{text-align:left}}
+.sheet-term{font-family:var(--serif);font-size:.95rem;color:var(--ink-2)}
+
+.grid-wrap{overflow-x:auto}
+.grid{display:grid;border:1px solid var(--line-2);border-radius:8px;overflow:hidden;min-width:640px;background:var(--surface)}
+.grid .hcell{background:var(--surface-2);border-bottom:1px solid var(--line-2);border-left:1px solid var(--line);
+  padding:6px 4px;text-align:center;font-size:.78rem;font-weight:700}
+.grid .hcell.corner{border-left:0}
+.grid .timecol{border-right:1px solid var(--line-2)}
+.grid .timeslot{height:var(--rowh);border-bottom:1px solid var(--line);font-size:.68rem;color:var(--ink-3);
+  padding:2px 6px 0 0;text-align:right;font-variant-numeric:tabular-nums}
+.grid .daycol{position:relative;border-left:1px solid var(--line)}
+.grid .daycol .line{height:var(--rowh);border-bottom:1px solid var(--line)}
+.grid .daycol .line.half{border-bottom:1px dotted var(--line)}
+.blk{position:absolute;left:2px;right:2px;min-height:20px;border-radius:6px;padding:3px 5px;overflow:hidden;color:#fff;
+  border-left:4px solid rgba(0,0,0,.28);font-size:.7rem;line-height:1.25}
+.blk b{display:block;font-size:.74rem;font-weight:700}
+.blk .l2,.blk .l3{display:block;opacity:.95;font-size:.67rem}
+.blk.est::after{content:"≈";position:absolute;top:2px;right:4px;font-weight:700;opacity:.9}
+.blk.oh{background:var(--oh)}
+.blk.other{background:var(--ink-3)}
+
+.aside-list{margin-top:14px}
+.aside-list h3{margin-bottom:6px}
+table.tbl{width:100%;border-collapse:collapse;font-size:.8rem}
+table.tbl th,table.tbl td{text-align:left;padding:5px 7px;border-bottom:1px solid var(--line);vertical-align:top}
+table.tbl th{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);border-bottom:1px solid var(--line-2)}
+table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
+.sheet-foot{margin-top:14px;padding-top:8px;border-top:1px solid var(--line);font-size:.72rem;color:var(--ink-3);
+  display:flex;flex-wrap:wrap;gap:4px 14px;justify-content:space-between}
+.notes-line{font-size:.8rem;color:var(--ink-2);margin-top:10px;white-space:pre-wrap}
+
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.toolbar .spacer{flex:1}
+.banner{border:1px solid var(--warn);background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:9px 11px;font-size:.8rem;margin-bottom:12px}
+.banner.info{border-color:var(--line-2);background:var(--surface-2);color:var(--ink-2)}
+
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);
+  padding:10px 16px;border-radius:999px;font-size:.85rem;box-shadow:var(--shadow);z-index:60;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- print ---------- */
+@page{size:letter landscape;margin:.45in}
+@media print{
+  :root{--bg:#fff;--surface:#fff;--surface-2:#fff;--ink:#000;--ink-2:#333;--ink-3:#555;--line:#bbb;--line-2:#888}
+  body{background:#fff;font-size:10.5pt}
+  .topbar,.sidebar,.toolbar,.banner,.no-print,.toast{display:none!important}
+  .layout{display:block}
+  .stage{padding:0}
+  .sheet{border:0;box-shadow:none;padding:0;margin:0;max-width:none;break-inside:auto}
+  .sheet+.sheet{break-before:page;margin-top:0}
+  .grid{min-width:0;break-inside:avoid;--rowh:32px!important}
+  .grid-wrap{overflow:visible}
+  .grid .hcell{font-size:9pt;padding:3px 2px}
+  .grid .timeslot{font-size:7.5pt}
+  /* Black on white with a colored spine: legible whether or not the user
+     enables background graphics in the print dialog. */
+  .blk{background:#fff!important;color:#000!important;font-size:7.5pt;line-height:1.2;padding:2px 4px;
+    border-top:1px solid #9a9a9a!important;border-right:1px solid #9a9a9a!important;border-bottom:1px solid #9a9a9a!important;
+    border-left-style:solid!important;border-left-width:5px!important;border-left-color:var(--blkc,#333)!important;
+    print-color-adjust:exact;-webkit-print-color-adjust:exact}
+  .blk b{font-size:8pt}
+  .blk .l2,.blk .l3{font-size:7pt;opacity:1}
+  table.tbl{font-size:8.5pt}
+  table.tbl tr{break-inside:avoid}
+  .aside-list{break-inside:avoid}
+  .sheet-head{break-after:avoid}
+  a{text-decoration:none;color:#000}
+}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <h1>Faculty Schedule Builder</h1>
+    <span class="sub">Brookdale Community College · School of STEAM</span>
+  </div>
+  <div class="status" id="dataStatus" aria-live="polite"></div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar no-print" aria-label="Schedule controls">
+
+    <details class="panel" id="p1" open>
+      <summary><span class="panel-num">1</span> Find your sections <span class="count-chip" id="chipFaculty"></span></summary>
+      <div class="panel-body">
+        <div class="field">
+          <label for="facSearch">Search by instructor name</label>
+          <input type="search" id="facSearch" placeholder="Start typing a last name…" autocomplete="off">
+        </div>
+        <div class="results" id="facResults" role="listbox" aria-label="Matching instructors"></div>
+        <div class="chips" id="facChips" aria-live="polite"></div>
+        <p class="hint">Chairs: add several names to print one sheet per person.</p>
+        <div class="field" style="margin-top:10px">
+          <label for="potFilter">Parts of term to include</label>
+          <select id="potFilter">
+            <option value="15W">15-week sections only</option>
+            <option value="ALL" selected>All parts of term (7-week, 11-week shown with dates)</option>
+          </select>
+        </div>
+      </div>
+    </details>
+
+    <details class="panel" id="p2">
+      <summary><span class="panel-num">2</span> Sections <span class="count-chip" id="chipSections"></span></summary>
+      <div class="panel-body">
+        <div class="btn-row" style="margin-bottom:9px">
+          <button class="btn sm" id="selAll" type="button">Select all</button>
+          <button class="btn sm" id="selNone" type="button">Clear all</button>
+        </div>
+        <div id="sectionList"></div>
+      </div>
+    </details>
+
+    <details class="panel" id="p3">
+      <summary><span class="panel-num">3</span> Office hours &amp; other blocks <span class="count-chip" id="chipCustom"></span></summary>
+      <div class="panel-body">
+        <div id="customList"></div>
+        <div class="field"><label for="cLabel">Label</label>
+          <input type="text" id="cLabel" placeholder="Office Hours"></div>
+        <div class="row2">
+          <div class="field"><label for="cType">Type</label>
+            <select id="cType">
+              <option value="oh">Office hours</option>
+              <option value="other">Other commitment</option>
+            </select></div>
+          <div class="field"><label for="cLoc">Location</label>
+            <input type="text" id="cLoc" placeholder="MAS 212 or Zoom"></div>
+        </div>
+        <div class="field"><label id="cDaysLabel">Days</label>
+          <div class="daybox" id="cDays" role="group" aria-labelledby="cDaysLabel"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label for="cStart">Start</label><input type="time" id="cStart" value="10:00"></div>
+          <div class="field"><label for="cEnd">End</label><input type="time" id="cEnd" value="11:00"></div>
+        </div>
+        <button class="btn primary" id="addCustom" type="button">Add block</button>
+        <p class="hint">Add by-appointment or virtual hours as a note in step&nbsp;4 if they have no fixed time.</p>
+      </div>
+    </details>
+
+    <details class="panel" id="p4">
+      <summary><span class="panel-num">4</span> Your information</summary>
+      <div class="panel-body">
+        <div class="field"><label for="fName">Name as it should print</label><input type="text" id="fName" placeholder="Michael Qaissaunee"></div>
+        <div class="row2">
+          <div class="field"><label for="fTitle">Title</label><input type="text" id="fTitle" placeholder="Professor / Department Chair"></div>
+          <div class="field"><label for="fDept">Department</label><input type="text" id="fDept" placeholder="Engineering &amp; Technology"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label for="fOffice">Office</label><input type="text" id="fOffice" placeholder="MAS 212"></div>
+          <div class="field"><label for="fPhone">Phone</label><input type="tel" id="fPhone" placeholder="732-224-0000"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label for="fEmail">Email</label><input type="email" id="fEmail" placeholder="you@brookdalecc.edu"></div>
+          <div class="field"><label for="fZoom">Virtual office / link text</label><input type="text" id="fZoom" placeholder="Zoom by appointment"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label for="fTermLabel">Term label</label><input type="text" id="fTermLabel" placeholder="Fall 2026"></div>
+          <div class="field"><label for="fTermStart">Term start (for calendar export)</label><input type="date" id="fTermStart"></div>
+        </div>
+        <div class="field"><label for="fTermEnd">Term end (for calendar export)</label><input type="date" id="fTermEnd"></div>
+        <div class="field"><label for="fNotes">Notes printed at the bottom</label><textarea id="fNotes" placeholder="Other hours by appointment. Best reached by email."></textarea></div>
+      </div>
+    </details>
+
+    <details class="panel" id="p5">
+      <summary><span class="panel-num">5</span> Display options</summary>
+      <div class="panel-body">
+        <label class="check"><input type="checkbox" id="optEnroll"> Show enrollment (enrolled / capacity)</label>
+        <label class="check"><input type="checkbox" id="optCode" checked> Show section codes</label>
+        <label class="check"><input type="checkbox" id="optCredits" checked> Show credits in the course table</label>
+        <label class="check"><input type="checkbox" id="optWeekend"> Always show Saturday and Sunday</label>
+        <label class="check"><input type="checkbox" id="optColor" checked> Color-code courses (kept in print)</label>
+        <label class="check"><input type="checkbox" id="optTable" checked> Include the course detail table</label>
+        <label class="check"><input type="checkbox" id="opt24"> Use 24-hour times</label>
+        <div class="field" style="margin-top:8px"><label for="optDensity">Grid height</label>
+          <select id="optDensity">
+            <option value="46">Compact</option>
+            <option value="58" selected>Standard</option>
+            <option value="72">Roomy</option>
+          </select></div>
+      </div>
+    </details>
+
+    <details class="panel" id="p6" open>
+      <summary><span class="panel-num">6</span> Export</summary>
+      <div class="panel-body">
+        <div class="btn-row">
+          <button class="btn primary" id="btnPrint" type="button">⎙ Print / Save as PDF</button>
+          <button class="btn" id="btnIcs" type="button">⤓ Calendar (.ics)</button>
+          <button class="btn" id="btnPng" type="button">⤓ Image (.png)</button>
+          <button class="btn" id="btnCsv" type="button">⤓ Spreadsheet (.csv)</button>
+        </div>
+        <p class="hint">In the print dialog choose <b>Landscape</b> and enable background graphics to keep course colors.</p>
+        <div class="btn-row" style="margin-top:10px">
+          <button class="btn ghost sm" id="btnSave" type="button">Save draft file</button>
+          <button class="btn ghost sm" id="btnLoad" type="button">Load draft file</button>
+          <button class="btn ghost sm danger" id="btnReset" type="button">Reset everything</button>
+        </div>
+        <input type="file" id="fileDraft" accept="application/json" class="sr-only">
+        <input type="file" id="fileData" accept="application/json" class="sr-only">
+        <p class="hint">Everything you type stays in this browser. Nothing is uploaded anywhere.</p>
+      </div>
+    </details>
+  </aside>
+
+  <main class="stage" id="main">
+    <div class="toolbar no-print">
+      <button class="btn primary" id="btnPrint2" type="button">⎙ Print / Save as PDF</button>
+      <span class="spacer"></span>
+      <button class="btn ghost sm" id="btnLoadData" type="button">Load a different data file</button>
+    </div>
+    <div id="banners"></div>
+    <div id="sheets"></div>
+  </main>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<canvas id="pngCanvas" class="sr-only" width="10" height="10"></canvas>
+
+<script type="application/json" id="demoData">{"term":"26FA","termLabel":"Fall 2026","generated":"2026-08-27T19:04:31+00:00","asOf":{"15W":"2026-08-27","11W":"2026-08-27","7A":"2026-08-27","7B":"2026-08-27"},"meetingSource":"enrollment","demo":true,"faculty":["Abdul Rahman Kamara","Ana Teodorescu","Anca Neagoe","Andrew Panitz","Anduela Zylyftari","Arminda Wey","Ashley Tasy","Brian McKeon","Brian Nietzold","Calvin Countee","Colleen Romanczyk","Daniel Cooperman","Daniel Lopez","Deborah Salagaj","Deniz Seden","Dharmishta Ghosh","Diane Galatro","Elham Fahmy","Eugene DeCosta","Frederick Burg","Gabriela Sprague","Gerard O'Reilly","Glenn Higgins","Glenn Noe","Gregory Liano","Hanli Huang","Heeja Kwon","James Schmitt","Jennifer Patronelli","Joan Carroll","Jose Henriques","Karina Ochs","Katelyn Brink","Kimberly Feldman","Koby Biran","Lyndsay Werner","Marcos Puga","Michael Elmes","Michael Nolan","Michael Qaissaunee","Mohammad Shanehsaz","Nathalie Darden","Neil Jackman","Prince Sekyi","Ravi Kumar","Rebecca Rozario","Richard Adleman","Richard LaScala","Richard Oppenheim","Robert Borek","Robert Fiore","Robert Zampella","Sally Mulvey","Samantha Doluweera","Sarbmeet Kanwal","Sean Bramley","Spyro Roubos","Stephen Hiamang","Stephen Peterson","Susan Monroe","Tina Legere","Troy Deckebach","Uma Gurusamy","Wallace Wilson","Xiaoxiang Liu"],"sections":[{"id":"MATH-015-701RL","c":"MATH-015","t":"Prealgebra","cr":4,"dept":"MATH","campus":"LINC","pot":"11W","mode":"inperson","i":["Stephen Hiamang"],"enr":3,"cap":23,"wl":0,"m":[{"d":["M","W"],"s":"16:00","e":"17:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-701RL","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"11W","mode":"inperson","i":[],"enr":1,"cap":23,"wl":0,"m":[{"d":["M","W"],"s":"16:00","e":"17:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-145-700RL","c":"MATH-145","t":"Algebraic Modeling","cr":4,"dept":"MATH","campus":"LINC","pot":"11W","mode":"inperson","i":["Lyndsay Werner"],"enr":2,"cap":25,"wl":0,"m":[{"d":["M","W"],"s":"16:00","e":"17:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-015-750RL","c":"MATH-015","t":"Prealgebra","cr":4,"dept":"MATH","campus":"LINC","pot":"11W","mode":"inperson","i":[],"enr":1,"cap":23,"wl":0,"m":[{"d":["T","R"],"s":"18:00","e":"19:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-750RL","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"ORLV","pot":"11W","mode":"inperson","i":["Abdul Rahman Kamara"],"enr":6,"cap":23,"wl":0,"m":[{"d":["T","R"],"s":"18:00","e":"19:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"ENGI-105-DE01B","c":"ENGI-105","t":"Introduction to Engineering","cr":1,"dept":"ENGI","campus":"DE","pot":"11W","mode":"online-async","i":["Daniel Cooperman"],"enr":11,"cap":30,"wl":0,"m":[],"sd":null,"ed":null},{"id":"MATH-131-DE01B","c":"MATH-131","t":"Statistics","cr":4,"dept":"MATH","campus":"DE","pot":"11W","mode":"online-async","i":["Robert Fiore"],"enr":28,"cap":28,"wl":0,"m":[],"sd":null,"ed":null},{"id":"MATH-145-DE01B","c":"MATH-145","t":"Algebraic Modeling","cr":4,"dept":"MATH","campus":"DE","pot":"11W","mode":"online-async","i":["Michael Elmes"],"enr":12,"cap":25,"wl":0,"m":[],"sd":null,"ed":null},{"id":"MATH-151-DE01B","c":"MATH-151","t":"Intermediate Algebra","cr":4,"dept":"MATH","campus":"DE","pot":"11W","mode":"online-async","i":["Rebecca Rozario"],"enr":8,"cap":30,"wl":0,"m":[],"sd":null,"ed":null},{"id":"MATH-156-DE01B","c":"MATH-156","t":"Math for Management/Soc Sci","cr":3,"dept":"MATH","campus":"DE","pot":"11W","mode":"online-async","i":["Ashley Tasy"],"enr":8,"cap":28,"wl":0,"m":[],"sd":null,"ed":null},{"id":"NETW-106-DE01B","c":"NETW-106","t":"Intro to Networking TCP/IP","cr":3,"dept":"NETW","campus":"DE","pot":"11W","mode":"online-async","i":["Mohammad Shanehsaz"],"enr":13,"cap":25,"wl":0,"m":[],"sd":null,"ed":null},{"id":"NETW-107-DE01B","c":"NETW-107","t":"Introduction to Security","cr":3,"dept":"NETW","campus":"DE","pot":"11W","mode":"online-async","i":["Mohammad Shanehsaz"],"enr":16,"cap":25,"wl":0,"m":[],"sd":null,"ed":null},{"id":"NETW-236-DE01B","c":"NETW-236","t":"Computer Forensics & Investiga","cr":3,"dept":"NETW","campus":"DE","pot":"11W","mode":"online-async","i":["Michael Qaissaunee"],"enr":7,"cap":18,"wl":0,"m":[],"sd":null,"ed":null},{"id":"NETW-237-DE01B","c":"NETW-237","t":"Perimeter Security","cr":3,"dept":"NETW","campus":"DE","pot":"11W","mode":"online-async","i":["Michael Qaissaunee"],"enr":9,"cap":18,"wl":0,"m":[],"sd":null,"ed":null},{"id":"NETW-238-DE01B","c":"NETW-238","t":"Hacker Tech, Tools & Incident","cr":3,"dept":"NETW","campus":"DE","pot":"11W","mode":"online-async","i":["Michael Qaissaunee"],"enr":12,"cap":18,"wl":0,"m":[],"sd":null,"ed":null},{"id":"MATH-273-DHS01","c":"MATH-273","t":"Calculus III","cr":4,"dept":"MATH","campus":"HSO","pot":"11W","mode":"online-async","i":["Neil Jackman"],"enr":6,"cap":28,"wl":0,"m":[],"sd":null,"ed":null},{"id":"MATH-295-700RL","c":"MATH-295","t":"Special Project - Mathematics","cr":1,"dept":"MATH","campus":"LINC","pot":"11W","mode":"online-async","i":[],"enr":0,"cap":5,"wl":0,"m":[],"sd":null,"ed":null},{"id":"MATH-015-014RL","c":"MATH-015","t":"Prealgebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Uma Gurusamy"],"enr":23,"cap":23,"wl":0,"m":[{"d":["T","R"],"s":"07:30","e":"09:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-006RL","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Robert Borek"],"enr":23,"cap":23,"wl":0,"m":[{"d":["T","R"],"s":"07:30","e":"09:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-153-007RL","c":"MATH-153","t":"Pre-Calculus Mathematics","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Arminda Wey"],"enr":19,"cap":30,"wl":0,"m":[{"d":["T","R"],"s":"07:30","e":"09:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-015-002RL","c":"MATH-015","t":"Prealgebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Katelyn Brink"],"enr":23,"cap":23,"wl":1,"m":[{"d":["M","F"],"s":"08:00","e":"09:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-015-004RL","c":"MATH-015","t":"Prealgebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Ravi Kumar"],"enr":23,"cap":23,"wl":0,"m":[{"d":["T","R"],"s":"08:00","e":"09:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-015-019RL","c":"MATH-015","t":"Prealgebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Robert Fiore"],"enr":22,"cap":23,"wl":0,"m":[{"d":["M","W"],"s":"08:00","e":"09:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-015-021RL","c":"MATH-015","t":"Prealgebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Eugene DeCosta"],"enr":23,"cap":23,"wl":1,"m":[{"d":["W","F"],"s":"08:00","e":"09:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-008RL","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Abdul Rahman Kamara"],"enr":22,"cap":23,"wl":0,"m":[{"d":["M","W"],"s":"08:00","e":"09:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-014RL","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Heeja Kwon"],"enr":9,"cap":23,"wl":0,"m":[{"d":["T","R"],"s":"08:00","e":"09:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-018ML","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Michael Nolan"],"enr":22,"cap":23,"wl":1,"m":[{"d":["T"],"s":"08:00","e":"11:40","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-026RL","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Diane Galatro"],"enr":6,"cap":23,"wl":0,"m":[{"d":["W","F"],"s":"08:00","e":"09:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-025-001RL","c":"MATH-025","t":"Elementary Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Koby Biran"],"enr":21,"cap":23,"wl":0,"m":[{"d":["M","W"],"s":"08:00","e":"09:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-131-001RL","c":"MATH-131","t":"Statistics","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Gregory Liano"],"enr":28,"cap":28,"wl":0,"m":[{"d":["M","W"],"s":"08:00","e":"09:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-131-011RL","c":"MATH-131","t":"Statistics","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Hanli Huang"],"enr":28,"cap":28,"wl":0,"m":[{"d":["T","R"],"s":"08:00","e":"09:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-136-003RL","c":"MATH-136","t":"Math for the Liberal Arts","cr":3,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Stephen Peterson"],"enr":17,"cap":30,"wl":0,"m":[{"d":["T"],"s":"08:00","e":"10:45","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-145-003ML","c":"MATH-145","t":"Algebraic Modeling","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Ashley Tasy"],"enr":25,"cap":25,"wl":1,"m":[{"d":["M"],"s":"08:00","e":"11:40","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-151-001RL","c":"MATH-151","t":"Intermediate Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Gerard O'Reilly"],"enr":20,"cap":30,"wl":0,"m":[{"d":["T","R"],"s":"08:00","e":"09:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-151-002ML","c":"MATH-151","t":"Intermediate Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Hanli Huang"],"enr":24,"cap":30,"wl":0,"m":[{"d":["W"],"s":"08:00","e":"11:40","rm":null,"est":true}],"sd":null,"ed":null},{"id":"ELEC-103-001RL","c":"ELEC-103","t":"Elec. Skills and Techniques","cr":4,"dept":"ELEC","campus":"LINC","pot":"15W","mode":"inperson","i":["Michael Qaissaunee"],"enr":13,"cap":20,"wl":0,"m":[{"d":["T"],"s":"09:00","e":"12:40","rm":null,"est":true}],"sd":null,"ed":null},{"id":"ELEC-112-001RL","c":"ELEC-112","t":"Electrical Circuits II","cr":4,"dept":"ELEC","campus":"LINC","pot":"15W","mode":"inperson","i":["Glenn Higgins"],"enr":6,"cap":15,"wl":0,"m":[{"d":["W"],"s":"09:00","e":"12:40","rm":null,"est":true}],"sd":null,"ed":null},{"id":"ENGI-101-001RL","c":"ENGI-101","t":"Engineering Mechanics I","cr":3,"dept":"ENGI","campus":"LINC","pot":"15W","mode":"inperson","i":["Daniel Cooperman"],"enr":30,"cap":30,"wl":2,"m":[{"d":["R"],"s":"09:00","e":"11:45","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-003ML","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Michael Nolan"],"enr":22,"cap":23,"wl":0,"m":[{"d":["F"],"s":"09:00","e":"12:40","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-004RL","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["James Schmitt"],"enr":22,"cap":23,"wl":0,"m":[{"d":["M","W"],"s":"09:00","e":"10:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-015ML","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Stephen Hiamang"],"enr":17,"cap":23,"wl":0,"m":[{"d":["R"],"s":"09:00","e":"12:40","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-021ML","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Ashley Tasy"],"enr":11,"cap":23,"wl":0,"m":[{"d":["R"],"s":"09:00","e":"12:40","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-030-002XL","c":"MATH-030","t":"Support Course for Math 131","cr":2,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Arminda Wey"],"enr":10,"cap":11,"wl":0,"m":[{"d":["M","W"],"s":"09:00","e":"09:55","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-040-014XL","c":"MATH-040","t":"Support Course for Math 145","cr":2,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Karina Ochs"],"enr":6,"cap":11,"wl":0,"m":[{"d":["T","R"],"s":"09:00","e":"09:55","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-151-003RL","c":"MATH-151","t":"Intermediate Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Deborah Salagaj"],"enr":29,"cap":30,"wl":3,"m":[{"d":["M","W"],"s":"09:00","e":"10:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-151-005XL","c":"MATH-151","t":"Intermediate Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Gabriela Sprague"],"enr":23,"cap":23,"wl":1,"m":[{"d":["T","R"],"s":"09:00","e":"10:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-011-004RL","c":"MATH-011","t":"Prealgebra, Part I","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Dharmishta Ghosh"],"enr":17,"cap":17,"wl":0,"m":[{"d":["T","R"],"s":"09:30","e":"11:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-015-018RL","c":"MATH-015","t":"Prealgebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Rebecca Rozario"],"enr":23,"cap":23,"wl":0,"m":[{"d":["T","R"],"s":"09:30","e":"11:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-025RL","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Uma Gurusamy"],"enr":22,"cap":23,"wl":0,"m":[{"d":["T","R"],"s":"09:30","e":"11:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-025-002RL","c":"MATH-025","t":"Elementary Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Nathalie Darden"],"enr":21,"cap":23,"wl":0,"m":[{"d":["T","R"],"s":"09:30","e":"11:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-145-007RL","c":"MATH-145","t":"Algebraic Modeling","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Abdul Rahman Kamara"],"enr":25,"cap":25,"wl":0,"m":[{"d":["T","R"],"s":"09:30","e":"11:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-151-013RL","c":"MATH-151","t":"Intermediate Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Arminda Wey"],"enr":15,"cap":30,"wl":0,"m":[{"d":["T","R"],"s":"09:30","e":"11:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-152-007RL","c":"MATH-152","t":"College Algebra & Trigonometry","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Brian McKeon"],"enr":29,"cap":30,"wl":2,"m":[{"d":["T","R"],"s":"09:30","e":"11:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"PHYS-111-001RL","c":"PHYS-111","t":"General Physics I Non-Calculus","cr":4,"dept":"PHYS","campus":"LINC","pot":"15W","mode":"inperson","i":["Xiaoxiang Liu"],"enr":11,"cap":23,"wl":0,"m":[{"d":["M","W"],"s":"09:30","e":"11:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-145-011RW","c":"MATH-145","t":"Algebraic Modeling","cr":4,"dept":"MATH","campus":"WALL","pot":"15W","mode":"inperson","i":["Tina Legere"],"enr":25,"cap":25,"wl":0,"m":[{"d":["T","R"],"s":"09:30","e":"11:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-011-001RL","c":"MATH-011","t":"Prealgebra, Part I","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Anca Neagoe"],"enr":17,"cap":17,"wl":2,"m":[{"d":["M","W"],"s":"10:00","e":"11:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-012-001RL","c":"MATH-012","t":"Prealgebra, Part II","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Diane Galatro"],"enr":13,"cap":18,"wl":0,"m":[{"d":["M","W"],"s":"10:00","e":"11:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-015-001RL","c":"MATH-015","t":"Prealgebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Eugene DeCosta"],"enr":23,"cap":23,"wl":1,"m":[{"d":["M","F"],"s":"10:00","e":"11:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-015-005RL","c":"MATH-015","t":"Prealgebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Daniel Lopez"],"enr":22,"cap":23,"wl":0,"m":[{"d":["W","F"],"s":"10:00","e":"11:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-015-007RL","c":"MATH-015","t":"Prealgebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Ana Teodorescu"],"enr":23,"cap":23,"wl":1,"m":[{"d":["M","W"],"s":"10:00","e":"11:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-015-023RL","c":"MATH-015","t":"Prealgebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Ravi Kumar"],"enr":23,"cap":23,"wl":0,"m":[{"d":["T","R"],"s":"10:00","e":"11:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-001RL","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Nathalie Darden"],"enr":23,"cap":23,"wl":1,"m":[{"d":["M","F"],"s":"10:00","e":"11:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-007RL","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Deniz Seden"],"enr":23,"cap":23,"wl":0,"m":[{"d":["M","W"],"s":"10:00","e":"11:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-022RL","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Andrew Panitz"],"enr":21,"cap":23,"wl":0,"m":[{"d":["M","W"],"s":"10:00","e":"11:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-025-008RL","c":"MATH-025","t":"Elementary Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Sally Mulvey"],"enr":7,"cap":23,"wl":0,"m":[{"d":["M","W"],"s":"10:00","e":"11:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-131-002XL","c":"MATH-131","t":"Statistics","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Arminda Wey"],"enr":10,"cap":11,"wl":0,"m":[{"d":["M","W"],"s":"10:00","e":"11:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-131-003RL","c":"MATH-131","t":"Statistics","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Arminda Wey"],"enr":17,"cap":17,"wl":2,"m":[{"d":["M","W"],"s":"10:00","e":"11:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-131-008RL","c":"MATH-131","t":"Statistics","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Hanli Huang"],"enr":27,"cap":28,"wl":2,"m":[{"d":["T","R"],"s":"10:00","e":"11:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-145-004RL","c":"MATH-145","t":"Algebraic Modeling","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Michael Elmes"],"enr":25,"cap":25,"wl":0,"m":[{"d":["M","W"],"s":"10:00","e":"11:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-145-005RL","c":"MATH-145","t":"Algebraic Modeling","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Joan Carroll"],"enr":25,"cap":25,"wl":0,"m":[{"d":["W","F"],"s":"10:00","e":"11:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-145-008RL","c":"MATH-145","t":"Algebraic Modeling","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Karina Ochs"],"enr":14,"cap":14,"wl":2,"m":[{"d":["T","R"],"s":"10:00","e":"11:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-145-014XL","c":"MATH-145","t":"Algebraic Modeling","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Karina Ochs"],"enr":6,"cap":11,"wl":0,"m":[{"d":["T","R"],"s":"10:00","e":"11:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-151-009RL","c":"MATH-151","t":"Intermediate Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Rebecca Rozario"],"enr":30,"cap":30,"wl":0,"m":[{"d":["M","W"],"s":"10:00","e":"11:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-152-008RL","c":"MATH-152","t":"College Algebra & Trigonometry","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Hanli Huang"],"enr":16,"cap":30,"wl":0,"m":[{"d":["M","W"],"s":"10:00","e":"11:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-153-006RL","c":"MATH-153","t":"Pre-Calculus Mathematics","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Abdul Rahman Kamara"],"enr":15,"cap":30,"wl":0,"m":[{"d":["M","W"],"s":"10:00","e":"11:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-156-002RL","c":"MATH-156","t":"Math for Management/Soc Sci","cr":3,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Frederick Burg"],"enr":14,"cap":28,"wl":0,"m":[{"d":["M","W"],"s":"10:00","e":"11:25","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-156-004RL","c":"MATH-156","t":"Math for Management/Soc Sci","cr":3,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Susan Monroe"],"enr":22,"cap":28,"wl":0,"m":[{"d":["T","R"],"s":"10:00","e":"11:25","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-171-002RL","c":"MATH-171","t":"Calculus I","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Susan Monroe"],"enr":28,"cap":28,"wl":1,"m":[{"d":["M","W"],"s":"10:00","e":"11:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-171-003RL","c":"MATH-171","t":"Calculus I","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Samantha Doluweera"],"enr":28,"cap":28,"wl":0,"m":[{"d":["T","R"],"s":"10:00","e":"11:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-172-004RL","c":"MATH-172","t":"Calculus II","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Ashley Tasy"],"enr":28,"cap":28,"wl":0,"m":[{"d":["M","W"],"s":"10:00","e":"11:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-131-016TC","c":"MATH-131","t":"Statistics","cr":4,"dept":"MATH","campus":"TCNJ","pot":"15W","mode":"inperson","i":["Ana Teodorescu"],"enr":13,"cap":28,"wl":0,"m":[{"d":["T","R"],"s":"10:00","e":"11:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-005RW","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"WALL","pot":"15W","mode":"inperson","i":["Brian McKeon"],"enr":14,"cap":23,"wl":0,"m":[{"d":["M","W"],"s":"10:00","e":"11:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-023ML","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Michael Nolan"],"enr":22,"cap":23,"wl":0,"m":[{"d":["F"],"s":"11:00","e":"14:40","rm":null,"est":true}],"sd":null,"ed":null},{"id":"NETW-110-001RL","c":"NETW-110","t":"Intro to UNIX Network Admin","cr":3,"dept":"NETW","campus":"LINC","pot":"15W","mode":"inperson","i":["Michael Qaissaunee"],"enr":20,"cap":20,"wl":6,"m":[{"d":["M"],"s":"11:00","e":"13:45","rm":null,"est":true}],"sd":null,"ed":null},{"id":"PHYS-121-001RL","c":"PHYS-121","t":"General Physics I","cr":4,"dept":"PHYS","campus":"LINC","pot":"15W","mode":"inperson","i":["Xiaoxiang Liu"],"enr":19,"cap":23,"wl":0,"m":[{"d":["M","W"],"s":"11:00","e":"12:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-011-002RL","c":"MATH-011","t":"Prealgebra, Part I","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Anca Neagoe"],"enr":17,"cap":17,"wl":1,"m":[{"d":["M","W"],"s":"12:00","e":"13:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-015-015RL","c":"MATH-015","t":"Prealgebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Eugene DeCosta"],"enr":23,"cap":23,"wl":0,"m":[{"d":["M","F"],"s":"12:00","e":"13:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-015-016RL","c":"MATH-015","t":"Prealgebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Diane Galatro"],"enr":21,"cap":23,"wl":0,"m":[{"d":["W","F"],"s":"12:00","e":"13:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-002ML","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Andrew Panitz"],"enr":23,"cap":23,"wl":3,"m":[{"d":["M"],"s":"12:00","e":"15:40","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-011RL","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Sally Mulvey"],"enr":23,"cap":23,"wl":0,"m":[{"d":["M","W"],"s":"12:00","e":"13:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-024RL","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Richard LaScala"],"enr":23,"cap":23,"wl":1,"m":[{"d":["M","W"],"s":"12:00","e":"13:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-025-003RL","c":"MATH-025","t":"Elementary Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Ana Teodorescu"],"enr":22,"cap":23,"wl":1,"m":[{"d":["M","W"],"s":"12:00","e":"13:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-131-007RL","c":"MATH-131","t":"Statistics","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Robert Fiore"],"enr":28,"cap":28,"wl":1,"m":[{"d":["M","W"],"s":"12:00","e":"13:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-136-005RL","c":"MATH-136","t":"Math for the Liberal Arts","cr":3,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Koby Biran"],"enr":14,"cap":30,"wl":0,"m":[{"d":["W"],"s":"12:00","e":"14:45","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-145-002RL","c":"MATH-145","t":"Algebraic Modeling","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Nathalie Darden"],"enr":25,"cap":25,"wl":0,"m":[{"d":["M","F"],"s":"12:00","e":"13:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-145-010RL","c":"MATH-145","t":"Algebraic Modeling","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Frederick Burg"],"enr":24,"cap":25,"wl":0,"m":[{"d":["M","W"],"s":"12:00","e":"13:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-151-004RL","c":"MATH-151","t":"Intermediate Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Daniel Lopez"],"enr":22,"cap":30,"wl":0,"m":[{"d":["W","F"],"s":"12:00","e":"13:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-152-011RL","c":"MATH-152","t":"College Algebra & Trigonometry","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Abdul Rahman Kamara"],"enr":15,"cap":30,"wl":0,"m":[{"d":["M","W"],"s":"12:00","e":"13:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-153-005RL","c":"MATH-153","t":"Pre-Calculus Mathematics","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Richard Adleman"],"enr":29,"cap":30,"wl":0,"m":[{"d":["M","W"],"s":"12:00","e":"13:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-172-006RL","c":"MATH-172","t":"Calculus II","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Stephen Hiamang"],"enr":22,"cap":28,"wl":0,"m":[{"d":["M","W"],"s":"12:00","e":"13:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-176-001RL","c":"MATH-176","t":"Calculus Business Applications","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Ashley Tasy"],"enr":11,"cap":28,"wl":0,"m":[{"d":["M","W"],"s":"12:00","e":"13:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-273-001RL","c":"MATH-273","t":"Calculus III","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Spyro Roubos"],"enr":27,"cap":28,"wl":0,"m":[{"d":["M","W"],"s":"12:00","e":"13:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-015-011RW","c":"MATH-015","t":"Prealgebra","cr":4,"dept":"MATH","campus":"WALL","pot":"15W","mode":"inperson","i":["Brian McKeon"],"enr":23,"cap":23,"wl":1,"m":[{"d":["M","W"],"s":"12:00","e":"13:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"ENGI-105-001RL","c":"ENGI-105","t":"Introduction to Engineering","cr":1,"dept":"ENGI","campus":"LINC","pot":"15W","mode":"inperson","i":["Daniel Cooperman"],"enr":30,"cap":30,"wl":2,"m":[{"d":["W"],"s":"13:00","e":"13:55","rm":null,"est":true}],"sd":null,"ed":null},{"id":"ELEC-101-001RL","c":"ELEC-101","t":"Comp. Aided Circuit Analysis","cr":3,"dept":"ELEC","campus":"LINC","pot":"15W","mode":"inperson","i":["Michael Qaissaunee"],"enr":15,"cap":20,"wl":0,"m":[{"d":["T"],"s":"13:30","e":"16:15","rm":null,"est":true}],"sd":null,"ed":null},{"id":"ENGI-103-001RL","c":"ENGI-103","t":"Engineering Problem Solving","cr":3,"dept":"ENGI","campus":"LINC","pot":"15W","mode":"inperson","i":["Daniel Cooperman"],"enr":25,"cap":25,"wl":3,"m":[{"d":["R"],"s":"13:30","e":"16:15","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-011-005RL","c":"MATH-011","t":"Prealgebra, Part I","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Wallace Wilson"],"enr":17,"cap":17,"wl":0,"m":[{"d":["T","R"],"s":"13:30","e":"15:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-012-002RL","c":"MATH-012","t":"Prealgebra, Part II","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Robert Zampella"],"enr":10,"cap":18,"wl":0,"m":[{"d":["T","R"],"s":"13:30","e":"15:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-015-003RL","c":"MATH-015","t":"Prealgebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Spyro Roubos"],"enr":23,"cap":23,"wl":2,"m":[{"d":["T","R"],"s":"13:30","e":"15:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-015-010RL","c":"MATH-015","t":"Prealgebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Rebecca Rozario"],"enr":23,"cap":23,"wl":0,"m":[{"d":["T","R"],"s":"13:30","e":"15:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-009RL","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Nathalie Darden"],"enr":23,"cap":23,"wl":0,"m":[{"d":["T","R"],"s":"13:30","e":"15:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-016RL","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Daniel Lopez"],"enr":17,"cap":23,"wl":0,"m":[{"d":["T","R"],"s":"13:30","e":"15:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-025-004RL","c":"MATH-025","t":"Elementary Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Brian Nietzold"],"enr":17,"cap":23,"wl":0,"m":[{"d":["T","R"],"s":"13:30","e":"15:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-131-009RL","c":"MATH-131","t":"Statistics","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Susan Monroe"],"enr":17,"cap":17,"wl":1,"m":[{"d":["T","R"],"s":"13:30","e":"15:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-131-010XL","c":"MATH-131","t":"Statistics","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Susan Monroe"],"enr":11,"cap":11,"wl":0,"m":[{"d":["T","R"],"s":"13:30","e":"15:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-145-009ML","c":"MATH-145","t":"Algebraic Modeling","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Michael Elmes"],"enr":25,"cap":25,"wl":1,"m":[{"d":["T"],"s":"13:30","e":"17:10","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-145-012RL","c":"MATH-145","t":"Algebraic Modeling","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Prince Sekyi"],"enr":25,"cap":25,"wl":0,"m":[{"d":["T","R"],"s":"13:30","e":"15:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-151-006RL","c":"MATH-151","t":"Intermediate Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Abdul Rahman Kamara"],"enr":25,"cap":30,"wl":0,"m":[{"d":["T","R"],"s":"13:30","e":"15:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-156-001RL","c":"MATH-156","t":"Math for Management/Soc Sci","cr":3,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Brian McKeon"],"enr":27,"cap":28,"wl":1,"m":[{"d":["T","R"],"s":"13:30","e":"14:55","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-171-004RL","c":"MATH-171","t":"Calculus I","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Richard Adleman"],"enr":7,"cap":28,"wl":0,"m":[{"d":["T","R"],"s":"13:30","e":"15:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-176-002RL","c":"MATH-176","t":"Calculus Business Applications","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Stephen Peterson"],"enr":17,"cap":28,"wl":0,"m":[{"d":["T","R"],"s":"13:30","e":"15:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"NETW-151-001RL","c":"NETW-151","t":"Router Internetworking/CCNA","cr":6,"dept":"NETW","campus":"ORLV","pot":"15W","mode":"inperson","i":["Mohammad Shanehsaz"],"enr":17,"cap":18,"wl":0,"m":[{"d":["T","R"],"s":"13:30","e":"16:15","rm":null,"est":true}],"sd":null,"ed":null},{"id":"ENGI-121-001RL","c":"ENGI-121","t":"Engineering Graphics with CAD","cr":2,"dept":"ENGI","campus":"LINC","pot":"15W","mode":"inperson","i":["Daniel Cooperman"],"enr":24,"cap":24,"wl":2,"m":[{"d":["W"],"s":"14:00","e":"15:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-015-006RL","c":"MATH-015","t":"Prealgebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Jose Henriques"],"enr":21,"cap":23,"wl":3,"m":[{"d":["M","W"],"s":"14:00","e":"15:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-015-008RL","c":"MATH-015","t":"Prealgebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Anca Neagoe"],"enr":23,"cap":23,"wl":0,"m":[{"d":["M","W"],"s":"14:00","e":"15:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-015-024RL","c":"MATH-015","t":"Prealgebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Colleen Romanczyk"],"enr":22,"cap":23,"wl":0,"m":[{"d":["M","W"],"s":"14:00","e":"15:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-012RL","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Sally Mulvey"],"enr":21,"cap":23,"wl":0,"m":[{"d":["M","W"],"s":"14:00","e":"15:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-020RL","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Troy Deckebach"],"enr":14,"cap":23,"wl":0,"m":[{"d":["M","W"],"s":"14:00","e":"15:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-131-005ML","c":"MATH-131","t":"Statistics","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Stephen Hiamang"],"enr":27,"cap":28,"wl":0,"m":[{"d":["W"],"s":"14:00","e":"17:40","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-131-015ML","c":"MATH-131","t":"Statistics","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Robert Fiore"],"enr":27,"cap":28,"wl":0,"m":[{"d":["M"],"s":"14:00","e":"17:40","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-136-001RL","c":"MATH-136","t":"Math for the Liberal Arts","cr":3,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Andrew Panitz"],"enr":11,"cap":30,"wl":0,"m":[{"d":["M","W"],"s":"14:00","e":"15:25","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-145-006RL","c":"MATH-145","t":"Algebraic Modeling","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Prince Sekyi"],"enr":24,"cap":25,"wl":3,"m":[{"d":["M","W"],"s":"14:00","e":"15:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-151-010RL","c":"MATH-151","t":"Intermediate Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Rebecca Rozario"],"enr":22,"cap":30,"wl":0,"m":[{"d":["M","W"],"s":"14:00","e":"15:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-152-009RL","c":"MATH-152","t":"College Algebra & Trigonometry","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Hanli Huang"],"enr":21,"cap":30,"wl":0,"m":[{"d":["M","W"],"s":"14:00","e":"15:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-156-003RL","c":"MATH-156","t":"Math for Management/Soc Sci","cr":3,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Susan Monroe"],"enr":28,"cap":28,"wl":1,"m":[{"d":["M","W"],"s":"14:00","e":"15:25","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-171-001RL","c":"MATH-171","t":"Calculus I","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Spyro Roubos"],"enr":28,"cap":28,"wl":1,"m":[{"d":["M","W"],"s":"14:00","e":"15:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-285-001RL","c":"MATH-285","t":"Linear Algebra","cr":3,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Ana Teodorescu"],"enr":12,"cap":28,"wl":0,"m":[{"d":["M","W"],"s":"14:00","e":"15:25","rm":null,"est":true}],"sd":null,"ed":null},{"id":"NETW-107-001RL","c":"NETW-107","t":"Introduction to Security","cr":3,"dept":"NETW","campus":"LINC","pot":"15W","mode":"inperson","i":["Michael Qaissaunee"],"enr":25,"cap":25,"wl":1,"m":[{"d":["M"],"s":"14:00","e":"16:45","rm":null,"est":true}],"sd":null,"ed":null},{"id":"PHYS-122-001RL","c":"PHYS-122","t":"General Physics II","cr":4,"dept":"PHYS","campus":"LINC","pot":"15W","mode":"inperson","i":["Xiaoxiang Liu"],"enr":23,"cap":23,"wl":7,"m":[{"d":["M","W"],"s":"14:00","e":"15:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"PHYS-223-001RL","c":"PHYS-223","t":"Gen Physics III","cr":4,"dept":"PHYS","campus":"LINC","pot":"15W","mode":"inperson","i":["Sarbmeet Kanwal"],"enr":13,"cap":20,"wl":0,"m":[{"d":["M","W"],"s":"14:00","e":"15:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"ENGI-105-002RL","c":"ENGI-105","t":"Introduction to Engineering","cr":1,"dept":"ENGI","campus":"LINC","pot":"15W","mode":"inperson","i":["Daniel Cooperman"],"enr":30,"cap":30,"wl":2,"m":[{"d":["T"],"s":"15:00","e":"15:55","rm":null,"est":true}],"sd":null,"ed":null},{"id":"ENGI-105-801RL","c":"ENGI-105","t":"Introduction to Engineering","cr":1,"dept":"ENGI","campus":"LINC","pot":"15W","mode":"inperson","i":["Daniel Cooperman"],"enr":30,"cap":30,"wl":2,"m":[{"d":["M"],"s":"15:00","e":"15:55","rm":null,"est":true}],"sd":null,"ed":null},{"id":"PHYS-106-001RL","c":"PHYS-106","t":"Astronomy","cr":3,"dept":"PHYS","campus":"LINC","pot":"15W","mode":"inperson","i":["Marcos Puga"],"enr":19,"cap":24,"wl":0,"m":[{"d":["M"],"s":"15:00","e":"17:45","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-011-006RL","c":"MATH-011","t":"Prealgebra, Part I","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Samantha Doluweera"],"enr":16,"cap":17,"wl":0,"m":[{"d":["T","R"],"s":"15:30","e":"17:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-015-013RL","c":"MATH-015","t":"Prealgebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Sean Bramley"],"enr":22,"cap":23,"wl":0,"m":[{"d":["T","R"],"s":"15:30","e":"17:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-015-017RL","c":"MATH-015","t":"Prealgebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Robert Zampella"],"enr":18,"cap":23,"wl":0,"m":[{"d":["T","R"],"s":"15:30","e":"17:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-025-006ML","c":"MATH-025","t":"Elementary Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Gregory Liano"],"enr":17,"cap":23,"wl":0,"m":[{"d":["T"],"s":"15:30","e":"19:10","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-030-010XL","c":"MATH-030","t":"Support Course for Math 131","cr":2,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Susan Monroe"],"enr":11,"cap":11,"wl":0,"m":[{"d":["T","R"],"s":"15:30","e":"16:25","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-145-013RL","c":"MATH-145","t":"Algebraic Modeling","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Prince Sekyi"],"enr":12,"cap":25,"wl":0,"m":[{"d":["T","R"],"s":"15:30","e":"17:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-172-005RL","c":"MATH-172","t":"Calculus II","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Spyro Roubos"],"enr":28,"cap":28,"wl":2,"m":[{"d":["T","R"],"s":"15:30","e":"17:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-274-002RL","c":"MATH-274","t":"Elem Differential Equations","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Stephen Hiamang"],"enr":26,"cap":28,"wl":0,"m":[{"d":["T","R"],"s":"15:30","e":"17:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"PHYS-108-001RL","c":"PHYS-108","t":"Physics in Life","cr":4,"dept":"PHYS","campus":"LINC","pot":"15W","mode":"inperson","i":["Xiaoxiang Liu"],"enr":19,"cap":20,"wl":0,"m":[{"d":["M","W"],"s":"15:30","e":"17:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"PHYS-121-002RL","c":"PHYS-121","t":"General Physics I","cr":4,"dept":"PHYS","campus":"LINC","pot":"15W","mode":"inperson","i":["Richard Oppenheim"],"enr":23,"cap":23,"wl":1,"m":[{"d":["T","R"],"s":"15:30","e":"17:20","rm":null,"est":true}],"sd":null,"ed":null},{"id":"ENGI-121-003RL","c":"ENGI-121","t":"Engineering Graphics with CAD","cr":2,"dept":"ENGI","campus":"LINC","pot":"15W","mode":"inperson","i":["Daniel Cooperman"],"enr":24,"cap":24,"wl":2,"m":[{"d":["M"],"s":"16:00","e":"17:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"ENGI-121-004RL","c":"ENGI-121","t":"Engineering Graphics with CAD","cr":2,"dept":"ENGI","campus":"LINC","pot":"15W","mode":"inperson","i":["Daniel Cooperman"],"enr":24,"cap":24,"wl":2,"m":[{"d":["T"],"s":"16:00","e":"17:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-015-009RL","c":"MATH-015","t":"Prealgebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Calvin Countee"],"enr":23,"cap":23,"wl":0,"m":[{"d":["M","W"],"s":"16:00","e":"17:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-015-012RL","c":"MATH-015","t":"Prealgebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Anduela Zylyftari"],"enr":23,"cap":23,"wl":0,"m":[{"d":["T","R"],"s":"16:00","e":"17:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-010RL","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Colleen Romanczyk"],"enr":18,"cap":23,"wl":0,"m":[{"d":["M","W"],"s":"16:00","e":"17:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-013RL","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Troy Deckebach"],"enr":16,"cap":23,"wl":0,"m":[{"d":["M","W"],"s":"16:00","e":"17:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-019RL","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Tina Legere"],"enr":10,"cap":23,"wl":0,"m":[{"d":["T","R"],"s":"16:00","e":"17:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-145-001ML","c":"MATH-145","t":"Algebraic Modeling","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Prince Sekyi"],"enr":25,"cap":25,"wl":0,"m":[{"d":["W"],"s":"16:00","e":"19:40","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-171-007HL","c":"MATH-171","t":"Calculus I","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Ana Teodorescu"],"enr":4,"cap":20,"wl":0,"m":[{"d":["M","W"],"s":"16:00","e":"17:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"PHYS-121-800ML","c":"PHYS-121","t":"General Physics I","cr":4,"dept":"PHYS","campus":"ONLH","pot":"15W","mode":"hybrid","i":["Xiaoxiang Liu"],"enr":23,"cap":23,"wl":0,"m":[{"d":["M"],"s":"17:00","e":"20:40","rm":null,"est":true}],"sd":null,"ed":null},{"id":"PHYS-122-800ML","c":"PHYS-122","t":"General Physics II","cr":4,"dept":"PHYS","campus":"ONLH","pot":"15W","mode":"hybrid","i":["Xiaoxiang Liu"],"enr":15,"cap":23,"wl":0,"m":[{"d":["W"],"s":"17:00","e":"20:40","rm":null,"est":true}],"sd":null,"ed":null},{"id":"ELEC-241-800RL","c":"ELEC-241","t":"Intro Digital Circuits","cr":4,"dept":"ELEC","campus":"LINC","pot":"15W","mode":"inperson","i":["Glenn Higgins"],"enr":5,"cap":8,"wl":0,"m":[{"d":["T"],"s":"18:00","e":"21:40","rm":null,"est":true}],"sd":null,"ed":null},{"id":"ENGI-101-800RL","c":"ENGI-101","t":"Engineering Mechanics I","cr":3,"dept":"ENGI","campus":"LINC","pot":"15W","mode":"inperson","i":["Daniel Cooperman"],"enr":30,"cap":30,"wl":0,"m":[{"d":["T"],"s":"18:00","e":"20:45","rm":null,"est":true}],"sd":null,"ed":null},{"id":"ENGI-103-800RL","c":"ENGI-103","t":"Engineering Problem Solving","cr":3,"dept":"ENGI","campus":"LINC","pot":"15W","mode":"inperson","i":["Daniel Cooperman"],"enr":25,"cap":25,"wl":2,"m":[{"d":["M"],"s":"18:00","e":"20:45","rm":null,"est":true}],"sd":null,"ed":null},{"id":"ENGI-251-800RL","c":"ENGI-251","t":"Digital I","cr":3,"dept":"ENGI","campus":"LINC","pot":"15W","mode":"inperson","i":["Glenn Higgins"],"enr":13,"cap":15,"wl":0,"m":[{"d":["T"],"s":"18:00","e":"20:45","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-015-800RL","c":"MATH-015","t":"Prealgebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Elham Fahmy"],"enr":23,"cap":23,"wl":0,"m":[{"d":["T","R"],"s":"18:00","e":"19:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-015-801RL","c":"MATH-015","t":"Prealgebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Jennifer Patronelli"],"enr":23,"cap":23,"wl":1,"m":[{"d":["M","W"],"s":"18:00","e":"19:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-015-803RL","c":"MATH-015","t":"Prealgebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Anduela Zylyftari"],"enr":16,"cap":23,"wl":0,"m":[{"d":["T","R"],"s":"18:00","e":"19:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-800RL","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Prince Sekyi"],"enr":15,"cap":23,"wl":0,"m":[{"d":["M","W"],"s":"18:00","e":"19:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-801RL","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Gabriela Sprague"],"enr":11,"cap":23,"wl":0,"m":[{"d":["T","R"],"s":"18:00","e":"19:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-131-800ML","c":"MATH-131","t":"Statistics","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Gregory Liano"],"enr":28,"cap":28,"wl":3,"m":[{"d":["T"],"s":"18:00","e":"21:40","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-145-800RL","c":"MATH-145","t":"Algebraic Modeling","cr":4,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Prince Sekyi"],"enr":10,"cap":25,"wl":0,"m":[{"d":["T","R"],"s":"18:00","e":"19:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-156-800RL","c":"MATH-156","t":"Math for Management/Soc Sci","cr":3,"dept":"MATH","campus":"LINC","pot":"15W","mode":"inperson","i":["Calvin Countee"],"enr":13,"cap":28,"wl":0,"m":[{"d":["M","W"],"s":"18:00","e":"19:25","rm":null,"est":true}],"sd":null,"ed":null},{"id":"NETW-106-001RL","c":"NETW-106","t":"Intro to Networking TCP/IP","cr":3,"dept":"NETW","campus":"LINC","pot":"15W","mode":"inperson","i":["Kimberly Feldman"],"enr":25,"cap":25,"wl":3,"m":[{"d":["R"],"s":"18:00","e":"20:45","rm":null,"est":true}],"sd":null,"ed":null},{"id":"NETW-151-800RL","c":"NETW-151","t":"Router Internetworking/CCNA","cr":6,"dept":"NETW","campus":"LINC","pot":"15W","mode":"inperson","i":["Mohammad Shanehsaz"],"enr":18,"cap":18,"wl":0,"m":[{"d":["T","R"],"s":"18:00","e":"20:45","rm":null,"est":true}],"sd":null,"ed":null},{"id":"NETW-107-800RL","c":"NETW-107","t":"Introduction to Security","cr":3,"dept":"NETW","campus":"ORLV","pot":"15W","mode":"inperson","i":["Michael Qaissaunee"],"enr":19,"cap":25,"wl":0,"m":[{"d":["M"],"s":"18:00","e":"20:45","rm":null,"est":true}],"sd":null,"ed":null},{"id":"ENGI-241-800RL","c":"ENGI-241","t":"Principles of EE I (Circuits)","cr":4,"dept":"ENGI","campus":"LINC","pot":"15W","mode":"inperson","i":["Glenn Higgins"],"enr":13,"cap":15,"wl":0,"m":[{"d":["M"],"s":"18:30","e":"22:10","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-DE01A","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"DE","pot":"15W","mode":"online-async","i":["Glenn Noe"],"enr":22,"cap":23,"wl":1,"m":[],"sd":null,"ed":null},{"id":"MATH-021-DE02A","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"DE","pot":"15W","mode":"online-async","i":["Karina Ochs"],"enr":20,"cap":23,"wl":1,"m":[],"sd":null,"ed":null},{"id":"MATH-021-DE03A","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"DE","pot":"15W","mode":"online-async","i":["Glenn Noe"],"enr":22,"cap":23,"wl":0,"m":[],"sd":null,"ed":null},{"id":"MATH-025-005XL","c":"MATH-025","t":"Elementary Algebra","cr":4,"dept":"MATH","campus":"DE","pot":"15W","mode":"online-async","i":["Gabriela Sprague"],"enr":23,"cap":23,"wl":1,"m":[],"sd":null,"ed":null},{"id":"MATH-025-DE01A","c":"MATH-025","t":"Elementary Algebra","cr":4,"dept":"MATH","campus":"DE","pot":"15W","mode":"online-async","i":["Hanli Huang"],"enr":10,"cap":23,"wl":0,"m":[],"sd":null,"ed":null},{"id":"MATH-131-DE01A","c":"MATH-131","t":"Statistics","cr":4,"dept":"MATH","campus":"DE","pot":"15W","mode":"online-async","i":["Andrew Panitz"],"enr":28,"cap":28,"wl":3,"m":[],"sd":null,"ed":null},{"id":"MATH-131-DE02A","c":"MATH-131","t":"Statistics","cr":4,"dept":"MATH","campus":"DE","pot":"15W","mode":"online-async","i":["Stephen Hiamang"],"enr":27,"cap":28,"wl":2,"m":[],"sd":null,"ed":null},{"id":"MATH-136-DE01A","c":"MATH-136","t":"Math for the Liberal Arts","cr":3,"dept":"MATH","campus":"DE","pot":"15W","mode":"online-async","i":["Gregory Liano"],"enr":18,"cap":30,"wl":0,"m":[],"sd":null,"ed":null},{"id":"MATH-145-DE01A","c":"MATH-145","t":"Algebraic Modeling","cr":4,"dept":"MATH","campus":"DE","pot":"15W","mode":"online-async","i":["Michael Elmes"],"enr":25,"cap":25,"wl":3,"m":[],"sd":null,"ed":null},{"id":"MATH-151-DE01A","c":"MATH-151","t":"Intermediate Algebra","cr":4,"dept":"MATH","campus":"DE","pot":"15W","mode":"online-async","i":["Abdul Rahman Kamara"],"enr":26,"cap":30,"wl":0,"m":[],"sd":null,"ed":null},{"id":"MATH-152-DE02A","c":"MATH-152","t":"College Algebra & Trigonometry","cr":4,"dept":"MATH","campus":"DE","pot":"15W","mode":"online-async","i":["Sally Mulvey"],"enr":21,"cap":30,"wl":0,"m":[],"sd":null,"ed":null},{"id":"MATH-153-DE02A","c":"MATH-153","t":"Pre-Calculus Mathematics","cr":4,"dept":"MATH","campus":"DE","pot":"15W","mode":"online-async","i":["Samantha Doluweera"],"enr":21,"cap":30,"wl":0,"m":[],"sd":null,"ed":null},{"id":"MATH-156-DE01A","c":"MATH-156","t":"Math for Management/Soc Sci","cr":3,"dept":"MATH","campus":"DE","pot":"15W","mode":"online-async","i":["Samantha Doluweera"],"enr":28,"cap":28,"wl":1,"m":[],"sd":null,"ed":null},{"id":"MATH-171-DE01A","c":"MATH-171","t":"Calculus I","cr":4,"dept":"MATH","campus":"DE","pot":"15W","mode":"online-async","i":["Stephen Hiamang"],"enr":26,"cap":28,"wl":0,"m":[],"sd":null,"ed":null},{"id":"MATH-176-DE01A","c":"MATH-176","t":"Calculus Business Applications","cr":4,"dept":"MATH","campus":"DE","pot":"15W","mode":"online-async","i":["Karina Ochs"],"enr":15,"cap":28,"wl":0,"m":[],"sd":null,"ed":null},{"id":"MATH-273-DE01A","c":"MATH-273","t":"Calculus III","cr":4,"dept":"MATH","campus":"DE","pot":"15W","mode":"online-async","i":["Gabriela Sprague"],"enr":9,"cap":28,"wl":0,"m":[],"sd":null,"ed":null},{"id":"NETW-110-DE01A","c":"NETW-110","t":"Intro to UNIX Network Admin","cr":3,"dept":"NETW","campus":"DE","pot":"15W","mode":"online-async","i":["Michael Qaissaunee"],"enr":23,"cap":20,"wl":5,"m":[],"sd":null,"ed":null},{"id":"NETW-190-DE01A","c":"NETW-190","t":"MCTS Guide to Windows 7","cr":3,"dept":"NETW","campus":"DE","pot":"15W","mode":"online-async","i":["Mohammad Shanehsaz"],"enr":20,"cap":20,"wl":0,"m":[],"sd":null,"ed":null},{"id":"NETW-190-DE02A","c":"NETW-190","t":"MCTS Guide to Windows 7","cr":3,"dept":"NETW","campus":"DE","pot":"15W","mode":"online-async","i":["Mohammad Shanehsaz"],"enr":9,"cap":20,"wl":0,"m":[],"sd":null,"ed":null},{"id":"NETW-243-DE01A","c":"NETW-243","t":"Computer Repair & Maintenance","cr":3,"dept":"NETW","campus":"DE","pot":"15W","mode":"online-async","i":["Mohammad Shanehsaz"],"enr":17,"cap":18,"wl":1,"m":[],"sd":null,"ed":null},{"id":"MATH-299-001RL","c":"MATH-299","t":"Mathematics Internship","cr":1,"dept":"MATH","campus":"LINC","pot":"15W","mode":"online-async","i":[],"enr":0,"cap":5,"wl":0,"m":[],"sd":null,"ed":null},{"id":"MATH-152-201ML","c":"MATH-152","t":"College Algebra & Trigonometry","cr":4,"dept":"MATH","campus":"LINC","pot":"7A","mode":"inperson","i":["Daniel Lopez"],"enr":14,"cap":30,"wl":0,"m":[{"d":["T","R"],"s":"09:00","e":"10:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-021-DE01K","c":"MATH-021","t":"Introductory Algebra","cr":4,"dept":"MATH","campus":"DE","pot":"7A","mode":"online-async","i":["Ashley Tasy"],"enr":5,"cap":23,"wl":0,"m":[],"sd":null,"ed":null},{"id":"MATH-153-250ML","c":"MATH-153","t":"Pre-Calculus Mathematics","cr":4,"dept":"MATH","campus":"LINC","pot":"7B","mode":"inperson","i":["Daniel Lopez"],"enr":13,"cap":30,"wl":0,"m":[{"d":["T","R"],"s":"09:00","e":"10:50","rm":null,"est":true}],"sd":null,"ed":null},{"id":"MATH-145-DE01L","c":"MATH-145","t":"Algebraic Modeling","cr":4,"dept":"MATH","campus":"DE","pot":"7B","mode":"online-async","i":["Prince Sekyi"],"enr":1,"cap":25,"wl":0,"m":[],"sd":null,"ed":null}]}</script>
+<script>
+(function(){
+  "use strict";
+
+  /* ===== configuration ===== */
+  // Same-origin feed produced by build_schedule_data.py. Falls back to the
+  // embedded demo subset when the feed is not present (e.g. opened locally).
+  var DATA_CANDIDATES = [
+    "data/26FA/sections.json",
+    "https://mqaissaunee-bcc.github.io/ai_projects/faculty-schedule/data/26FA/sections.json"
+  ];
+  var STORAGE_KEY = "bcc-faculty-schedule-v1";
+  var DAYS = [
+    {k:"M", short:"Mon", long:"Monday", ics:"MO", dow:1},
+    {k:"T", short:"Tue", long:"Tuesday", ics:"TU", dow:2},
+    {k:"W", short:"Wed", long:"Wednesday", ics:"WE", dow:3},
+    {k:"R", short:"Thu", long:"Thursday", ics:"TH", dow:4},
+    {k:"F", short:"Fri", long:"Friday", ics:"FR", dow:5},
+    {k:"S", short:"Sat", long:"Saturday", ics:"SA", dow:6},
+    {k:"U", short:"Sun", long:"Sunday", ics:"SU", dow:0}
+  ];
+  var PALETTE = ["--c1","--c2","--c3","--c4","--c5","--c6"];
+  var MODE_LABEL = {"inperson":"", "online-async":"Online · asynchronous", "online-sync":"Online · scheduled", "hybrid":"Hybrid"};
+
+  /* ===== state ===== */
+  var DATA = null;
+  var state = {
+    faculty: [],
+    include: {},      // sectionId -> bool
+    overrides: {},    // sectionId -> {days,start,end,room,title,mode}
+    custom: [],       // {id,label,type,days,start,end,loc}
+    profile: {name:"",title:"",dept:"",office:"",phone:"",email:"",zoom:"",termLabel:"",termStart:"",termEnd:"",notes:""},
+    pot: "ALL",
+    opts: {enroll:false, code:true, credits:true, weekend:false, color:true, table:true, h24:false, density:58}
+  };
+
+  /* ===== small helpers ===== */
+  function $(id){ return document.getElementById(id); }
+  function el(tag, cls, text){ var n=document.createElement(tag); if(cls) n.className=cls; if(text!=null) n.textContent=text; return n; }
+  function clear(n){ while(n.firstChild) n.removeChild(n.firstChild); }
+  function toMin(hm){ if(!hm) return null; var p=String(hm).split(":"); if(p.length<2) return null;
+    var h=parseInt(p[0],10), m=parseInt(p[1],10); return (isNaN(h)||isNaN(m))?null:h*60+m; }
+  function pad(n){ return (n<10?"0":"")+n; }
+  function hhmm(mins){ return pad(Math.floor(mins/60))+":"+pad(mins%60); }
+  function fmtTime(mins){
+    if(mins==null) return "";
+    if(state.opts.h24) return hhmm(mins);
+    var h=Math.floor(mins/60), m=mins%60, ap=h>=12?"pm":"am", hh=h%12; if(hh===0) hh=12;
+    return hh+(m?":"+pad(m):"")+" "+ap;
+  }
+  function dayLabel(keys, longForm){
+    return keys.map(function(k){ var d=DAYS.find(function(x){return x.k===k;}); return d?(longForm?d.long:d.short):k; }).join(longForm?", ":" ");
+  }
+  function toast(msg){
+    var t=$("toast"); t.textContent=msg; t.classList.add("show");
+    clearTimeout(toast._t); toast._t=setTimeout(function(){ t.classList.remove("show"); }, 2600);
+  }
+  function download(name, mime, text){
+    var blob=new Blob([text],{type:mime}), url=URL.createObjectURL(blob), a=document.createElement("a");
+    a.href=url; a.download=name; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 500);
+  }
+  function slug(s){ return (s||"schedule").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""); }
+
+  /* ===== persistence ===== */
+  function save(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+  }
+  function load(){
+    try{
+      var raw=localStorage.getItem(STORAGE_KEY); if(!raw) return;
+      var s=JSON.parse(raw); if(!s||typeof s!=="object") return;
+      ["faculty","include","overrides","custom","profile","opts","pot"].forEach(function(k){
+        if(s[k]!=null){ if(k==="profile"||k==="opts"){ Object.assign(state[k], s[k]); } else { state[k]=s[k]; } }
+      });
+    }catch(e){}
+  }
+
+  /* ===== data model ===== */
+  function sectionsFor(name){
+    if(!DATA) return [];
+    return DATA.sections.filter(function(s){
+      if(state.pot==="15W" && s.pot!=="15W") return false;
+      return (s.i||[]).indexOf(name)>-1;
+    }).sort(function(a,b){ return a.id<b.id?-1:1; });
+  }
+  function allSelectedSections(){
+    var out=[], seen={};
+    state.faculty.forEach(function(n){
+      sectionsFor(n).forEach(function(s){ if(!seen[s.id]){ seen[s.id]=1; out.push(s); } });
+    });
+    return out;
+  }
+  function eff(s){
+    // merged section: source data + user overrides
+    var o = state.overrides[s.id] || {};
+    var meetings = o.meetings ? o.meetings : (s.m||[]).map(function(m){
+      return {d:(m.d||[]).slice(), s:m.s, e:m.e, rm:m.rm, est:!!m.est};
+    });
+    return {
+      id:s.id, course:s.c, title:o.title!=null?o.title:s.t, credits:s.cr, campus:s.campus, pot:s.pot,
+      mode:o.mode||s.mode, enrolled:s.enr, cap:s.cap, waitlist:s.wl, meetings:meetings,
+      startDate:s.sd, endDate:s.ed, instructors:s.i||[]
+    };
+  }
+  function colorFor(idx){ return "var("+PALETTE[idx%PALETTE.length]+")"; }
+
+  /* Blocks that land on the weekly grid, for one faculty member. */
+  function blocksFor(name){
+    var out=[], idx=0;
+    var list = name==null ? allSelectedSections() : sectionsFor(name);
+    list.forEach(function(s){
+      if(!state.include[s.id]) return;
+      var e=eff(s), cvar=PALETTE[idx++ % PALETTE.length], color="var("+cvar+")";
+      e.meetings.forEach(function(m){
+        var st=toMin(m.s), en=toMin(m.e);
+        if(st==null || !m.d || !m.d.length) return;
+        if(en==null || en<=st) en=st+60;
+        m.d.forEach(function(d){
+          out.push({day:d, start:st, end:en, kind:"course", color:color, colorVar:cvar, est:!!m.est,
+            title:e.course, sub:(state.opts.code?e.id.replace(e.course+"-",""):"")+(m.rm?(state.opts.code?" · ":"")+m.rm:""),
+            sub2:e.title, room:m.rm, sectionId:e.id});
+        });
+      });
+    });
+    state.custom.forEach(function(c){
+      var st=toMin(c.start), en=toMin(c.end);
+      if(st==null||en==null||!c.days||!c.days.length) return;
+      c.days.forEach(function(d){
+        out.push({day:d, start:st, end:Math.max(en,st+15), kind:c.type==="oh"?"oh":"other",
+          title:c.label||(c.type==="oh"?"Office Hours":"Blocked"), sub:c.loc||"", sub2:"", est:false});
+      });
+    });
+    return out;
+  }
+  function unscheduledFor(name){
+    var list = name==null ? allSelectedSections() : sectionsFor(name);
+    return list.filter(function(s){ return state.include[s.id]; }).map(eff).filter(function(e){
+      return !e.meetings.some(function(m){ return m.s && m.d && m.d.length; });
+    });
+  }
+  function scheduledSections(name){
+    var list = name==null ? allSelectedSections() : sectionsFor(name);
+    return list.filter(function(s){ return state.include[s.id]; }).map(eff);
+  }
+
+  /* ===== sidebar rendering ===== */
+  function renderFacultyResults(q){
+    var box=$("facResults"); clear(box);
+    if(!DATA) return;
+    q=(q||"").trim().toLowerCase();
+    if(q.length<2){ box.appendChild(el("div","empty","Type at least two letters.")); return; }
+    var matches=DATA.faculty.filter(function(n){ return n.toLowerCase().indexOf(q)>-1; }).slice(0,40);
+    if(!matches.length){ box.appendChild(el("div","empty","No instructor matches that.")); return; }
+    matches.forEach(function(n){
+      var b=el("button"); b.type="button"; b.setAttribute("role","option");
+      b.appendChild(document.createTextNode(n));
+      var count=DATA.sections.filter(function(s){ return (s.i||[]).indexOf(n)>-1; }).length;
+      b.appendChild(el("span","meta",count+" section"+(count===1?"":"s")));
+      b.addEventListener("click", function(){ addFaculty(n); });
+      box.appendChild(b);
+    });
+  }
+  function addFaculty(n){
+    if(state.faculty.indexOf(n)>-1) return;
+    state.faculty.push(n);
+    sectionsFor(n).forEach(function(s){ if(state.include[s.id]===undefined) state.include[s.id]=true; });
+    if(!state.profile.name && state.faculty.length===1){ state.profile.name=n; $("fName").value=n; }
+    $("facSearch").value=""; renderFacultyResults("");
+    $("p2").open=true;
+    renderAll(); save();
+  }
+  function removeFaculty(n){
+    state.faculty=state.faculty.filter(function(x){ return x!==n; });
+    renderAll(); save();
+  }
+  function renderChips(){
+    var box=$("facChips"); clear(box);
+    state.faculty.forEach(function(n){
+      var c=el("span","chip"); c.appendChild(document.createTextNode(n));
+      var b=el("button",null,"×"); b.type="button"; b.setAttribute("aria-label","Remove "+n);
+      b.addEventListener("click", function(){ removeFaculty(n); });
+      c.appendChild(b); box.appendChild(c);
+    });
+    $("chipFaculty").textContent = state.faculty.length ? state.faculty.length+" selected" : "";
+  }
+  function renderSectionList(){
+    var box=$("sectionList"); clear(box);
+    var list=allSelectedSections();
+    $("chipSections").textContent = list.length ? list.filter(function(s){return state.include[s.id];}).length+" of "+list.length : "";
+    if(!list.length){ box.appendChild(el("div","empty","Pick an instructor in step 1.")); return; }
+    list.forEach(function(s){
+      var e=eff(s);
+      var wrap=el("div","sec"); wrap.dataset.id=s.id;
+      var head=el("div","sec-head");
+      var cb=document.createElement("input"); cb.type="checkbox"; cb.checked=!!state.include[s.id];
+      cb.id="inc-"+s.id; cb.addEventListener("change", function(){ state.include[s.id]=cb.checked; renderAll(); save(); });
+      var lab=el("label","sec-title"); lab.setAttribute("for", cb.id);
+      var b=el("b", null, e.course+" — "+e.title); lab.appendChild(b);
+      var meta=el("div","sec-meta");
+      meta.appendChild(el("span",null,e.id));
+      var pattern = e.meetings.map(function(m){
+        return (m.d&&m.d.length? dayLabel(m.d):"") + (m.s? " "+fmtTime(toMin(m.s))+"–"+fmtTime(toMin(m.e)) : "");
+      }).join("; ").trim();
+      meta.appendChild(el("span",null, pattern || "no meeting pattern"));
+      if(e.campus) meta.appendChild(el("span",null,e.campus));
+      if(e.pot!=="15W") meta.appendChild(el("span","tag",e.pot));
+      if(e.meetings.some(function(m){return m.est;})) meta.appendChild(el("span","tag est","est. end time"));
+      if(e.mode!=="inperson") meta.appendChild(el("span","tag async", MODE_LABEL[e.mode]||e.mode));
+      lab.appendChild(meta);
+      var edit=el("button","btn sm ghost","Edit"); edit.type="button";
+      edit.addEventListener("click", function(){ wrap.classList.toggle("editing"); });
+      head.appendChild(cb); head.appendChild(lab); head.appendChild(edit);
+      wrap.appendChild(head);
+      wrap.appendChild(buildEditor(s));
+      box.appendChild(wrap);
+    });
+  }
+  function buildEditor(s){
+    var e=eff(s), box=el("div","sec-edit");
+    var rows=el("div"); box.appendChild(rows);
+    var patterns = e.meetings.length ? e.meetings : [{d:[],s:"",e:"",rm:""}];
+
+    function addRow(m, n){
+      var row=el("div","pattern");
+      var f1=el("div","field");
+      f1.appendChild(el("label",null, "Meeting days"+(n>0?" — pattern "+(n+1):"")));
+      var db=el("div","daybox");
+      DAYS.forEach(function(d){
+        var lb=el("label"); var inp=document.createElement("input"); inp.type="checkbox"; inp.value=d.k;
+        inp.checked=(m.d||[]).indexOf(d.k)>-1; inp.setAttribute("aria-label",d.long+" for "+s.id);
+        lb.appendChild(inp); lb.appendChild(el("span",null,d.short));
+        db.appendChild(lb);
+      });
+      f1.appendChild(db); row.appendChild(f1);
+      var g=el("div","row3");
+      var fs=el("div","field"); fs.appendChild(el("label",null,"Start"));
+      var is=document.createElement("input"); is.type="time"; is.value=m.s||"";
+      is.setAttribute("aria-label","Start time for "+s.id); fs.appendChild(is);
+      var fe=el("div","field"); fe.appendChild(el("label",null,"End"));
+      var ie=document.createElement("input"); ie.type="time"; ie.value=m.e||"";
+      ie.setAttribute("aria-label","End time for "+s.id); fe.appendChild(ie);
+      var fr=el("div","field"); fr.appendChild(el("label",null,"Room"));
+      var ir=document.createElement("input"); ir.type="text"; ir.value=m.rm||""; ir.placeholder="MAS 212";
+      ir.setAttribute("aria-label","Room for "+s.id); fr.appendChild(ir);
+      g.appendChild(fs); g.appendChild(fe); g.appendChild(fr); row.appendChild(g);
+      if(n>0){
+        var rm=el("button","btn sm ghost danger","Remove this pattern"); rm.type="button";
+        rm.addEventListener("click", function(){ rows.removeChild(row); });
+        row.appendChild(rm);
+      }
+      row._read=function(){
+        return {d:[].slice.call(db.querySelectorAll("input:checked")).map(function(x){ return x.value; }),
+                s:is.value||null, e:ie.value||null, rm:ir.value.trim()||null, est:false};
+      };
+      rows.appendChild(row);
+    }
+    patterns.forEach(addRow);
+
+    var addBtn=el("button","btn sm ghost","+ Add a second meeting pattern"); addBtn.type="button";
+    addBtn.addEventListener("click", function(){
+      addRow({d:[],s:"",e:"",rm:""}, rows.children.length);
+    });
+    box.appendChild(addBtn);
+
+    var ft=el("div","field"); ft.appendChild(el("label",null,"Title as printed"));
+    var it=document.createElement("input"); it.type="text"; it.value=e.title||"";
+    it.setAttribute("aria-label","Printed title for "+s.id); ft.appendChild(it); box.appendChild(ft);
+
+    var actions=el("div","btn-row");
+    var okb=el("button","btn sm primary","Apply"); okb.type="button";
+    okb.addEventListener("click", function(){
+      var ms=[].slice.call(rows.children).map(function(r){ return r._read(); })
+              .filter(function(m){ return m.d.length || m.s; });
+      var o=state.overrides[s.id]||{};
+      o.meetings=ms; o.title=it.value.trim();
+      state.overrides[s.id]=o; renderAll(); save(); toast("Section updated");
+    });
+    var rvb=el("button","btn sm ghost","Revert to feed"); rvb.type="button";
+    rvb.addEventListener("click", function(){ delete state.overrides[s.id]; renderAll(); save(); });
+    actions.appendChild(okb); actions.appendChild(rvb); box.appendChild(actions);
+    return box;
+  }
+  function renderCustomList(){
+    var box=$("customList"); clear(box);
+    $("chipCustom").textContent = state.custom.length ? state.custom.length+"" : "";
+    if(!state.custom.length){ box.appendChild(el("div","empty","No office hours added yet.")); return; }
+    state.custom.forEach(function(c){
+      var item=el("div","custom-item");
+      var t=el("div","t");
+      t.appendChild(el("b",null,c.label||"Block"));
+      t.appendChild(el("div","sec-meta", dayLabel(c.days)+" · "+fmtTime(toMin(c.start))+"–"+fmtTime(toMin(c.end))+(c.loc?" · "+c.loc:"")));
+      var del=el("button","btn sm ghost danger","Remove"); del.type="button";
+      del.addEventListener("click", function(){
+        state.custom=state.custom.filter(function(x){ return x.id!==c.id; }); renderAll(); save();
+      });
+      item.appendChild(t); item.appendChild(del); box.appendChild(item);
+    });
+  }
+  function buildDayPicker(){
+    var db=$("cDays"); clear(db);
+    DAYS.forEach(function(d){
+      var lb=el("label"); var inp=document.createElement("input"); inp.type="checkbox"; inp.value=d.k;
+      inp.setAttribute("aria-label",d.long);
+      lb.appendChild(inp); lb.appendChild(el("span",null,d.short));
+      db.appendChild(lb);
+    });
+  }
+
+  /* ===== sheet rendering ===== */
+  function gridBounds(blocks){
+    var min=8*60, max=17*60;
+    blocks.forEach(function(b){ min=Math.min(min,b.start); max=Math.max(max,b.end); });
+    min=Math.floor(min/60)*60; max=Math.ceil(max/60)*60;
+    if(max-min<4*60) max=min+4*60;
+    return {min:min, max:max};
+  }
+  function daysShown(blocks){
+    var used={}; blocks.forEach(function(b){ used[b.day]=true; });
+    return DAYS.filter(function(d){
+      if(d.k==="S"||d.k==="U") return state.opts.weekend || used[d.k];
+      return true;
+    });
+  }
+  function layoutOverlaps(list){
+    // assign column index / count to overlapping blocks within one day
+    var sorted=list.slice().sort(function(a,b){ return a.start-b.start || a.end-b.end; });
+    var clusters=[], cur=[], curEnd=-1;
+    sorted.forEach(function(b){
+      if(cur.length && b.start>=curEnd){ clusters.push(cur); cur=[]; curEnd=-1; }
+      cur.push(b); curEnd=Math.max(curEnd,b.end);
+    });
+    if(cur.length) clusters.push(cur);
+    clusters.forEach(function(cl){
+      var cols=[];
+      cl.forEach(function(b){
+        var placed=false;
+        for(var i=0;i<cols.length;i++){ if(cols[i]<=b.start){ b._col=i; cols[i]=b.end; placed=true; break; } }
+        if(!placed){ b._col=cols.length; cols.push(b.end); }
+      });
+      cl.forEach(function(b){ b._cols=cols.length; });
+    });
+    return sorted;
+  }
+  function buildGrid(blocks){
+    var wrap=el("div","grid-wrap");
+    var bounds=gridBounds(blocks), cols=daysShown(blocks), rowh=state.opts.density;
+    var grid=el("div","grid");
+    grid.style.setProperty("--rowh", rowh+"px");
+    grid.style.gridTemplateColumns="62px repeat("+cols.length+",minmax(90px,1fr))";
+    var hours=(bounds.max-bounds.min)/60;
+    grid.appendChild(el("div","hcell corner",""));
+    cols.forEach(function(d){ grid.appendChild(el("div","hcell",d.short)); });
+    var timecol=el("div","timecol");
+    for(var h=0;h<hours;h++){
+      var t=el("div","timeslot", fmtTime(bounds.min+h*60));
+      timecol.appendChild(t);
+    }
+    grid.appendChild(timecol);
+    cols.forEach(function(d){
+      var col=el("div","daycol");
+      for(var h=0;h<hours;h++){ col.appendChild(el("div","line")); }
+      var dayBlocks=layoutOverlaps(blocks.filter(function(b){ return b.day===d.k; }));
+      dayBlocks.forEach(function(b){
+        var topH=(b.start-bounds.min)/60, durH=(b.end-b.start)/60;
+        var n=el("div","blk"+(b.kind==="oh"?" oh":"")+(b.kind==="other"?" other":"")+(b.est?" est":"")+(state.opts.color&&b.kind==="course"?" print-color":""));
+        // sized in grid rows so the print stylesheet can rescale --rowh
+        n.style.top="calc(var(--rowh) * "+topH.toFixed(4)+")";
+        n.style.height="calc(var(--rowh) * "+durH.toFixed(4)+" - 2px)";
+        var w=100/(b._cols||1);
+        n.style.left="calc("+(w*(b._col||0))+"% + 2px)";
+        n.style.width="calc("+w+"% - 4px)";
+        n.style.right="auto";
+        var spine = b.kind==="course" ? b.color : (b.kind==="oh" ? "var(--oh)" : "var(--ink-3)");
+        n.style.setProperty("--blkc", spine);
+        if(b.kind==="course" && state.opts.color) n.style.background=b.color;
+        n.appendChild(el("b",null,b.title));
+        n.appendChild(el("span","l2", fmtTime(b.start)+"–"+fmtTime(b.end)));
+        if(b.sub) n.appendChild(el("span","l3", b.sub));
+        if(b.sub2 && durH*rowh>62) n.appendChild(el("span","l3", b.sub2));
+        n.title=b.title+" "+fmtTime(b.start)+"–"+fmtTime(b.end)+(b.sub?" · "+b.sub:"")+(b.est?" (estimated end time)":"");
+        col.appendChild(n);
+      });
+      grid.appendChild(col);
+    });
+    wrap.appendChild(grid);
+    return wrap;
+  }
+  function buildTable(list){
+    var t=el("table","tbl");
+    var thead=el("thead"), tr=el("tr");
+    var cols=["Section","Course","Meets","Room","Mode"];
+    if(state.opts.credits) cols.splice(2,0,"Cr");
+    if(state.opts.enroll) cols.push("Enrolled");
+    cols.forEach(function(c){ tr.appendChild(el("th",null,c)); });
+    thead.appendChild(tr); t.appendChild(thead);
+    var tb=el("tbody");
+    list.forEach(function(e){
+      var r=el("tr");
+      r.appendChild(el("td",null,e.id));
+      r.appendChild(el("td",null,e.title));
+      if(state.opts.credits) r.appendChild(el("td","num", e.credits||""));
+      var meets=e.meetings.filter(function(m){ return m.s&&m.d&&m.d.length; }).map(function(m){
+        return dayLabel(m.d)+" "+fmtTime(toMin(m.s))+"–"+fmtTime(toMin(m.e))+(m.est?" ≈":"");
+      }).join("; ");
+      r.appendChild(el("td",null, meets || "—"));
+      r.appendChild(el("td",null, e.meetings.map(function(m){return m.rm;}).filter(Boolean).join(", ") || (e.campus||"")));
+      var mode=MODE_LABEL[e.mode]||"In person";
+      r.appendChild(el("td",null, (mode||"In person")+(e.pot!=="15W"?" · "+e.pot:"")));
+      if(state.opts.enroll) r.appendChild(el("td","num", (e.enrolled!=null?e.enrolled:"—")+" / "+(e.cap!=null?e.cap:"—")));
+      tb.appendChild(r);
+    });
+    t.appendChild(tb);
+    return t;
+  }
+  function buildSheet(name){
+    var p=state.profile;
+    var sheet=el("section","sheet");
+    var head=el("div","sheet-head");
+    var who=el("div","who");
+    who.appendChild(el("h2", null, (state.faculty.length>1 ? name : (p.name||name||"Teaching Schedule"))));
+    var roleBits=[p.title,p.dept].filter(Boolean).join(" · ");
+    if(state.faculty.length<=1 && roleBits) who.appendChild(el("div","role", roleBits));
+    if(p.termLabel||DATA&&DATA.termLabel) who.appendChild(el("div","sheet-term", p.termLabel || DATA.termLabel));
+    head.appendChild(who);
+    var contact=el("div","contact");
+    if(state.faculty.length<=1){
+      [p.office?"Office: "+p.office:"", p.phone, p.email, p.zoom].filter(Boolean).forEach(function(line){
+        contact.appendChild(el("div",null,line));
+      });
+    }
+    head.appendChild(contact);
+    sheet.appendChild(head);
+
+    var blocks=blocksFor(state.faculty.length>1 ? name : null);
+    if(blocks.length){
+      sheet.appendChild(buildGrid(blocks));
+    } else {
+      sheet.appendChild(el("p","empty","No scheduled meeting times yet. Select sections or add office hours."));
+    }
+
+    var unsched=unscheduledFor(state.faculty.length>1 ? name : null);
+    if(unsched.length){
+      var box=el("div","aside-list");
+      box.appendChild(el("h3",null,"Not on the weekly grid"));
+      var ul=el("table","tbl"); var tb=el("tbody");
+      unsched.forEach(function(e){
+        var r=el("tr");
+        r.appendChild(el("td",null,e.id));
+        r.appendChild(el("td",null,e.title));
+        r.appendChild(el("td",null,(MODE_LABEL[e.mode]||"Unscheduled")+(e.pot!=="15W"?" · "+e.pot+" session":"")));
+        if(state.opts.enroll) r.appendChild(el("td","num",(e.enrolled!=null?e.enrolled:"—")+" / "+(e.cap!=null?e.cap:"—")));
+        tb.appendChild(r);
+      });
+      ul.appendChild(tb); box.appendChild(ul); sheet.appendChild(box);
+    }
+
+    if(state.opts.table){
+      var sec=scheduledSections(state.faculty.length>1 ? name : null);
+      if(sec.length){
+        var tbox=el("div","aside-list");
+        tbox.appendChild(el("h3",null,"Courses"));
+        tbox.appendChild(buildTable(sec));
+        sheet.appendChild(tbox);
+      }
+    }
+    if(p.notes) sheet.appendChild(el("div","notes-line", p.notes));
+
+    var foot=el("div","sheet-foot");
+    var srcBits=[];
+    if(DATA){
+      srcBits.push("Course data: "+(DATA.demo?"embedded sample":"published schedule")+(DATA.asOf&&DATA.asOf["15W"]?" as of "+DATA.asOf["15W"]:""));
+      if(DATA.meetingSource==="enrollment") srcBits.push("end times marked ≈ are estimated");
+    }
+    foot.appendChild(el("span",null, srcBits.join(" · ")));
+    foot.appendChild(el("span",null,"Brookdale Community College"));
+    sheet.appendChild(foot);
+    return sheet;
+  }
+  function renderSheets(){
+    var box=$("sheets"); clear(box);
+    if(!state.faculty.length && !state.custom.length){
+      var p=el("div","banner info","Start in step 1: search for your name to pull in your sections. You can edit anything the schedule feed gets wrong.");
+      box.appendChild(p); return;
+    }
+    if(state.faculty.length>1){
+      state.faculty.forEach(function(n){ box.appendChild(buildSheet(n)); });
+    } else {
+      box.appendChild(buildSheet(state.faculty[0]||state.profile.name||""));
+    }
+  }
+  function renderBanners(){
+    var box=$("banners"); clear(box);
+    if(!DATA) return;
+    var sel=allSelectedSections().filter(function(s){ return state.include[s.id]; }).map(eff);
+    var estCount=0;
+    sel.forEach(function(e){ e.meetings.forEach(function(m){ if(m.est && m.s) estCount++; }); });
+    if(estCount){
+      box.appendChild(el("div","banner","Heads up: "+estCount+" meeting time"+(estCount===1?" has an estimated end time":"s have estimated end times")+
+        " (marked ≈). The published enrollment report only carries start times. Use Edit on any section to correct it before printing."));
+    }
+    var noRoom=sel.filter(function(e){ return e.meetings.some(function(m){ return m.s && !m.rm; }); }).length;
+    if(noRoom) box.appendChild(el("div","banner info", noRoom+" section"+(noRoom===1?"":"s")+" have no room number in the feed. Add rooms with Edit; they are saved for next time."));
+  }
+  function renderAll(){
+    renderChips(); renderSectionList(); renderCustomList(); renderBanners(); renderSheets();
+  }
+
+  /* ===== exports ===== */
+  function icsDate(dateStr, mins){
+    var d=new Date(dateStr+"T00:00:00");
+    d.setMinutes(d.getMinutes()+mins);
+    return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+"T"+pad(d.getHours())+pad(d.getMinutes())+"00";
+  }
+  function firstOccurrence(termStart, dayKey){
+    var d=new Date(termStart+"T00:00:00");
+    var target=DAYS.find(function(x){ return x.k===dayKey; }).dow;
+    for(var i=0;i<7;i++){ if(d.getDay()===target) break; d.setDate(d.getDate()+1); }
+    return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+  }
+  function exportIcs(){
+    var p=state.profile;
+    if(!p.termStart || !p.termEnd){ toast("Add term start and end dates in step 4 first."); $("p4").open=true; $("fTermStart").focus(); return; }
+    var lines=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Brookdale//Faculty Schedule Builder//EN","CALSCALE:GREGORIAN"];
+    var until=p.termEnd.replace(/-/g,"")+"T235900";
+    var stamp=new Date().toISOString().replace(/[-:]/g,"").replace(/\.\d+Z$/,"Z");
+    var n=0;
+    blocksFor(null).forEach(function(b){
+      var first=firstOccurrence(p.termStart, b.day);
+      var day=DAYS.find(function(x){ return x.k===b.day; });
+      n++;
+      lines.push("BEGIN:VEVENT");
+      lines.push("UID:bcc-"+n+"-"+Date.now()+"@brookdalecc.edu");
+      lines.push("DTSTAMP:"+stamp);
+      lines.push("DTSTART:"+icsDate(first,b.start));
+      lines.push("DTEND:"+icsDate(first,b.end));
+      lines.push("RRULE:FREQ=WEEKLY;BYDAY="+day.ics+";UNTIL="+until);
+      lines.push("SUMMARY:"+(b.title+(b.sub2?" "+b.sub2:"")).replace(/[,;]/g," "));
+      if(b.sub) lines.push("LOCATION:"+b.sub.replace(/[,;]/g," "));
+      lines.push("END:VEVENT");
+    });
+    lines.push("END:VCALENDAR");
+    if(n===0){ toast("Nothing to export yet."); return; }
+    download(slug(p.name||state.faculty[0]||"schedule")+"-schedule.ics","text/calendar", lines.join("\r\n"));
+    toast(n+" recurring events exported");
+  }
+  function exportCsv(){
+    var rows=[["Type","Section","Course","Days","Start","End","Room","Mode","Part of term","Credits","Enrolled","Capacity"]];
+    scheduledSections(null).forEach(function(e){
+      if(!e.meetings.length){
+        rows.push(["Course",e.id,e.title,"","","","",MODE_LABEL[e.mode]||"In person",e.pot,e.credits||"",e.enrolled!=null?e.enrolled:"",e.cap!=null?e.cap:""]);
+      }
+      e.meetings.forEach(function(m){
+        rows.push(["Course",e.id,e.title,(m.d||[]).join(""),m.s||"",m.e||"",m.rm||"",MODE_LABEL[e.mode]||"In person",e.pot,e.credits||"",e.enrolled!=null?e.enrolled:"",e.cap!=null?e.cap:""]);
+      });
+    });
+    state.custom.forEach(function(c){
+      rows.push([c.type==="oh"?"Office hours":"Other",c.label||"",  "", (c.days||[]).join(""), c.start||"", c.end||"", c.loc||"","","","","",""]);
+    });
+    var csv=rows.map(function(r){ return r.map(function(v){
+      v=String(v==null?"":v); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v;
+    }).join(","); }).join("\r\n");
+    download(slug(state.profile.name||state.faculty[0]||"schedule")+"-schedule.csv","text/csv",csv);
+  }
+  function cssVar(name){
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || "#1f4e79";
+  }
+  function exportPng(){
+    var name = state.faculty.length>1 ? null : (state.faculty[0]||null);
+    var blocks=blocksFor(state.faculty.length>1?null:name);
+    if(!blocks.length){ toast("Nothing to draw yet."); return; }
+    var bounds=gridBounds(blocks), cols=daysShown(blocks);
+    var scale=2, padL=70, padT=108, colW=150, rowH=62, footer=44;
+    var hours=(bounds.max-bounds.min)/60;
+    var w=padL+cols.length*colW+16, h=padT+hours*rowH+footer;
+    var cv=$("pngCanvas"); cv.width=w*scale; cv.height=h*scale;
+    var g=cv.getContext("2d"); g.scale(scale,scale);
+    var ink="#1b1c1e", line="#d9d5cd", muted="#6f7378";
+    g.fillStyle="#ffffff"; g.fillRect(0,0,w,h);
+    var p=state.profile;
+    g.fillStyle=ink; g.font="600 22px Georgia, serif";
+    g.fillText(p.name||state.faculty[0]||"Teaching Schedule", 16, 32);
+    g.font="14px system-ui, sans-serif"; g.fillStyle=muted;
+    g.fillText([p.title,p.dept].filter(Boolean).join(" · "), 16, 52);
+    g.fillText([p.termLabel||(DATA&&DATA.termLabel)||"", p.office?"Office "+p.office:"", p.email||""].filter(Boolean).join("   ·   "), 16, 72);
+    g.strokeStyle=line; g.lineWidth=1;
+    g.font="600 13px system-ui, sans-serif"; g.fillStyle=ink; g.textAlign="center";
+    cols.forEach(function(d,i){ g.fillText(d.short, padL+i*colW+colW/2, padT-14); });
+    g.textAlign="right"; g.font="11px system-ui, sans-serif"; g.fillStyle=muted;
+    for(var i=0;i<=hours;i++){
+      var y=padT+i*rowH;
+      g.beginPath(); g.moveTo(padL-6,y); g.lineTo(padL+cols.length*colW,y); g.strokeStyle=line; g.stroke();
+      if(i<hours) g.fillText(fmtTime(bounds.min+i*60), padL-12, y+14);
+    }
+    g.textAlign="left";
+    cols.forEach(function(d,i){
+      var x=padL+i*colW;
+      g.beginPath(); g.moveTo(x,padT); g.lineTo(x,padT+hours*rowH); g.strokeStyle=line; g.stroke();
+      layoutOverlaps(blocks.filter(function(b){ return b.day===d.k; })).forEach(function(b){
+        var bw=(colW-6)/(b._cols||1);
+        var bx=x+3+bw*(b._col||0), by=padT+(b.start-bounds.min)/60*rowH+1.5;
+        var bh=Math.max((b.end-b.start)/60*rowH-3, 20);
+        g.fillStyle = b.kind==="course"
+                    ? (state.opts.color ? cssVar(b.colorVar||"--c1") : "#1f4e79")
+                    : (b.kind==="oh" ? "#4a4d52" : "#6f7378");
+        g.fillRect(bx,by,bw-3,bh);
+        g.fillStyle="#ffffff"; g.font="600 12px system-ui, sans-serif";
+        g.save(); g.beginPath(); g.rect(bx+4,by+2,bw-11,bh-4); g.clip();
+        g.fillText(b.title, bx+6, by+15);
+        g.font="11px system-ui, sans-serif";
+        g.fillText(fmtTime(b.start)+"–"+fmtTime(b.end), bx+6, by+29);
+        if(b.sub && bh>44) g.fillText(b.sub, bx+6, by+43);
+        g.restore();
+      });
+    });
+    g.strokeStyle=line; g.beginPath();
+    g.moveTo(padL+cols.length*colW, padT); g.lineTo(padL+cols.length*colW, padT+hours*rowH); g.stroke();
+    g.fillStyle=muted; g.font="11px system-ui, sans-serif";
+    g.fillText("Brookdale Community College · "+((DATA&&DATA.asOf&&DATA.asOf["15W"])?"schedule data as of "+DATA.asOf["15W"]:"draft"), 16, h-16);
+    var url=cv.toDataURL("image/png");
+    var a=document.createElement("a"); a.href=url; a.download=slug(p.name||state.faculty[0]||"schedule")+"-schedule.png";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    toast("PNG saved");
+  }
+
+  /* ===== data loading ===== */
+  function applyData(d, label){
+    DATA=d;
+    var st=$("dataStatus"); clear(st);
+    var bits=[];
+    bits.push(el("span","pill", (d.termLabel||d.term||"Term")+" · "+d.sections.length+" sections"));
+    if(d.asOf && d.asOf["15W"]) bits.push(el("span","pill","15W data as of "+d.asOf["15W"]));
+    if(d.meetingSource==="enrollment") bits.push(el("span","pill warn","end times estimated"));
+    if(d.demo) bits.push(el("span","pill warn","sample data — "+(label||"embedded")));
+    bits.forEach(function(b){ st.appendChild(b); });
+    if(!state.profile.termLabel && d.termLabel){ state.profile.termLabel=d.termLabel; $("fTermLabel").value=d.termLabel; }
+    renderAll();
+  }
+  function tryFetch(i){
+    if(i>=DATA_CANDIDATES.length){
+      var demo=JSON.parse($("demoData").textContent);
+      applyData(demo,"live feed not found");
+      return;
+    }
+    if(typeof fetch!=="function"){ tryFetch(DATA_CANDIDATES.length); return; }
+    fetch(DATA_CANDIDATES[i]+"?t="+Date.now()).then(function(r){
+      if(!r.ok) throw new Error("http "+r.status);
+      return r.json();
+    }).then(function(d){
+      if(!d || !d.sections) throw new Error("bad payload");
+      applyData(d);
+    }).catch(function(){ tryFetch(i+1); });
+  }
+
+  /* ===== wiring ===== */
+  function bindProfile(){
+    var map={fName:"name",fTitle:"title",fDept:"dept",fOffice:"office",fPhone:"phone",fEmail:"email",
+             fZoom:"zoom",fTermLabel:"termLabel",fTermStart:"termStart",fTermEnd:"termEnd",fNotes:"notes"};
+    Object.keys(map).forEach(function(id){
+      var node=$(id); node.value=state.profile[map[id]]||"";
+      node.addEventListener("input", function(){
+        state.profile[map[id]]=node.value; save();
+        if(["fName","fTitle","fDept","fOffice","fPhone","fEmail","fZoom","fTermLabel","fNotes"].indexOf(id)>-1) renderSheets();
+      });
+    });
+  }
+  function bindOptions(){
+    var map={optEnroll:"enroll",optCode:"code",optCredits:"credits",optWeekend:"weekend",optColor:"color",optTable:"table",opt24:"h24"};
+    Object.keys(map).forEach(function(id){
+      var node=$(id); node.checked=!!state.opts[map[id]];
+      node.addEventListener("change", function(){ state.opts[map[id]]=node.checked; save(); renderAll(); });
+    });
+    var dens=$("optDensity"); dens.value=String(state.opts.density);
+    dens.addEventListener("change", function(){ state.opts.density=parseInt(dens.value,10); save(); renderSheets(); });
+    var pot=$("potFilter"); pot.value=state.pot;
+    pot.addEventListener("change", function(){ state.pot=pot.value; save(); renderAll(); });
+  }
+  function bindButtons(){
+    $("facSearch").addEventListener("input", function(e){ renderFacultyResults(e.target.value); });
+    $("selAll").addEventListener("click", function(){
+      allSelectedSections().forEach(function(s){ state.include[s.id]=true; }); renderAll(); save();
+    });
+    $("selNone").addEventListener("click", function(){
+      allSelectedSections().forEach(function(s){ state.include[s.id]=false; }); renderAll(); save();
+    });
+    $("addCustom").addEventListener("click", function(){
+      var days=[].slice.call($("cDays").querySelectorAll("input:checked")).map(function(x){ return x.value; });
+      if(!days.length){ toast("Pick at least one day."); return; }
+      var st=$("cStart").value, en=$("cEnd").value;
+      if(!st||!en||toMin(en)<=toMin(st)){ toast("Check the start and end times."); return; }
+      state.custom.push({id:"c"+Date.now(), label:$("cLabel").value.trim()||($("cType").value==="oh"?"Office Hours":"Blocked"),
+        type:$("cType").value, days:days, start:st, end:en, loc:$("cLoc").value.trim()});
+      $("cLabel").value=""; $("cLoc").value="";
+      [].slice.call($("cDays").querySelectorAll("input")).forEach(function(x){ x.checked=false; });
+      renderAll(); save(); toast("Block added");
+    });
+    var doPrint=function(){ window.print(); };
+    $("btnPrint").addEventListener("click", doPrint);
+    $("btnPrint2").addEventListener("click", doPrint);
+    $("btnIcs").addEventListener("click", exportIcs);
+    $("btnCsv").addEventListener("click", exportCsv);
+    $("btnPng").addEventListener("click", exportPng);
+    $("btnSave").addEventListener("click", function(){
+      download(slug(state.profile.name||"schedule")+"-draft.json","application/json", JSON.stringify(state,null,2));
+    });
+    $("btnLoad").addEventListener("click", function(){ $("fileDraft").click(); });
+    $("fileDraft").addEventListener("change", function(e){
+      var f=e.target.files[0]; if(!f) return;
+      var r=new FileReader();
+      r.onload=function(){
+        try{
+          var s=JSON.parse(r.result);
+          Object.keys(state).forEach(function(k){ if(s[k]!=null) state[k]=s[k]; });
+          bindProfile(); bindOptions(); renderAll(); save(); toast("Draft loaded");
+        }catch(err){ toast("That file could not be read."); }
+      };
+      r.readAsText(f); e.target.value="";
+    });
+    $("btnLoadData").addEventListener("click", function(){ $("fileData").click(); });
+    $("fileData").addEventListener("change", function(e){
+      var f=e.target.files[0]; if(!f) return;
+      var r=new FileReader();
+      r.onload=function(){
+        try{
+          var d=JSON.parse(r.result);
+          if(!d.sections) throw new Error("no sections");
+          applyData(d, f.name); toast("Loaded "+d.sections.length+" sections");
+        }catch(err){ toast("That does not look like a schedule feed."); }
+      };
+      r.readAsText(f); e.target.value="";
+    });
+    $("btnReset").addEventListener("click", function(){
+      if(!window.confirm("Clear your selections, office hours, and contact information?")) return;
+      try{ localStorage.removeItem(STORAGE_KEY); }catch(err){}
+      window.location.reload();
+    });
+  }
+
+  function init(){
+    load();
+    buildDayPicker();
+    bindProfile();
+    bindOptions();
+    bindButtons();
+    renderFacultyResults("");
+    renderAll();
+    tryFetch(0);
+  }
+  if(document.readyState==="loading"){ document.addEventListener("DOMContentLoaded", init); } else { init(); }
+})();
+</script>
+<footer class="no-print" style="padding:14px 16px;font-size:.76rem;color:var(--ink-3);text-align:center">
+  <p>Faculty Schedule Builder · Brookdale Community College · 2026 · Course data is drawn from the publicly posted schedule; contact details you enter stay in your browser.</p>
+</footer>
+</body>
+</html>
