@@ -315,7 +315,19 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
           <div class="field"><label for="fTermStart">Term start (for calendar export)</label><input type="date" id="fTermStart"></div>
         </div>
         <div class="field"><label for="fTermEnd">Term end (for calendar export)</label><input type="date" id="fTermEnd"></div>
-        <div class="field"><label for="fNotes">Notes printed at the bottom</label><textarea id="fNotes" placeholder="Other hours by appointment. Best reached by email."></textarea></div>
+        <h3 style="margin:14px 0 7px;font-size:.9rem">Load and release time</h3>
+        <div class="field"><label for="fLoadBase">Full load, contact hours</label>
+          <input type="number" id="fLoadBase" min="0" max="30" step="0.5" value="15"></div>
+        <div id="releaseList"></div>
+        <div class="row2">
+          <div class="field"><label for="rCredits">Credits released</label>
+            <input type="number" id="rCredits" min="0" max="15" step="0.5" placeholder="3"></div>
+          <div class="field"><label for="rReason">Released for</label>
+            <input type="text" id="rReason" placeholder="Department chair duties"></div>
+        </div>
+        <button class="btn" id="addRelease" type="button">Add release time</button>
+        <p class="hint">Add a line for each release or extra-compensation assignment. Each one lowers the contact hours you owe.</p>
+        <div class="field" style="margin-top:12px"><label for="fNotes">Notes printed at the bottom</label><textarea id="fNotes" placeholder="Other hours by appointment. Best reached by email."></textarea></div>
       </div>
     </details>
 
@@ -329,14 +341,7 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
         <label class="check"><input type="checkbox" id="optTable" checked> Include the course detail table</label>
         <label class="check"><input type="checkbox" id="optLoad" checked> Show teaching load summary</label>
         <label class="check"><input type="checkbox" id="optSign"> Add a signature line for approval</label>
-        <div class="row2" style="margin-top:8px">
-          <div class="field"><label for="fLoadBase">Full load, contact hours</label>
-            <input type="number" id="fLoadBase" min="0" max="30" step="0.5" value="15"></div>
-          <div class="field"><label for="fReleased">Credits released</label>
-            <input type="number" id="fReleased" min="0" max="15" step="0.5" placeholder="0"></div>
-        </div>
-        <div class="field"><label for="fReleasedFor">Released for</label>
-          <input type="text" id="fReleasedFor" placeholder="Department chair duties"></div>
+
         <label class="check"><input type="checkbox" id="opt24"> Use 24-hour times</label>
         <div class="field" style="margin-top:8px"><label for="optDensity">Grid height</label>
           <select id="optDensity">
@@ -412,11 +417,13 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
   var DATA = null;
   var state = {
     faculty: [],
+    nameAuto: true,   // false once the user edits the printed name by hand
     include: {},      // sectionId -> bool
     pt: {},           // sectionId -> hours counted as PT/overload (true = the whole section)
     hrs: {},          // sectionId -> contact hours for load, when it differs from credits
     overrides: {},    // sectionId -> {days,start,end,room,title,mode}
     custom: [],       // {id,label,type,days,start,end,loc}
+    release: [],      // {id, credits, reason} — release time / extra compensation
     profile: {name:"",title:"",dept:"",office:"",phone:"",email:"",zoom:"",termLabel:"",termStart:"",termEnd:"",notes:"",loadBase:"15",released:"",releasedFor:""},
     pot: "ALL",
     opts: {code:true, credits:true, weekend:false, color:true, table:true, h24:false, load:true, sign:false, density:58}
@@ -458,7 +465,7 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
     try{
       var raw=localStorage.getItem(STORAGE_KEY); if(!raw) return;
       var s=JSON.parse(raw); if(!s||typeof s!=="object") return;
-      ["faculty","include","pt","hrs","overrides","custom","profile","opts","pot"].forEach(function(k){
+      ["faculty","include","pt","hrs","overrides","custom","profile","opts","pot","nameAuto","release"].forEach(function(k){
         if(s[k]!=null){ if(k==="profile"||k==="opts"){ Object.assign(state[k], s[k]); } else { state[k]=s[k]; } }
       });
     }catch(e){}
@@ -553,7 +560,10 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
     if(state.faculty.indexOf(n)>-1) return;
     state.faculty.push(n);
     sectionsFor(n).forEach(function(s){ if(state.include[s.id]===undefined) state.include[s.id]=true; });
-    if(!state.profile.name && state.faculty.length===1){ state.profile.name=n; $("fName").value=n; }
+    // Fill the printed name from the picker until the user types their own.
+    if(state.faculty.length===1 && (!state.profile.name || state.nameAuto)){
+      state.profile.name = n; state.nameAuto = true; $("fName").value = n;
+    }
     $("facSearch").value=""; renderFacultyResults("");
     $("p2").open=true;
     renderAll(); save();
@@ -701,6 +711,21 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
       delete state.overrides[s.id]; delete state.hrs[s.id]; delete state.pt[s.id]; renderAll(); save(); });
     actions.appendChild(okb); actions.appendChild(rvb); box.appendChild(actions);
     return box;
+  }
+  function renderReleaseList(){
+    var box=$("releaseList"); clear(box);
+    (state.release||[]).forEach(function(r){
+      var item=el("div","custom-item");
+      var t=el("div","t");
+      t.appendChild(el("b",null, r.credits + " credit" + (parseFloat(r.credits)===1?"":"s") + " released"));
+      t.appendChild(el("div","sec-meta", r.reason || "no reason given"));
+      var del=el("button","btn sm ghost danger","Remove"); del.type="button";
+      del.addEventListener("click", function(){
+        state.release = state.release.filter(function(x){ return x.id!==r.id; });
+        renderReleaseList(); renderSheets(); save();
+      });
+      item.appendChild(t); item.appendChild(del); box.appendChild(item);
+    });
   }
   function renderCustomList(){
     var box=$("customList"); clear(box);
@@ -880,7 +905,10 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
   function loadSummary(list){
     var base = parseFloat(state.profile.loadBase);
     if(isNaN(base)) base = 15;
-    var rel = parseFloat(state.profile.released) || 0;
+    var rel = 0;
+    (state.release||[]).forEach(function(r){ rel += parseFloat(r.credits) || 0; });
+    if(!rel) rel = parseFloat(state.profile.released) || 0;   // legacy single value
+    rel = Math.round(rel*100)/100;
     var load = 0, over = 0;
     list.forEach(function(e){
       var hrs = hoursFor(e), pt = ptHoursFor(e);
@@ -896,7 +924,12 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
     var box = el("div","load-line");
     var bits = [];
     if(L.load || L.over) bits.push("Contact hours: " + L.load + " of " + L.required);
-    if(L.released) bits.push(L.released + " released" + (state.profile.releasedFor ? " for " + state.profile.releasedFor : ""));
+    if(L.released){
+      var reasons = (state.release||[]).filter(function(r){ return r.reason; })
+                      .map(function(r){ return r.credits + " for " + r.reason; });
+      if(!reasons.length && state.profile.releasedFor) reasons = [L.released + " for " + state.profile.releasedFor];
+      bits.push(reasons.length ? "Released: " + reasons.join(", ") : L.released + " released");
+    }
     if(L.office) bits.push("Office hours: " + L.office);
     if(L.over) bits.push("PT / overload: " + L.over);
     box.appendChild(el("span",null,bits.join("  ·  ")));
@@ -1053,7 +1086,7 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
     if(noRoom) box.appendChild(el("div","banner info", noRoom+(noRoom===1?" section has":" sections have")+" no room number in the feed. Add rooms with Edit; they are saved for next time."));
   }
   function renderAll(){
-    renderChips(); renderSectionList(); renderCustomList(); renderBanners(); renderSheets();
+    renderChips(); renderSectionList(); renderCustomList(); renderReleaseList(); renderBanners(); renderSheets();
   }
 
   /* ===== exports ===== */
@@ -1208,12 +1241,14 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
   function bindProfile(){
     var map={fName:"name",fTitle:"title",fDept:"dept",fOffice:"office",fPhone:"phone",fEmail:"email",
              fZoom:"zoom",fTermLabel:"termLabel",fTermStart:"termStart",fTermEnd:"termEnd",fNotes:"notes",
-             fLoadBase:"loadBase", fReleased:"released", fReleasedFor:"releasedFor"};
+             fLoadBase:"loadBase"};
     Object.keys(map).forEach(function(id){
       var node=$(id); node.value=state.profile[map[id]]||"";
       node.addEventListener("input", function(){
-        state.profile[map[id]]=node.value; save();
-        if(["fName","fTitle","fDept","fOffice","fPhone","fEmail","fZoom","fTermLabel","fNotes","fLoadBase","fReleased","fReleasedFor"].indexOf(id)>-1) renderSheets();
+        state.profile[map[id]]=node.value;
+        if(id==="fName") state.nameAuto = false;
+        save();
+        if(["fName","fTitle","fDept","fOffice","fPhone","fEmail","fZoom","fTermLabel","fNotes","fLoadBase"].indexOf(id)>-1) renderSheets();
       });
     });
   }
@@ -1255,6 +1290,14 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
         resetCustomForm();
         renderAll(); save(); toast("Block added");
       }
+    });
+    $("addRelease").addEventListener("click", function(){
+      var cr=parseFloat($("rCredits").value);
+      if(isNaN(cr) || cr<=0){ toast("Enter the number of credits released."); $("rCredits").focus(); return; }
+      state.release = state.release || [];
+      state.release.push({id:"r"+Date.now(), credits:cr, reason:$("rReason").value.trim()});
+      $("rCredits").value=""; $("rReason").value="";
+      renderReleaseList(); renderSheets(); save(); toast("Release time added");
     });
     $("cancelCustom").addEventListener("click", function(){ resetCustomForm(); renderCustomList(); });
     var doPrint=function(){ window.print(); };
