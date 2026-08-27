@@ -1,7 +1,7 @@
 const fs = require('fs');
 const { JSDOM } = require('jsdom');
 
-const html = fs.readFileSync('/home/claude/faculty_schedule.html', 'utf8');
+const html = fs.readFileSync('/home/claude/repo/faculty-schedule/index.html', 'utf8');
 const dom = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://example.org/' });
 const { window } = dom;
 const doc = window.document;
@@ -38,7 +38,7 @@ setTimeout(() => {
   ok('weekly grid rendered', !!doc.querySelector('.grid'));
   const blocks = doc.querySelectorAll('.blk');
   ok('course blocks drawn (' + blocks.length + ')', blocks.length > 0);
-  ok('estimated-time banner shown', /estimated end time/.test($('banners').textContent));
+  ok('no estimate banner with complete data', !/estimated end time/.test($('banners').textContent));
   ok('async sections listed separately', /Not on the weekly grid/.test(sheet.textContent));
   ok('course table rendered', !!sheet.querySelector('table.tbl'));
 
@@ -82,9 +82,7 @@ setTimeout(() => {
   ok('second pattern room on sheet', /MAS 118/.test(doc.querySelector('.sheet').textContent));
 
   // 6. options
-  $('optEnroll').checked = true;
-  $('optEnroll').dispatchEvent(new window.Event('change', { bubbles: true }));
-  ok('enrollment column toggles on', /Enrolled/.test(doc.querySelector('.sheet').textContent));
+  ok('no enrollment column', !/Enrolled/.test(doc.querySelector('.sheet').textContent));
   $('opt24').checked = true;
   $('opt24').dispatchEvent(new window.Event('change', { bubbles: true }));
   ok('24-hour times applied', /1[0-9]:\d\d/.test(doc.querySelector('.blk').textContent));
