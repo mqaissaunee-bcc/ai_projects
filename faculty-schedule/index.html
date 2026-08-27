@@ -179,6 +179,18 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
 .banner{border:1px solid var(--warn);background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:9px 11px;font-size:.8rem;margin-bottom:12px}
 .banner.info{border-color:var(--line-2);background:var(--surface-2);color:var(--ink-2)}
 
+/* Mirrors the @media print geometry so the measured height matches the printed
+   one. Keep the two in step: this block and the print block below. */
+.print-measure .sheet{border:0;box-shadow:none;padding:0;margin:0;max-width:none;font-size:10.5pt}
+.print-measure .grid{min-width:0;--rowh:32px!important}  /* beats the inline row height set for the screen */
+.print-measure .grid .hcell{font-size:9pt;padding:3px 2px}
+.print-measure .grid .timeslot{font-size:7.5pt}
+.print-measure .blk{font-size:7.5pt;line-height:1.2;padding:2px 4px}
+.print-measure .blk b{font-size:8pt}
+.print-measure .blk .l2,.print-measure .blk .l3{font-size:7pt}
+.print-measure table.tbl{font-size:8.5pt}
+.print-measure .pt-list,.print-measure .load-warn{font-size:8.5pt}
+.print-measure .sig-row{margin-top:22pt}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);
   padding:10px 16px;border-radius:999px;font-size:.85rem;box-shadow:var(--shadow);z-index:60;opacity:0;pointer-events:none;transition:opacity .2s}
 .toast.show{opacity:1}
@@ -193,7 +205,8 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
   .topbar,.sidebar,.toolbar,.banner,.no-print,.toast{display:none!important}
   .layout{display:block}
   .stage{padding:0}
-  .sheet{border:0;box-shadow:none;padding:0;margin:0;max-width:none;break-inside:auto}
+  /* zoom reflows percentage widths, so the sheet still fills the page width */
+  .sheet{border:0;box-shadow:none;padding:0;margin:0;max-width:none;break-inside:auto;zoom:var(--fit,1)}
   .sheet+.sheet{break-before:page;margin-top:0}
   .grid{min-width:0;break-inside:avoid;--rowh:32px!important}
   .grid-wrap{overflow:visible}
@@ -341,6 +354,7 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
         <label class="check"><input type="checkbox" id="optTable" checked> Include the course detail table</label>
         <label class="check"><input type="checkbox" id="optLoad" checked> Show teaching load summary</label>
         <label class="check"><input type="checkbox" id="optSign"> Add a signature line for approval</label>
+        <label class="check"><input type="checkbox" id="optFit" checked> Fit the printed schedule to one page</label>
 
         <label class="check"><input type="checkbox" id="opt24"> Use 24-hour times</label>
         <div class="field" style="margin-top:8px"><label for="optDensity">Grid height</label>
@@ -426,7 +440,7 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
     release: [],      // {id, credits, reason} — release time / extra compensation
     profile: {name:"",title:"",dept:"",office:"",phone:"",email:"",zoom:"",termLabel:"",termStart:"",termEnd:"",notes:"",loadBase:"15",released:"",releasedFor:""},
     pot: "ALL",
-    opts: {code:true, credits:true, weekend:false, color:true, table:true, h24:false, load:true, sign:false, density:58}
+    opts: {code:true, credits:true, weekend:false, color:true, table:true, h24:false, load:true, sign:false, fit:true, density:58}
   };
 
   /* ===== small helpers ===== */
@@ -954,7 +968,10 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
     var t=el("table","tbl");
     var thead=el("thead"), tr=el("tr");
     var anyPt = list.some(function(e){ return ptHoursFor(e) > 0; });
-    var cols=["Section","Course","Meets","Room","Mode"];
+    // With fit-to-one-page on, Meets and Room are dropped: the grid above
+    // already shows both, and they are what pushes the table onto page two.
+    var condensed = !!state.opts.fit;
+    var cols = condensed ? ["Section","Course","Mode"] : ["Section","Course","Meets","Room","Mode"];
     if(state.opts.credits) cols.splice(2,0,"Cr");
     if(anyPt) cols.push("Load");
     cols.forEach(function(c){ tr.appendChild(el("th",null,c)); });
@@ -965,11 +982,13 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
       r.appendChild(el("td",null,e.id));
       r.appendChild(el("td",null,e.title));
       if(state.opts.credits) r.appendChild(el("td","num", e.credits||""));
-      var meets=e.meetings.filter(function(m){ return m.s&&m.d&&m.d.length; }).map(function(m){
-        return dayLabel(m.d)+" "+fmtTime(toMin(m.s))+"–"+fmtTime(toMin(m.e))+(m.est?" ≈":"");
-      }).join("; ");
-      r.appendChild(el("td",null, meets || "—"));
-      r.appendChild(el("td",null, e.meetings.map(function(m){return m.rm;}).filter(Boolean).join(", ") || (e.campus||"")));
+      if(!condensed){
+        var meets=e.meetings.filter(function(m){ return m.s&&m.d&&m.d.length; }).map(function(m){
+          return dayLabel(m.d)+" "+fmtTime(toMin(m.s))+"–"+fmtTime(toMin(m.e))+(m.est?" ≈":"");
+        }).join("; ");
+        r.appendChild(el("td",null, meets || "—"));
+        r.appendChild(el("td",null, e.meetings.map(function(m){return m.rm;}).filter(Boolean).join(", ") || (e.campus||"")));
+      }
       var mode=MODE_LABEL[e.mode]||"In person";
       r.appendChild(el("td",null, (mode||"In person")+(e.pot!=="15W"?" · "+e.pot:"")));
       if(anyPt){
@@ -1087,6 +1106,46 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
   }
   function renderAll(){
     renderChips(); renderSectionList(); renderCustomList(); renderReleaseList(); renderBanners(); renderSheets();
+  }
+
+  /* ===== fit to one page ===== */
+  // Letter landscape at 96dpi, less the 0.45in margins set in @page.
+  var PAGE_W = (11 - 0.9) * 96;
+  var PAGE_H = (8.5 - 0.9) * 96;
+  var MIN_SCALE = 0.6;
+
+  function measurePrintHeight(sheet, width){
+    var host = el("div","print-measure");
+    host.style.cssText = "position:absolute;left:-10000px;top:0;width:"+(width||PAGE_W)+"px;";
+    var clone = sheet.cloneNode(true);
+    clone.style.removeProperty("--fit");
+    host.appendChild(clone);
+    document.body.appendChild(host);
+    var h = clone.getBoundingClientRect().height;
+    document.body.removeChild(host);
+    return h;
+  }
+  function fitSheetsToPage(){
+    var sheets = [].slice.call(document.querySelectorAll("#sheets .sheet"));
+    var tight = false;
+    sheets.forEach(function(sheet){
+      // --fit is only read inside @media print, so the on-screen sheet is untouched
+      sheet.style.removeProperty("--fit");
+      if(!state.opts.fit) return;
+      var h = measurePrintHeight(sheet, PAGE_W);
+      if(h <= PAGE_H) return;                    // condensing was enough
+      var k = (PAGE_H * 0.98) / h;
+      // Scaling shrinks the width too, so the sheet is widened to compensate.
+      // Re-measure at that wider width: text wraps less, so it usually needs
+      // less shrinking than the first pass suggested.
+      var h2 = measurePrintHeight(sheet, PAGE_W / Math.max(k, MIN_SCALE));
+      var k2 = (PAGE_H * 0.98) / h2;
+      if(k2 > k) k = k2;
+      if(k >= 1) return;
+      if(k < MIN_SCALE){ k = MIN_SCALE; tight = true; }
+      sheet.style.setProperty("--fit", Math.round(k * 1000) / 1000);
+    });
+    if(tight) toast("This schedule is too full for one page even at the smallest size.");
   }
 
   /* ===== exports ===== */
@@ -1253,7 +1312,7 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
     });
   }
   function bindOptions(){
-    var map={optCode:"code",optCredits:"credits",optWeekend:"weekend",optColor:"color",optTable:"table",optLoad:"load",optSign:"sign",opt24:"h24"};
+    var map={optCode:"code",optCredits:"credits",optWeekend:"weekend",optColor:"color",optTable:"table",optLoad:"load",optSign:"sign",optFit:"fit",opt24:"h24"};
     Object.keys(map).forEach(function(id){
       var node=$(id); node.checked=!!state.opts[map[id]];
       node.addEventListener("change", function(){ state.opts[map[id]]=node.checked; save(); renderAll(); });
@@ -1300,7 +1359,7 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
       renderReleaseList(); renderSheets(); save(); toast("Release time added");
     });
     $("cancelCustom").addEventListener("click", function(){ resetCustomForm(); renderCustomList(); });
-    var doPrint=function(){ window.print(); };
+    var doPrint=function(){ fitSheetsToPage(); window.print(); };
     $("btnPrint").addEventListener("click", doPrint);
     $("btnPrint2").addEventListener("click", doPrint);
     $("btnIcs").addEventListener("click", exportIcs);
