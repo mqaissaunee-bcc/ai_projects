@@ -283,6 +283,10 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
         <div id="customList"></div>
         <div class="field"><label for="cLabel">Label</label>
           <input type="text" id="cLabel" placeholder="Office Hours"></div>
+        <div class="field" id="cWhoField" hidden>
+          <label for="cWho">Whose schedule</label>
+          <select id="cWho"></select>
+        </div>
         <div class="row2">
           <div class="field"><label for="cType">Type</label>
             <select id="cType">
@@ -438,7 +442,7 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
     pt: {},           // sectionId -> hours counted as PT/overload (true = the whole section)
     hrs: {},          // sectionId -> contact hours for load, when it differs from credits
     overrides: {},    // sectionId -> {days,start,end,room,title,mode}
-    custom: [],       // {id,label,type,days,start,end,loc}
+    custom: [],       // {id,label,type,days,start,end,loc,who} — who="" means everyone
     release: [],      // {id, credits, reason} — release time / extra compensation
     profile: {name:"",title:"",dept:"",office:"",phone:"",email:"",zoom:"",termLabel:"",termStart:"",termEnd:"",notes:"",loadBase:"15",released:"",releasedFor:""},
     pot: "15W",
@@ -517,8 +521,13 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
   function colorFor(idx){ return "var("+PALETTE[idx%PALETTE.length]+")"; }
 
   /* Blocks that land on the weekly grid, for one faculty member. */
-  function blocksFor(name){
+  function ownsBlock(c, owner){
+    // A block with no owner belongs to every sheet; otherwise only to that person.
+    return !c.who || !owner || c.who === owner;
+  }
+  function blocksFor(name, allCustom){
     var out=[], idx=0;
+    var owner = allCustom ? null : (name || state.faculty[0] || null);
     var list = name==null ? allSelectedSections() : sectionsFor(name);
     list.forEach(function(s){
       if(!state.include[s.id]) return;
@@ -535,6 +544,7 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
       });
     });
     state.custom.forEach(function(c){
+      if(!ownsBlock(c, owner)) return;
       var st=toMin(c.start), en=toMin(c.end);
       if(st==null||en==null||!c.days||!c.days.length) return;
       c.days.forEach(function(d){
@@ -743,6 +753,21 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
       item.appendChild(t); item.appendChild(del); box.appendChild(item);
     });
   }
+  function renderWhoPicker(){
+    var field=$("cWhoField"), sel=$("cWho");
+    // Only worth showing once more than one person's schedule is on screen.
+    field.hidden = state.faculty.length < 2;
+    var prev = sel.value;
+    clear(sel);
+    var everyone = document.createElement("option");
+    everyone.value=""; everyone.textContent="Everyone shown";
+    sel.appendChild(everyone);
+    state.faculty.forEach(function(n){
+      var o=document.createElement("option"); o.value=n; o.textContent=n; sel.appendChild(o);
+    });
+    if(prev && state.faculty.indexOf(prev)>-1) sel.value=prev;
+    else if(state.faculty.length===1) sel.value="";
+  }
   function renderCustomList(){
     var box=$("customList"); clear(box);
     $("chipCustom").textContent = state.custom.length ? state.custom.length+"" : "";
@@ -751,7 +776,8 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
       var item=el("div","custom-item");
       var t=el("div","t");
       t.appendChild(el("b",null,c.label||"Block"));
-      t.appendChild(el("div","sec-meta", dayLabel(c.days)+" · "+fmtTime(toMin(c.start))+"–"+fmtTime(toMin(c.end))+(c.loc?" · "+c.loc:"")));
+      t.appendChild(el("div","sec-meta", dayLabel(c.days)+" · "+fmtTime(toMin(c.start))+"–"+fmtTime(toMin(c.end))+
+        (c.loc?" · "+c.loc:"") + (state.faculty.length>1 ? " · " + (c.who || "everyone") : "")));
       var ed=el("button","btn sm ghost","Edit"); ed.type="button";
       ed.addEventListener("click", function(){ startEditCustom(c.id); });
       var del=el("button","btn sm ghost danger","Remove"); del.type="button";
@@ -776,6 +802,7 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
     $("cLabel").value = ""; $("cLoc").value = "";
     $("cStart").value = "10:00"; $("cEnd").value = "11:00";
     $("cType").value = "oh";
+    if($("cWho").options.length) $("cWho").value = "";
     setCustomDays([]);
     $("addCustom").textContent = "Add block";
     $("cancelCustom").hidden = true;
@@ -786,6 +813,7 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
     editingCustomId = id;
     $("cLabel").value = c.label || ""; $("cLoc").value = c.loc || "";
     $("cType").value = c.type || "oh";
+    if($("cWho").querySelector('option[value="'+(c.who||"").replace(/"/g,'\\"')+'"]')) $("cWho").value = c.who || "";
     $("cStart").value = c.start || ""; $("cEnd").value = c.end || "";
     setCustomDays(c.days);
     $("addCustom").textContent = "Save changes";
@@ -908,17 +936,17 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
     if(o !== undefined && o !== "" && !isNaN(parseFloat(o))) return parseFloat(o);
     return parseFloat(e.credits) || 0;
   }
-  function officeHours(){
+  function officeHours(owner){
     var total = 0;
     state.custom.forEach(function(c){
-      if(c.type !== "oh") return;
+      if(c.type !== "oh" || !ownsBlock(c, owner)) return;
       var st = toMin(c.start), en = toMin(c.end);
       if(st == null || en == null || en <= st) return;
       total += ((en - st) / 60) * (c.days ? c.days.length : 0);
     });
     return Math.round(total * 100) / 100;
   }
-  function loadSummary(list){
+  function loadSummary(list, owner){
     var base = parseFloat(state.profile.loadBase);
     if(isNaN(base)) base = 15;
     var rel = 0;
@@ -932,10 +960,10 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
       load += (hrs - pt);
     });
     return {base:base, required:Math.max(0, base - rel), released:rel,
-            load:Math.round(load*100)/100, over:Math.round(over*100)/100, office:officeHours()};
+            load:Math.round(load*100)/100, over:Math.round(over*100)/100, office:officeHours(owner)};
   }
-  function buildLoadLine(list){
-    var L = loadSummary(list);
+  function buildLoadLine(list, owner){
+    var L = loadSummary(list, owner);
     if(!L.load && !L.over && !L.office) return null;
     var box = el("div","load-line");
     var bits = [];
@@ -1004,6 +1032,7 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
   }
   function buildSheet(name){
     var p=state.profile;
+    var sheetOwner = (state.faculty.length>1 ? name : (state.faculty[0] || null));
     var sheet=el("section","sheet");
     var head=el("div","sheet-head");
     var who=el("div","who");
@@ -1045,7 +1074,7 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
 
     var allSec = scheduledSections(state.faculty.length>1 ? name : null);
     if(state.opts.load){
-      var ll = buildLoadLine(allSec);
+      var ll = buildLoadLine(allSec, sheetOwner);
       if(ll) sheet.appendChild(ll);
     }
     if(state.opts.table){
@@ -1107,7 +1136,7 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
     if(noRoom) box.appendChild(el("div","banner info", noRoom+(noRoom===1?" section has":" sections have")+" no room number in the feed. Add rooms with Edit; they are saved for next time."));
   }
   function renderAll(){
-    renderChips(); renderSectionList(); renderCustomList(); renderReleaseList(); renderBanners(); renderSheets();
+    renderChips(); renderSectionList(); renderWhoPicker(); renderCustomList(); renderReleaseList(); renderBanners(); renderSheets();
   }
 
   /* ===== fit to one page ===== */
@@ -1169,7 +1198,7 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
     var until=p.termEnd.replace(/-/g,"")+"T235900";
     var stamp=new Date().toISOString().replace(/[-:]/g,"").replace(/\.\d+Z$/,"Z");
     var n=0;
-    blocksFor(null).forEach(function(b){
+    blocksFor(null, true).forEach(function(b){
       var first=firstOccurrence(p.termStart, b.day);
       var day=DAYS.find(function(x){ return x.k===b.day; });
       n++;
@@ -1351,7 +1380,8 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
       var st=$("cStart").value, en=$("cEnd").value;
       if(!st||!en||toMin(en)<=toMin(st)){ toast("Check the start and end times."); return; }
       var rec = {label:$("cLabel").value.trim()||($("cType").value==="oh"?"Office Hours":"Blocked"),
-                 type:$("cType").value, days:days, start:st, end:en, loc:$("cLoc").value.trim()};
+                 type:$("cType").value, days:days, start:st, end:en, loc:$("cLoc").value.trim(),
+                 who: state.faculty.length>1 ? $("cWho").value : ""};
       if(editingCustomId){
         state.custom = state.custom.map(function(c){
           return c.id===editingCustomId ? Object.assign({}, c, rec) : c;
