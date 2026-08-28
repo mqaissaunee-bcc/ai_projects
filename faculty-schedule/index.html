@@ -375,7 +375,9 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
           <button class="btn" id="btnPng" type="button">⤓ Image (.png)</button>
           <button class="btn" id="btnCsv" type="button">⤓ Spreadsheet (.csv)</button>
         </div>
-        <p class="hint">In the print dialog choose <b>Landscape</b> and enable background graphics to keep course colors.</p>
+        <p class="hint">This opens your browser's print dialog. To get a PDF, set the
+          <b>destination</b> to "Save as PDF" (Chrome, Edge) or "Microsoft Print to PDF" (Windows),
+          then Save. Leave orientation on <b>Landscape</b>.</p>
         <div class="btn-row" style="margin-top:10px">
           <button class="btn ghost sm" id="btnSave" type="button">Save draft file</button>
           <button class="btn ghost sm" id="btnLoad" type="button">Load draft file</button>
@@ -1372,7 +1374,15 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
       renderReleaseList(); renderSheets(); save(); toast("Release time added");
     });
     $("cancelCustom").addEventListener("click", function(){ resetCustomForm(); renderCustomList(); });
-    var doPrint=function(){ fitSheetsToPage(); window.print(); };
+    var doPrint=function(){
+      // Fitting is an enhancement. If it throws for any reason, the print
+      // dialog must still open — a silent dead button is far worse than a
+      // schedule that runs onto a second page.
+      try { fitSheetsToPage(); }
+      catch(err){ if(window.console) console.warn("Could not fit to one page:", err); }
+      try { window.print(); }
+      catch(err2){ toast("Your browser blocked printing. Use the browser menu: File then Print."); }
+    };
     $("btnPrint").addEventListener("click", doPrint);
     $("btnPrint2").addEventListener("click", doPrint);
     $("btnIcs").addEventListener("click", exportIcs);
