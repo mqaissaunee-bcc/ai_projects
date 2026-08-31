@@ -120,11 +120,18 @@ textarea{min-height:60px;resize:vertical}
 .btn.pt-toggle{min-width:44px;letter-spacing:.03em}
 .btn.pt-toggle.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .btn.pt-toggle.partial{background:var(--surface);border-color:var(--accent);color:var(--accent);font-weight:700}
+.conflict-line{font-size:.78rem;margin-top:3px;opacity:.9}
 .load-warn{margin-top:5px;font-size:.78rem;color:var(--warn)}
 .pt-list{margin-top:5px;font-size:.78rem;color:var(--ink-2)}
 .sig-row{display:flex;flex-wrap:wrap;gap:18px;margin-top:26px}
 .sig{flex:1 1 170px;min-width:150px}
-.sig-rule{border-bottom:1px solid var(--ink-2);height:26px}
+.sig-rule{border-bottom:1px solid var(--ink-2);height:34px;display:flex;align-items:flex-end;justify-content:flex-start;overflow:hidden}
+.sig-typed{font-family:"Segoe Script","Bradley Hand","Snell Roundhand",cursive;font-size:1.15rem;
+  line-height:1.1;padding:0 2px 2px;white-space:nowrap}
+.sig-date{font-size:.95rem}
+.sig-img{max-height:34px;max-width:100%;object-fit:contain;object-position:left bottom}
+.sig-note{margin-top:6px;font-size:.72rem;color:var(--ink-3)}
+#sigPad{border:1px dashed var(--line-2);border-radius:8px;background:var(--surface);touch-action:none;display:block}
 .sig-label{font-size:.72rem;color:var(--ink-3);padding-top:3px}
 .custom-item.editing-item{border-color:var(--accent);background:var(--accent-soft)}
 .load-line{margin-top:14px;padding:7px 10px;border:1px solid var(--line-2);border-radius:7px;
@@ -170,6 +177,8 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.8rem}
 table.tbl th,table.tbl td{text-align:left;padding:5px 7px;border-bottom:1px solid var(--line);vertical-align:top}
 table.tbl th{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);border-bottom:1px solid var(--line-2)}
 table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
+table.tbl td.flagged{font-weight:700;color:var(--warn)}
+table.tbl tr.total-row td{border-top:2px solid var(--line-2);font-weight:700}
 .sheet-foot{margin-top:14px;padding-top:8px;border-top:1px solid var(--line);font-size:.72rem;color:var(--ink-3);
   display:flex;flex-wrap:wrap;gap:4px 14px;justify-content:space-between}
 .notes-line{font-size:.8rem;color:var(--ink-2);margin-top:10px;white-space:pre-wrap}
@@ -197,7 +206,7 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
   width:min(680px,calc(100vw - 24px));max-height:min(84vh,760px);display:flex;flex-direction:column;
   background:var(--surface);border:1px solid var(--line-2);border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,.3)}
 /* a class rule with display beats the UA [hidden] rule, so restore it */
-.modal[hidden],.modal-backdrop[hidden],.tour-callout[hidden],.banner[hidden]{display:none!important}
+.modal[hidden],.modal-backdrop[hidden],.tour-callout[hidden],.banner[hidden],.dot[hidden]{display:none!important}
 .modal-head{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
 .modal-head h2{flex:1}
 .modal-body{padding:14px;overflow:auto}
@@ -206,6 +215,11 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
 .tab{border:1px solid transparent;border-bottom:0;background:transparent;padding:8px 13px;min-height:40px;
   border-radius:8px 8px 0 0;font-size:.86rem;font-weight:600;color:var(--ink-2)}
 .tab.on{background:var(--surface-2);border-color:var(--line);color:var(--ink)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-left:5px;vertical-align:middle}
+.rel{margin-bottom:14px}
+.rel h3{font-size:.92rem;margin-bottom:4px}
+.rel ul{margin:0;padding-left:20px}
+.rel li{font-size:.85rem;color:var(--ink-2);margin-bottom:4px}
 ol.walk{margin:0 0 12px;padding-left:22px}
 ol.walk li{margin-bottom:7px;font-size:.88rem}
 .modal-body details{border:1px solid var(--line);border-radius:8px;margin-bottom:7px;background:var(--surface)}
@@ -214,6 +228,15 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
 .modal-body details[open] summary{border-bottom:1px solid var(--line)}
 .modal-body details p{margin:0;padding:10px 12px;font-size:.85rem;color:var(--ink-2)}
 
+.can-drag .daycol{cursor:crosshair}
+.can-drag .blk.movable{cursor:grab}
+.can-drag .blk.movable:active{cursor:grabbing}
+.blk-grip{position:absolute;left:0;right:0;bottom:0;height:8px;cursor:ns-resize}
+.drag-ghost{position:absolute;left:2px;right:2px;border-radius:6px;background:var(--accent-soft);
+  border:2px dashed var(--accent);color:var(--ink);font-size:.72rem;font-weight:700;
+  display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:5}
+.dragging{user-select:none;-webkit-user-select:none}
+@media print{.blk-grip,.drag-ghost{display:none!important}}
 .tour-callout{position:absolute;z-index:72;width:min(330px,calc(100vw - 24px));background:var(--surface);
   border:1px solid var(--accent);border-radius:10px;padding:12px 13px;box-shadow:0 10px 30px rgba(0,0,0,.22)}
 .tour-callout h3{margin:2px 0 6px;font-size:1rem}
@@ -249,11 +272,22 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     border-left-style:solid!important;border-left-width:5px!important;border-left-color:var(--blkc,#333)!important;
     print-color-adjust:exact;-webkit-print-color-adjust:exact}
   .blk b{font-size:8pt}
+  /* Full-colour printing needs "background graphics" enabled in the print
+     dialog; without it the fills vanish, so white text would too. Keep the
+     text dark unless the fill is actually painted. */
+  body.color-print .blk.print-color{background:var(--blkc)!important;color:#fff!important;
+    border-color:var(--blkc)!important}
+  body.color-print .blk.oh,body.color-print .blk.other{background:var(--blkc)!important;color:#fff!important;
+    border-color:var(--blkc)!important}
+  body.color-print .blk b,body.color-print .blk .l2,body.color-print .blk .l3{color:#fff!important}
   .blk .l2,.blk .l3{font-size:7pt;opacity:1}
   table.tbl{font-size:8.5pt}
   .sig-row{break-inside:avoid;margin-top:22pt}
+  .sig-img{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+  .sig-note{font-size:8pt}
   .pt-list{font-size:8.5pt}
   .load-warn{font-size:8.5pt;color:#000!important}
+  table.tbl td.flagged{color:#000!important;text-decoration:underline}
   .load-line{background:#fff!important;border:1px solid #888!important;font-size:9pt;break-inside:avoid}
   table.tbl tr{break-inside:avoid}
   .aside-list{break-inside:avoid}
@@ -271,6 +305,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     <span class="sub">Brookdale Community College</span>
   </div>
   <div class="topbar-right">
+    <button class="btn sm ghost no-print" id="btnNews" type="button">What's new<span class="dot" id="newsDot" hidden></span></button>
     <button class="btn sm ghost no-print" id="btnHelp" type="button">? Help</button>
     <div class="status" id="dataStatus" aria-live="polite"></div>
   </div>
@@ -340,7 +375,9 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
           <button class="btn primary" id="addCustom" type="button">Add block</button>
           <button class="btn ghost" id="cancelCustom" type="button" hidden>Cancel</button>
         </div>
-        <p class="hint">Add by-appointment or virtual hours as a note in step&nbsp;4 if they have no fixed time.</p>
+        <p class="hint">Faster with a mouse: drag on an empty part of the weekly grid to add office hours,
+          then drag the block to move it or its bottom edge to resize. Add by-appointment or virtual hours
+          as a note in step&nbsp;4 if they have no fixed time.</p>
       </div>
     </details>
 
@@ -365,9 +402,15 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
           <div class="field"><label for="fTermStart">Term start (for calendar export)</label><input type="date" id="fTermStart"></div>
         </div>
         <div class="field"><label for="fTermEnd">Term end (for calendar export)</label><input type="date" id="fTermEnd"></div>
+        <div class="field"><label for="fSupervisors">Supervisor email(s), comma separated</label>
+          <input type="text" id="fSupervisors" placeholder="chair@brookdalecc.edu, dean@brookdalecc.edu"></div>
         <h3 style="margin:14px 0 7px;font-size:.9rem">Load and release time</h3>
-        <div class="field"><label for="fLoadBase">Full load, contact hours</label>
-          <input type="number" id="fLoadBase" min="0" max="30" step="0.5" value="15"></div>
+        <div class="row2">
+          <div class="field"><label for="fLoadBase">Full load, contact hours</label>
+            <input type="number" id="fLoadBase" min="0" max="30" step="0.5" value="15"></div>
+          <div class="field"><label for="fOhRequired">Office hours required</label>
+            <input type="number" id="fOhRequired" min="0" max="20" step="0.5" value="5"></div>
+        </div>
         <div id="releaseList"></div>
         <div class="row2">
           <div class="field"><label for="rCredits">Credits released</label>
@@ -387,11 +430,41 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         <label class="check"><input type="checkbox" id="optCode" checked> Show section codes</label>
         <label class="check"><input type="checkbox" id="optCredits" checked> Show credits in the course table</label>
         <label class="check"><input type="checkbox" id="optWeekend"> Always show Saturday and Sunday</label>
-        <label class="check"><input type="checkbox" id="optColor" checked> Color-code courses (kept in print)</label>
+        <label class="check"><input type="checkbox" id="optColor" checked> Color-code courses on screen</label>
+        <label class="check"><input type="checkbox" id="optPrintColor"> Print the blocks in full color</label>
         <label class="check"><input type="checkbox" id="optTable" checked> Include the course detail table</label>
         <label class="check"><input type="checkbox" id="optLoad" checked> Show teaching load summary</label>
         <label class="check"><input type="checkbox" id="optSign"> Add a signature line for approval</label>
+        <div id="sigOptions" hidden>
+          <div class="field"><label for="sigMode">Your signature</label>
+            <select id="sigMode">
+              <option value="blank">Blank line — sign the printout by hand</option>
+              <option value="typed">Type my name</option>
+              <option value="drawn">Draw my signature</option>
+            </select>
+          </div>
+          <div class="field" id="sigTypedField" hidden>
+            <label for="sigTyped">Name as signed</label>
+            <input type="text" id="sigTyped" placeholder="Michael Qaissaunee">
+          </div>
+          <div class="field" id="sigDrawField" hidden>
+            <label id="sigPadLabel">Draw with a mouse, trackpad, or finger</label>
+            <canvas id="sigPad" width="640" height="220" aria-labelledby="sigPadLabel"
+                    role="img" style="width:100%;height:110px"></canvas>
+            <div class="btn-row" style="margin-top:6px">
+              <button class="btn sm ghost" id="sigClear" type="button">Clear</button>
+            </div>
+          </div>
+          <div class="field" id="sigDateField" hidden>
+            <label for="sigDate">Date signed</label>
+            <input type="date" id="sigDate">
+          </div>
+          <p class="hint" id="sigNote" hidden>This prints your signature on the sheet. It is a
+            convenience, not a verified signature — check that your Institute Office accepts one
+            before relying on it. The chair and dean lines stay blank.</p>
+        </div>
         <label class="check"><input type="checkbox" id="optFit" checked> Fit the printed schedule to one page</label>
+        <label class="check"><input type="checkbox" id="optDept" checked> Lead with a department summary when several people are shown</label>
 
         <label class="check"><input type="checkbox" id="opt24"> Use 24-hour times</label>
         <div class="field" style="margin-top:8px"><label for="optDensity">Grid height</label>
@@ -412,6 +485,15 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
           <button class="btn" id="btnPng" type="button">⤓ Image (.png)</button>
           <button class="btn" id="btnCsv" type="button">⤓ Spreadsheet (.csv)</button>
         </div>
+        <div class="btn-row" style="margin-top:8px">
+          <button class="btn" id="btnEmail" type="button">✉ Email to supervisor</button>
+          <button class="btn ghost" id="btnCopy" type="button">Copy summary</button>
+        </div>
+        <p class="hint">Email opens your mail program with a written summary ready to send.
+          Save the PDF first and attach it — a link like this cannot carry an attachment.</p>
+        <p class="hint" id="colorHint" hidden>Full-colour printing needs
+          <b>background graphics</b> (or "Print backgrounds") switched on in the print dialog,
+          otherwise the blocks come out empty.</p>
         <p class="hint">This opens your browser's print dialog. To get a PDF, set the
           <b>destination</b> to "Save as PDF" (Chrome, Edge) or "Microsoft Print to PDF" (Windows),
           then Save. Leave orientation on <b>Landscape</b>.</p>
@@ -464,6 +546,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
   <div class="tabs" role="tablist">
     <button class="tab on" id="tabWalk" role="tab" aria-selected="true" aria-controls="paneWalk" type="button">Walkthrough</button>
     <button class="tab" id="tabFaq" role="tab" aria-selected="false" aria-controls="paneFaq" type="button">Questions</button>
+    <button class="tab" id="tabNews" role="tab" aria-selected="false" aria-controls="paneNews" type="button">What's new</button>
   </div>
   <div class="modal-body">
     <section id="paneWalk" role="tabpanel" aria-labelledby="tabWalk">
@@ -471,7 +554,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       <ol class="walk">
         <li><b>Find your sections.</b> Type your last name and pick yourself from the list. Your sections load automatically, and your name fills in for the printed sheet.</li>
         <li><b>Check the sections.</b> Uncheck anything you are not teaching. <b>Edit</b> fixes a wrong room, time, or title, and sets contact hours when they differ from the published credits. <b>PT</b> marks a section as overload.</li>
-        <li><b>Add office hours.</b> Pick days, set a start and end, and add the block. Every block can be edited or removed later.</li>
+        <li><b>Add office hours.</b> Pick days, set a start and end, and add the block — or just drag across an empty part of the weekly grid. Blocks can be dragged to move, resized from the bottom edge, and edited or removed at any time.</li>
         <li><b>Fill in your information.</b> Office, phone, email, and any release time with what it was released for.</li>
         <li><b>Set display options</b> if you want a signature line or a different grid density.</li>
         <li><b>Export.</b> Print to PDF, or download a calendar file, image, or spreadsheet.</li>
@@ -496,18 +579,75 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         <p>The button opens your browser's print dialog; the PDF comes from there. On Windows set the <b>destination</b> to "Save as PDF" or "Microsoft Print to PDF", then Save. If the destination is a physical printer, it prints on paper instead. Keep the orientation on landscape.</p></details>
       <details><summary>It printed on two pages</summary>
         <p>"Fit the printed schedule to one page" is on by default under Display options. It condenses the course table and, if that is not enough, shrinks the sheet. A very full schedule with office hours, a signature line, and a long course list can still exceed one page, in which case the tool tells you rather than printing something unreadable.</p></details>
+      <details><summary>Can I draw office hours straight onto the grid?</summary>
+        <p>Yes, with a mouse or trackpad. Drag across an empty part of a day column and a block is created, snapped to the nearest quarter hour. Drag an existing block to move it — including sideways into a different day — or its bottom edge to change the end time. A block set on several days shifts in time only, since moving one of its days elsewhere would be ambiguous; edit it in step 3 to change which days it falls on. On a touch screen use the form in step 3 instead, so dragging does not fight with scrolling. When several people are shown, a block you draw belongs to whichever person's schedule you drew it on.</p></details>
       <details><summary>Can I put office hours on one person's sheet only?</summary>
         <p>Yes, when more than one person is selected. A "Whose schedule" picker appears in the office hours panel: choose a person, or "Everyone shown" for something like a department meeting.</p></details>
       <details><summary>The calendar export asks for term dates</summary>
         <p>A calendar file needs to know when the term starts and ends to repeat your classes weekly. Fill in Term start and Term end under Your information, then export again.</p></details>
       <details><summary>The image download has no course table</summary>
         <p>That is deliberate. The image is meant as a door sign — the weekly grid and nothing else. Use Print for the full sheet.</p></details>
+      <details><summary>Can I sign it electronically?</summary>
+        <p>Turn on the signature line under Display options and choose "Type my name" or "Draw my signature". A typed name prints in a script face; a drawn one is captured with your mouse, trackpad, or finger. The date fills in automatically and can be changed. Only your own line can be signed here — the chair and dean lines stay blank for them to sign.</p>
+        <p>This is a convenience, not a verified signature. Nothing authenticates who typed or drew it, so check that your Institute Office accepts one before relying on it. A drawn signature is saved in this browser and is included if you save a draft file, so clear it before handing your laptop to someone else.</p></details>
+      <details><summary>Can I email this to my chair or dean?</summary>
+        <p>Add their addresses under Your information, then use "Email to supervisor" in the export panel. Your mail program opens with a written summary of your courses, office hours, and load already in the message. Save the PDF first and attach it — a mail link cannot carry an attachment on its own. "Copy summary" puts the same text on the clipboard if you would rather paste it somewhere else.</p></details>
+      <details><summary>Can I print it in color?</summary>
+        <p>Yes — "Print the blocks in full color" under Display options. Colors need <b>background graphics</b> switched on in the print dialog; without that the blocks print empty, which is why the plain version uses dark text with a colored edge instead.</p></details>
       <details><summary>Is my contact information stored anywhere?</summary>
         <p>No. Course data is public and comes from the college's published schedule. Everything you type — office, phone, email, office hours — stays in your own browser and is never sent anywhere. Use "Save draft file" to move it to another computer, or "Reset everything" to clear it.</p></details>
       <details><summary>Do I have to redo this every semester?</summary>
         <p>No. Your contact block, office hours, and release time stay put. When the new term's data loads you pick your sections again and the rest is already filled in.</p></details>
       <details><summary>How current is the course data?</summary>
         <p>The header shows the date the schedule data was pulled. Rooms and times change during drop/add, so check the sheet against reality before you post it on a door.</p></details>
+    </section>
+    <section id="paneNews" role="tabpanel" aria-labelledby="tabNews" hidden>
+      <p>Changes to this tool, newest first.</p>
+
+      <div class="rel"><h3>Version 1.5</h3>
+        <ul>
+          <li>Conflicts are flagged: office hours sitting on top of a class, or two sections at the same time.</li>
+          <li>Office hours are checked against the number your department requires, set under Your information.</li>
+          <li>Chairs get a department summary page listing every person's contact hours, overload, office hours, and release.</li>
+          <li>Email your schedule to a chair or dean, with the summary written into the message.</li>
+          <li>Blocks can print in full color, and office-hour blocks drag sideways into another day.</li>
+          <li>This page.</li>
+        </ul></div>
+
+      <div class="rel"><h3>Version 1.4</h3>
+        <ul>
+          <li>Sign your own line by typing your name or drawing a signature.</li>
+          <li>Draw office hours straight onto the grid, then drag to move or resize them.</li>
+          <li>Help, a guided tour, and answers to common questions.</li>
+        </ul></div>
+
+      <div class="rel"><h3>Version 1.3</h3>
+        <ul>
+          <li>Printing fits on one page: the course table condenses first, then the sheet scales if it still needs to.</li>
+          <li>Overload can be a portion of a section rather than all of it, for a course whose lab is paid separately.</li>
+          <li>Release time takes several lines, each with its own reason.</li>
+          <li>With more than one person shown, office hours belong to whoever's schedule they were added to.</li>
+        </ul></div>
+
+      <div class="rel"><h3>Version 1.2</h3>
+        <ul>
+          <li>Load is counted in contact hours, which you can correct per section when they differ from the published credits.</li>
+          <li>Overload sections are marked PT, excluded from the load, and listed by name.</li>
+          <li>Optional signature lines for faculty, chair, dean, and date.</li>
+        </ul></div>
+
+      <div class="rel"><h3>Version 1.1</h3>
+        <ul>
+          <li>Real end times and room numbers from the published schedule, replacing estimates.</li>
+          <li>Courses that meet at two different times show both.</li>
+          <li>Instructor names written two ways in the source are merged into one person.</li>
+        </ul></div>
+
+      <div class="rel"><h3>Version 1.0</h3>
+        <ul>
+          <li>Search your name, get your weekly schedule, add office hours and contact details.</li>
+          <li>Export as PDF, calendar file, image, or spreadsheet. Chairs can print one sheet per person.</li>
+        </ul></div>
     </section>
   </div>
 </div>
@@ -528,6 +668,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     "https://mqaissaunee-bcc.github.io/ai_projects/faculty-schedule/data/26FA/sections.json"
   ];
   var STORAGE_KEY = "bcc-faculty-schedule-v1";
+  var APP_VERSION = "1.5";
   var DAYS = [
     {k:"M", short:"Mon", long:"Monday", ics:"MO", dow:1},
     {k:"T", short:"Tue", long:"Tuesday", ics:"TU", dow:2},
@@ -551,9 +692,10 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     overrides: {},    // sectionId -> {days,start,end,room,title,mode}
     custom: [],       // {id,label,type,days,start,end,loc,who} — who="" means everyone
     release: [],      // {id, credits, reason} — release time / extra compensation
-    profile: {name:"",title:"",dept:"",office:"",phone:"",email:"",zoom:"",termLabel:"",termStart:"",termEnd:"",notes:"",loadBase:"15",released:"",releasedFor:""},
+    sig: {mode:"blank", typed:"", drawn:"", date:""},   // faculty signature only
+    profile: {name:"",title:"",dept:"",office:"",phone:"",email:"",zoom:"",termLabel:"",termStart:"",termEnd:"",notes:"",loadBase:"15",ohRequired:"5",released:"",releasedFor:"",supervisors:""},
     pot: "15W",
-    opts: {code:true, credits:true, weekend:false, color:true, table:true, h24:false, load:true, sign:false, fit:true, density:58}
+    opts: {code:true, credits:true, weekend:false, color:true, table:true, h24:false, load:true, sign:false, fit:true, dept:true, printColor:false, density:58}
   };
 
   /* ===== small helpers ===== */
@@ -592,7 +734,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     try{
       var raw=localStorage.getItem(STORAGE_KEY); if(!raw) return;
       var s=JSON.parse(raw); if(!s||typeof s!=="object") return;
-      ["faculty","include","pt","hrs","overrides","custom","profile","opts","pot","nameAuto","release"].forEach(function(k){
+      ["faculty","include","pt","hrs","overrides","custom","profile","opts","pot","nameAuto","release","sig"].forEach(function(k){
         if(s[k]!=null){ if(k==="profile"||k==="opts"){ Object.assign(state[k], s[k]); } else { state[k]=s[k]; } }
       });
     }catch(e){}
@@ -656,7 +798,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       if(st==null||en==null||!c.days||!c.days.length) return;
       c.days.forEach(function(d){
         out.push({day:d, start:st, end:Math.max(en,st+15), kind:c.type==="oh"?"oh":"other",
-          title:c.label||(c.type==="oh"?"Office Hours":"Blocked"), sub:c.loc||"", sub2:"", est:false});
+          title:c.label||(c.type==="oh"?"Office Hours":"Blocked"), sub:c.loc||"", sub2:"", est:false,
+          customId:c.id});
       });
     });
     return out;
@@ -979,6 +1122,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     var bounds=gridBounds(blocks), cols=daysShown(blocks), rowh=state.opts.density;
     var grid=el("div","grid");
     grid.style.setProperty("--rowh", rowh+"px");
+    grid.dataset.min = bounds.min; grid.dataset.rowh = rowh;
     grid.style.gridTemplateColumns="62px repeat("+cols.length+",minmax(90px,1fr))";
     var hours=(bounds.max-bounds.min)/60;
     grid.appendChild(el("div","hcell corner",""));
@@ -991,6 +1135,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     grid.appendChild(timecol);
     cols.forEach(function(d){
       var col=el("div","daycol");
+      col.dataset.day = d.k;
       for(var h=0;h<hours;h++){ col.appendChild(el("div","line")); }
       var dayBlocks=layoutOverlaps(blocks.filter(function(b){ return b.day===d.k; }));
       dayBlocks.forEach(function(b){
@@ -1011,6 +1156,11 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         if(b.sub) n.appendChild(el("span","l3", b.sub));
         if(b.sub2 && durH*rowh>62) n.appendChild(el("span","l3", b.sub2));
         n.title=b.title+" "+fmtTime(b.start)+"–"+fmtTime(b.end)+(b.sub?" · "+b.sub:"")+(b.est?" (estimated end time)":"");
+        if(b.customId){
+          n.classList.add("movable");
+          n.dataset.customId = b.customId;
+          n.appendChild(el("span","blk-grip"));
+        }
         col.appendChild(n);
       });
       grid.appendChild(col);
@@ -1067,7 +1217,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       load += (hrs - pt);
     });
     return {base:base, required:Math.max(0, base - rel), released:rel,
-            load:Math.round(load*100)/100, over:Math.round(over*100)/100, office:officeHours(owner)};
+            load:Math.round(load*100)/100, over:Math.round(over*100)/100, office:officeHours(owner),
+            officeRequired: parseFloat(state.profile.ohRequired) || 0};
   }
   function buildLoadLine(list, owner){
     var L = loadSummary(list, owner);
@@ -1081,7 +1232,9 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       if(!reasons.length && state.profile.releasedFor) reasons = [L.released + " for " + state.profile.releasedFor];
       bits.push(reasons.length ? "Released: " + reasons.join(", ") : L.released + " released");
     }
-    if(L.office) bits.push("Office hours: " + L.office);
+    if(L.office || L.officeRequired){
+      bits.push("Office hours: " + L.office + (L.officeRequired ? " of " + L.officeRequired : ""));
+    }
     if(L.over) bits.push("PT / overload: " + L.over);
     box.appendChild(el("span",null,bits.join("  ·  ")));
     if(L.load > L.required){
@@ -1141,6 +1294,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     var p=state.profile;
     var sheetOwner = (state.faculty.length>1 ? name : (state.faculty[0] || null));
     var sheet=el("section","sheet");
+    if(sheetOwner) sheet.dataset.owner = sheetOwner;
     var head=el("div","sheet-head");
     var who=el("div","who");
     who.appendChild(el("h2", null, (state.faculty.length>1 ? name : (p.name||name||"Teaching Schedule"))));
@@ -1198,11 +1352,30 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       var sig = el("div","sig-row");
       ["Faculty signature","Department chair","Institute dean","Date"].forEach(function(lbl){
         var c = el("div","sig");
-        c.appendChild(el("div","sig-rule"));
+        var rule = el("div","sig-rule");
+        // Only the faculty line can be signed in the tool; the approval lines
+        // belong to other people and stay blank.
+        if(lbl === "Faculty signature"){
+          if(state.sig.mode === "typed" && state.sig.typed){
+            rule.appendChild(el("span","sig-typed", state.sig.typed));
+          } else if(state.sig.mode === "drawn" && state.sig.drawn){
+            var img = document.createElement("img");
+            img.className = "sig-img"; img.src = state.sig.drawn; img.alt = "Signature";
+            rule.appendChild(img);
+          }
+        }
+        if(lbl === "Date" && state.sig.mode !== "blank" && state.sig.date){
+          rule.appendChild(el("span","sig-typed sig-date", state.sig.date));
+        }
+        c.appendChild(rule);
         c.appendChild(el("div","sig-label", lbl));
         sig.appendChild(c);
       });
       sheet.appendChild(sig);
+      if(state.sig.mode !== "blank" && (state.sig.typed || state.sig.drawn)){
+        sheet.appendChild(el("div","sig-note",
+          "Signed electronically by the faculty member" + (state.sig.date ? " on " + state.sig.date : "") + "."));
+      }
     }
 
     var foot=el("div","sheet-foot");
@@ -1217,6 +1390,53 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     sheet.appendChild(foot);
     return sheet;
   }
+  function buildDeptSummary(){
+    var sheet = el("section","sheet");
+    var head = el("div","sheet-head");
+    var who = el("div","who");
+    who.appendChild(el("h2", null, (state.profile.dept || "Department") + " — teaching load"));
+    who.appendChild(el("div","sheet-term", state.profile.termLabel || (DATA && DATA.termLabel) || ""));
+    head.appendChild(who);
+    head.appendChild(el("div","contact", state.faculty.length + " faculty"));
+    sheet.appendChild(head);
+
+    var t = el("table","tbl"), thead = el("thead"), hr = el("tr");
+    ["Faculty","Sections","Contact hours","Required","PT / overload","Office hours","Released"]
+      .forEach(function(c){ hr.appendChild(el("th",null,c)); });
+    thead.appendChild(hr); t.appendChild(thead);
+    var tb = el("tbody"), totals = {sec:0, load:0, over:0, office:0};
+    state.faculty.forEach(function(n){
+      var list = scheduledSections(n), L = loadSummary(list, n);
+      totals.sec += list.length; totals.load += L.load; totals.over += L.over; totals.office += L.office;
+      var r = el("tr");
+      r.appendChild(el("td",null,n));
+      r.appendChild(el("td","num",list.length));
+      var loadCell = el("td","num", L.load);
+      if(L.load > L.required || L.load < L.required) loadCell.className = "num flagged";
+      r.appendChild(loadCell);
+      r.appendChild(el("td","num", L.required));
+      r.appendChild(el("td","num", L.over || "—"));
+      var oh = el("td","num", L.office || (L.officeRequired ? 0 : "—"));
+      if(L.officeRequired && L.office < L.officeRequired) oh.className = "num flagged";
+      r.appendChild(oh);
+      r.appendChild(el("td","num", L.released || "—"));
+      tb.appendChild(r);
+    });
+    var tot = el("tr","total-row");
+    tot.appendChild(el("td",null,"Total"));
+    tot.appendChild(el("td","num", totals.sec));
+    tot.appendChild(el("td","num", Math.round(totals.load*100)/100));
+    tot.appendChild(el("td",null,""));
+    tot.appendChild(el("td","num", Math.round(totals.over*100)/100));
+    tot.appendChild(el("td","num", Math.round(totals.office*100)/100));
+    tot.appendChild(el("td",null,""));
+    tb.appendChild(tot);
+    t.appendChild(tb);
+    sheet.appendChild(t);
+    sheet.appendChild(el("div","sig-note",
+      "Figures come from each schedule that follows. A highlighted number is off the expected load or below the required office hours."));
+    return sheet;
+  }
   function renderSheets(){
     var box=$("sheets"); clear(box);
     if(!state.faculty.length && !state.custom.length){
@@ -1224,10 +1444,27 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       box.appendChild(p); return;
     }
     if(state.faculty.length>1){
+      if(state.opts.dept) box.appendChild(buildDeptSummary());
       state.faculty.forEach(function(n){ box.appendChild(buildSheet(n)); });
     } else {
       box.appendChild(buildSheet(state.faculty[0]||state.profile.name||""));
     }
+  }
+  function conflictsFor(owner){
+    var blocks = blocksFor(owner), out = [];
+    DAYS.forEach(function(d){
+      var day = blocks.filter(function(b){ return b.day === d.k; })
+                      .sort(function(a,b){ return a.start - b.start; });
+      for(var i=0;i<day.length;i++){
+        for(var j=i+1;j<day.length;j++){
+          if(day[j].start >= day[i].end) break;
+          // Two blocks genuinely on top of each other in the same day column.
+          out.push(day[i].title + " (" + d.short + " " + fmtTime(day[i].start) + "–" + fmtTime(day[i].end) +
+                   ") overlaps " + day[j].title + " (" + fmtTime(day[j].start) + "–" + fmtTime(day[j].end) + ")");
+        }
+      }
+    });
+    return out;
   }
   function renderBanners(){
     var box=$("banners"); clear(box);
@@ -1241,9 +1478,327 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     }
     var noRoom=sel.filter(function(e){ return e.meetings.some(function(m){ return m.s && !m.rm; }); }).length;
     if(noRoom) box.appendChild(el("div","banner info", noRoom+(noRoom===1?" section has":" sections have")+" no room number in the feed. Add rooms with Edit; they are saved for next time."));
+
+    // Overlaps and short office hours are the two errors that get a submitted
+    // form sent back, so they are flagged on screen but never printed.
+    var owners = state.faculty.length > 1 ? state.faculty : [state.faculty[0] || null];
+    owners.forEach(function(who){
+      if(state.faculty.length && !who) return;
+      var clashes = conflictsFor(state.faculty.length > 1 ? who : null);
+      if(clashes.length){
+        var pre = state.faculty.length > 1 ? who + ": " : "";
+        var b2 = el("div","banner");
+        b2.appendChild(el("div",null, pre + clashes.length + (clashes.length===1?" scheduling conflict":" scheduling conflicts")+":"));
+        clashes.slice(0,4).forEach(function(c){ b2.appendChild(el("div","conflict-line", c)); });
+        if(clashes.length > 4) b2.appendChild(el("div","conflict-line", "…and " + (clashes.length-4) + " more"));
+        box.appendChild(b2);
+      }
+      var L = loadSummary(scheduledSections(state.faculty.length > 1 ? who : null),
+                          state.faculty.length > 1 ? who : (state.faculty[0] || null));
+      if(L.officeRequired && L.office < L.officeRequired && (L.load || L.over)){
+        box.appendChild(el("div","banner",
+          (state.faculty.length > 1 ? who + ": " : "") +
+          "Office hours total " + L.office + ", below the " + L.officeRequired + " required."));
+      }
+    });
   }
   function renderAll(){
+    document.body.classList.toggle("color-print", !!state.opts.printColor);
     renderChips(); renderSectionList(); renderWhoPicker(); renderCustomList(); renderReleaseList(); renderBanners(); renderSheets();
+  }
+
+  /* ===== written summary, for email or the clipboard ===== */
+  function summaryText(){
+    var p = state.profile, lines = [];
+    var owner = state.faculty.length > 1 ? null : (state.faculty[0] || null);
+    var list = scheduledSections(owner);
+    lines.push((p.name || "Teaching schedule") + " — " + (p.termLabel || (DATA && DATA.termLabel) || ""));
+    if(p.title || p.dept) lines.push([p.title, p.dept].filter(Boolean).join(" · "));
+    if(p.office) lines.push("Office: " + p.office);
+    lines.push("");
+
+    lines.push("COURSES");
+    list.forEach(function(e){
+      var when = e.meetings.filter(function(m){ return m.s && m.d && m.d.length; }).map(function(m){
+        return dayLabel(m.d) + " " + fmtTime(toMin(m.s)) + "-" + fmtTime(toMin(m.e)) + (m.rm ? " " + m.rm : "");
+      }).join("; ") || (MODE_LABEL[e.mode] || "unscheduled");
+      var pt = ptHoursFor(e);
+      lines.push("  " + e.id + "  " + e.title + "  (" + when + ")" +
+        (pt ? "  [" + (isFullyPt(e) ? "PT" : pt + " hrs PT") + "]" : ""));
+    });
+
+    var oh = state.custom.filter(function(c){ return c.type === "oh" && ownsBlock(c, owner); });
+    if(oh.length){
+      lines.push("");
+      lines.push("OFFICE HOURS");
+      oh.forEach(function(c){
+        lines.push("  " + dayLabel(c.days) + " " + fmtTime(toMin(c.start)) + "-" + fmtTime(toMin(c.end)) +
+          (c.loc ? "  " + c.loc : ""));
+      });
+    }
+
+    var L = loadSummary(list, owner);
+    lines.push("");
+    lines.push("LOAD");
+    lines.push("  Contact hours: " + L.load + " of " + L.required);
+    if(L.released){
+      var reasons = (state.release || []).filter(function(r){ return r.reason; })
+                      .map(function(r){ return r.credits + " for " + r.reason; });
+      lines.push("  Released: " + (reasons.length ? reasons.join(", ") : L.released));
+    }
+    if(L.office) lines.push("  Office hours: " + L.office);
+    if(L.over) lines.push("  PT / overload: " + L.over);
+    if(p.notes){ lines.push(""); lines.push(p.notes); }
+    return lines.join("\n");
+  }
+  function emailSchedule(){
+    var p = state.profile;
+    if(!state.faculty.length && !state.custom.length){ toast("Build a schedule first."); return; }
+    var to = (p.supervisors || "").split(/[,;\s]+/).filter(Boolean).join(",");
+    if(!to){
+      toast("Add a supervisor email in step 4 first.");
+      $("p4").open = true; $("fSupervisors").focus();
+      return;
+    }
+    var subject = (p.termLabel || "Teaching") + " schedule — " + (p.name || state.faculty[0] || "");
+    var body = summaryText() + "\n\nThe printable schedule is attached.\n";
+    // Mail clients and browsers truncate very long mailto URLs.
+    if(body.length > 1600) body = body.slice(0, 1600) + "\n… (full details on the attached schedule)\n";
+    var url = "mailto:" + encodeURIComponent(to).replace(/%2C/g, ",") +
+              "?subject=" + encodeURIComponent(subject) +
+              "&body=" + encodeURIComponent(body);
+    // An anchor click is more reliable than location.href: some browsers block
+    // scripted navigation to mailto:, and this also works inside an iframe.
+    var a = document.createElement("a");
+    a.href = url; a.rel = "noopener";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    toast("Opening your mail program. Attach the saved PDF before sending.");
+  }
+  function copySummary(){
+    var text = summaryText();
+    var done = function(){ toast("Summary copied to the clipboard"); };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done, function(){ fallbackCopy(text, done); });
+    } else { fallbackCopy(text, done); }
+  }
+  function fallbackCopy(text, done){
+    var ta = document.createElement("textarea");
+    ta.value = text; ta.style.cssText = "position:fixed;left:-9999px;top:0";
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand("copy"); done(); }
+    catch(e){ toast("Could not copy automatically — use the print or spreadsheet export instead."); }
+    document.body.removeChild(ta);
+  }
+
+  /* ===== signature pad ===== */
+  function todayISO(){
+    var d = new Date();
+    return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+  }
+  function syncSigControls(){
+    var on = !!state.opts.sign, mode = state.sig.mode || "blank";
+    $("sigOptions").hidden = !on;
+    $("sigMode").value = mode;
+    $("sigTypedField").hidden = mode !== "typed";
+    $("sigDrawField").hidden = mode !== "drawn";
+    $("sigDateField").hidden = mode === "blank";
+    $("sigNote").hidden = mode === "blank";
+    $("sigTyped").value = state.sig.typed || "";
+    if(!state.sig.date) state.sig.date = todayISO();
+    $("sigDate").value = state.sig.date;
+    if(mode === "drawn") restoreSigPad();
+  }
+  function sigCtx(){
+    var cv = $("sigPad"), g = cv.getContext("2d");
+    g.lineWidth = 3; g.lineCap = "round"; g.lineJoin = "round";
+    g.strokeStyle = "#111827";
+    return g;
+  }
+  function clearSigPad(){
+    var cv = $("sigPad");
+    cv.getContext("2d").clearRect(0, 0, cv.width, cv.height);
+  }
+  function restoreSigPad(){
+    clearSigPad();
+    if(!state.sig.drawn) return;
+    var img = new Image();
+    img.onload = function(){ $("sigPad").getContext("2d").drawImage(img, 0, 0, $("sigPad").width, $("sigPad").height); };
+    img.src = state.sig.drawn;
+  }
+  function padPoint(e){
+    var cv = $("sigPad"), r = cv.getBoundingClientRect();
+    return {x: (e.clientX - r.left) * (cv.width / r.width),
+            y: (e.clientY - r.top) * (cv.height / r.height)};
+  }
+  function initSigPad(){
+    var cv = $("sigPad"), drawing = false, g = null;
+    cv.addEventListener("pointerdown", function(e){
+      drawing = true; g = sigCtx();
+      var p0 = padPoint(e);
+      g.beginPath(); g.moveTo(p0.x, p0.y);
+      try{ cv.setPointerCapture(e.pointerId); }catch(err){}
+      e.preventDefault();
+    });
+    cv.addEventListener("pointermove", function(e){
+      if(!drawing) return;
+      var p1 = padPoint(e);
+      g.lineTo(p1.x, p1.y); g.stroke();
+      e.preventDefault();
+    });
+    var stop = function(){
+      if(!drawing) return;
+      drawing = false;
+      state.sig.drawn = cv.toDataURL("image/png");
+      save(); renderSheets();
+    };
+    cv.addEventListener("pointerup", stop);
+    cv.addEventListener("pointerleave", stop);
+    cv.addEventListener("pointercancel", stop);
+    $("sigClear").addEventListener("click", function(){
+      clearSigPad(); state.sig.drawn = ""; save(); renderSheets(); toast("Signature cleared");
+    });
+    $("sigMode").addEventListener("change", function(){
+      state.sig.mode = $("sigMode").value;
+      if(state.sig.mode === "typed" && !state.sig.typed){
+        state.sig.typed = state.profile.name || "";
+      }
+      syncSigControls(); save(); renderSheets();
+    });
+    $("sigTyped").addEventListener("input", function(){
+      state.sig.typed = $("sigTyped").value; save(); renderSheets();
+    });
+    $("sigDate").addEventListener("change", function(){
+      state.sig.date = $("sigDate").value; save(); renderSheets();
+    });
+  }
+
+  /* ===== drag to add, move, and resize office hours =====
+     An enhancement over the form in step 3, not a replacement: the form stays
+     the accessible path and the only one on touch, where a drag would fight
+     with scrolling. */
+  var SNAP = 15;
+  var drag = null;
+
+  function finePointer(){
+    return !window.matchMedia || window.matchMedia("(pointer: fine)").matches;
+  }
+  function snap(mins){ return Math.round(mins / SNAP) * SNAP; }
+  function gridInfo(col){
+    var grid = col.parentNode;
+    return {min: parseFloat(grid.dataset.min), rowh: parseFloat(grid.dataset.rowh)};
+  }
+  function minutesAt(col, clientY){
+    var g = gridInfo(col), r = col.getBoundingClientRect();
+    return g.min + ((clientY - r.top) / g.rowh) * 60;
+  }
+  function ownerOf(node){
+    var sheet = node.closest ? node.closest(".sheet") : null;
+    return (sheet && sheet.dataset.owner) || state.faculty[0] || "";
+  }
+  function placeGhost(col, startM, endM){
+    var g = gridInfo(col);
+    if(!drag.ghost){
+      drag.ghost = el("div","drag-ghost");
+      col.appendChild(drag.ghost);
+    } else if(drag.ghost.parentNode !== col){
+      drag.ghost.parentNode.removeChild(drag.ghost);
+      col.appendChild(drag.ghost);
+    }
+    var a = Math.min(startM, endM), b = Math.max(startM, endM);
+    drag.ghost.style.top = ((a - g.min) / 60 * g.rowh) + "px";
+    drag.ghost.style.height = Math.max((b - a) / 60 * g.rowh, 16) + "px";
+    drag.ghost.textContent = fmtTime(a) + "–" + fmtTime(b);
+  }
+  function dropGhost(){
+    if(drag && drag.ghost && drag.ghost.parentNode) drag.ghost.parentNode.removeChild(drag.ghost);
+  }
+  function onPointerDown(e){
+    if(!finePointer() || e.button !== 0) return;
+    var col = e.target.closest ? e.target.closest(".daycol") : null;
+    if(!col) return;
+    var blk = e.target.closest(".blk");
+    var startM;
+
+    if(blk && blk.dataset.customId){
+      var c = state.custom.filter(function(x){ return x.id === blk.dataset.customId; })[0];
+      if(!c) return;
+      var resizing = e.target.classList.contains("blk-grip");
+      drag = {mode: resizing ? "resize" : "move", col: col, id: c.id,
+              startAt: toMin(c.start), endAt: toMin(c.end),
+              grabM: minutesAt(col, e.clientY), owner: ownerOf(col), moved: false,
+              // A block on several days keeps its days and just shifts in time;
+              // moving one of them to another day would be ambiguous.
+              oneDay: (c.days || []).length === 1, dayChanged: false};
+    } else if(blk){
+      return;                                   // course blocks are not draggable
+    } else {
+      startM = snap(minutesAt(col, e.clientY));
+      drag = {mode: "create", col: col, anchor: startM, owner: ownerOf(col), moved: false};
+      placeGhost(col, startM, startM + SNAP);
+    }
+    document.body.classList.add("dragging");
+    if(e.target.setPointerCapture) { try { e.target.setPointerCapture(e.pointerId); } catch(err){} }
+    e.preventDefault();
+  }
+  function colUnder(e){
+    // Allow a single-day block to be dragged into a different day column.
+    if(!document.elementFromPoint) return null;
+    var node = document.elementFromPoint(e.clientX, e.clientY);
+    var col = node && node.closest ? node.closest(".daycol") : null;
+    return (col && col.parentNode === drag.col.parentNode) ? col : null;
+  }
+  function onPointerMove(e){
+    if(!drag) return;
+    if(drag.mode === "move" && drag.oneDay){
+      var over = colUnder(e);
+      if(over && over !== drag.col){
+        drag.col = over;
+        drag.dayChanged = true;
+      }
+    }
+    var col = drag.col, now = minutesAt(col, e.clientY);
+    drag.moved = true;
+    if(drag.mode === "create"){
+      placeGhost(col, drag.anchor, snap(now));
+    } else if(drag.mode === "move"){
+      var shift = snap(now - drag.grabM);
+      placeGhost(col, drag.startAt + shift, drag.endAt + shift);
+    } else {
+      placeGhost(col, drag.startAt, Math.max(snap(now), drag.startAt + SNAP));
+    }
+  }
+  function onPointerUp(e){
+    if(!drag) return;
+    var d = drag, col = d.col, now = minutesAt(col, e.clientY);
+    dropGhost();
+    drag = null;
+    document.body.classList.remove("dragging");
+
+    if(d.mode === "create"){
+      var a = Math.min(d.anchor, snap(now)), b = Math.max(d.anchor, snap(now));
+      if(b - a < SNAP) return;                  // a click, not a drag
+      state.custom.push({id:"c"+Date.now(), label:"Office Hours", type:"oh",
+        days:[col.dataset.day], start:hhmm(a), end:hhmm(b), loc:"", who:d.owner});
+      renderAll(); save();
+      toast("Office hours " + fmtTime(a) + "–" + fmtTime(b) + " added. Drag to adjust.");
+      return;
+    }
+    if(!d.moved) return;
+    var c = state.custom.filter(function(x){ return x.id === d.id; })[0];
+    if(!c) return;
+    if(d.mode === "move"){
+      var shift = snap(now - d.grabM);
+      if(!shift && !d.dayChanged) return;
+      c.start = hhmm(d.startAt + shift);
+      c.end   = hhmm(d.endAt + shift);
+      if(d.oneDay && d.dayChanged) c.days = [col.dataset.day];
+    } else {
+      var end = Math.max(snap(now), d.startAt + SNAP);
+      if(end === d.endAt) return;
+      c.end = hhmm(end);
+    }
+    renderAll(); save();
+    toast(c.label + " now " + dayLabel(c.days) + " " + fmtTime(toMin(c.start)) + "–" + fmtTime(toMin(c.end)));
   }
 
   /* ===== help, walkthrough, FAQ ===== */
@@ -1253,7 +1808,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     {sel:"#p2", title:"Check what you are teaching",
      body:"Uncheck anything that is not yours. Edit corrects a wrong room, time, or title, and sets contact hours when they differ from the published credits. PT marks a section as overload."},
     {sel:"#p3", title:"Add your office hours",
-     body:"Choose days, set the times, and add the block. You can edit or remove any block afterwards, and the hours are totalled for you."},
+     body:"Choose days, set the times, and add the block — or drag across an empty part of the grid on the right. Blocks can be dragged to move and resized from the bottom edge, and the hours are totalled for you."},
     {sel:"#p4", title:"Your details and release time",
      body:"Office, phone, and email print at the top of the schedule. Add a line for any release time with what it was released for."},
     {sel:"#p5", title:"How it prints",
@@ -1274,12 +1829,20 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     $("helpModal").hidden = true;
     $("btnHelp").focus();
   }
+  var HELP_TABS = {walk:["paneWalk","tabWalk"], faq:["paneFaq","tabFaq"], news:["paneNews","tabNews"]};
   function showHelpTab(which){
-    var walk = which === "walk";
-    $("paneWalk").hidden = !walk; $("paneFaq").hidden = walk;
-    $("tabWalk").classList.toggle("on", walk); $("tabFaq").classList.toggle("on", !walk);
-    $("tabWalk").setAttribute("aria-selected", walk ? "true" : "false");
-    $("tabFaq").setAttribute("aria-selected", walk ? "false" : "true");
+    if(!HELP_TABS[which]) which = "walk";
+    Object.keys(HELP_TABS).forEach(function(k){
+      var on = k === which, pane = $(HELP_TABS[k][0]), tab = $(HELP_TABS[k][1]);
+      pane.hidden = !on;
+      tab.classList.toggle("on", on);
+      tab.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    if(which === "news") markNewsSeen();
+  }
+  function markNewsSeen(){
+    $("newsDot").hidden = true;
+    try{ localStorage.setItem("bcc-faculty-schedule-seen", APP_VERSION); }catch(e){}
   }
   function clearTourTarget(){
     if(tourTarget) tourTarget.classList.remove("tour-target");
@@ -1536,22 +2099,27 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
   function bindProfile(){
     var map={fName:"name",fTitle:"title",fDept:"dept",fOffice:"office",fPhone:"phone",fEmail:"email",
              fZoom:"zoom",fTermLabel:"termLabel",fTermStart:"termStart",fTermEnd:"termEnd",fNotes:"notes",
-             fLoadBase:"loadBase"};
+             fLoadBase:"loadBase", fOhRequired:"ohRequired", fSupervisors:"supervisors"};
     Object.keys(map).forEach(function(id){
       var node=$(id); node.value=state.profile[map[id]]||"";
       node.addEventListener("input", function(){
         state.profile[map[id]]=node.value;
         if(id==="fName") state.nameAuto = false;
         save();
-        if(["fName","fTitle","fDept","fOffice","fPhone","fEmail","fZoom","fTermLabel","fNotes","fLoadBase"].indexOf(id)>-1) renderSheets();
+        if(["fName","fTitle","fDept","fOffice","fPhone","fEmail","fZoom","fTermLabel","fNotes","fLoadBase","fOhRequired"].indexOf(id)>-1) renderAll();
       });
     });
   }
   function bindOptions(){
-    var map={optCode:"code",optCredits:"credits",optWeekend:"weekend",optColor:"color",optTable:"table",optLoad:"load",optSign:"sign",optFit:"fit",opt24:"h24"};
+    var map={optCode:"code",optCredits:"credits",optWeekend:"weekend",optColor:"color",optTable:"table",optLoad:"load",optSign:"sign",optFit:"fit",optDept:"dept",optPrintColor:"printColor",opt24:"h24"};
     Object.keys(map).forEach(function(id){
       var node=$(id); node.checked=!!state.opts[map[id]];
-      node.addEventListener("change", function(){ state.opts[map[id]]=node.checked; save(); renderAll(); });
+      node.addEventListener("change", function(){
+        state.opts[map[id]]=node.checked;
+        if(id==="optSign") syncSigControls();
+        if(id==="optPrintColor") $("colorHint").hidden = !node.checked;
+        save(); renderAll();
+      });
     });
     var dens=$("optDensity"); dens.value=String(state.opts.density);
     dens.addEventListener("change", function(){ state.opts.density=parseInt(dens.value,10); save(); renderSheets(); });
@@ -1587,11 +2155,21 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         renderAll(); save(); toast("Block added");
       }
     });
+    if(finePointer()) document.body.classList.add("can-drag");
+    var stage = $("sheets");
+    stage.addEventListener("pointerdown", onPointerDown);
+    stage.addEventListener("pointermove", onPointerMove);
+    stage.addEventListener("pointerup", onPointerUp);
+    stage.addEventListener("pointercancel", function(){
+      dropGhost(); drag = null; document.body.classList.remove("dragging");
+    });
     $("btnHelp").addEventListener("click", function(){ openHelp("walk"); });
     $("helpClose").addEventListener("click", closeHelp);
     $("helpBackdrop").addEventListener("click", closeHelp);
     $("tabWalk").addEventListener("click", function(){ showHelpTab("walk"); });
     $("tabFaq").addEventListener("click", function(){ showHelpTab("faq"); });
+    $("tabNews").addEventListener("click", function(){ showHelpTab("news"); });
+    $("btnNews").addEventListener("click", function(){ openHelp("news"); });
     $("startTour").addEventListener("click", startTour);
     $("tourNext").addEventListener("click", function(){ showTourStep(tourIdx + 1); });
     $("tourBack").addEventListener("click", function(){ showTourStep(tourIdx - 1); });
@@ -1630,6 +2208,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     $("btnIcs").addEventListener("click", exportIcs);
     $("btnCsv").addEventListener("click", exportCsv);
     $("btnPng").addEventListener("click", exportPng);
+    $("btnEmail").addEventListener("click", emailSchedule);
+    $("btnCopy").addEventListener("click", copySummary);
     $("btnSave").addEventListener("click", function(){
       download(slug(state.profile.name||"schedule")+"-draft.json","application/json", JSON.stringify(state,null,2));
     });
@@ -1669,11 +2249,21 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
   function init(){
     load();
     buildDayPicker();
+    initSigPad();
     bindProfile();
     bindOptions();
     bindButtons();
+    syncSigControls();
     renderFacultyResults("");
     renderAll();
+    // The dot appears only for someone who has used an earlier version — not
+    // for a first-time visitor, who has nothing to catch up on.
+    try{
+      var lastSeen = localStorage.getItem("bcc-faculty-schedule-seen");
+      var used = !!localStorage.getItem(STORAGE_KEY);
+      if(used && lastSeen !== APP_VERSION) $("newsDot").hidden = false;
+      if(!used) localStorage.setItem("bcc-faculty-schedule-seen", APP_VERSION);
+    }catch(e){}
     var seen = true;
     try{ seen = !!localStorage.getItem("bcc-faculty-schedule-tour"); }catch(e){}
     if(!seen && !state.faculty.length) $("firstRun").hidden = false;
