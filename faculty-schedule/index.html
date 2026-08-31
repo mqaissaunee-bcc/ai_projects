@@ -206,7 +206,7 @@ table.tbl tr.total-row td{border-top:2px solid var(--line-2);font-weight:700}
   width:min(680px,calc(100vw - 24px));max-height:min(84vh,760px);display:flex;flex-direction:column;
   background:var(--surface);border:1px solid var(--line-2);border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,.3)}
 /* a class rule with display beats the UA [hidden] rule, so restore it */
-.modal[hidden],.modal-backdrop[hidden],.tour-callout[hidden],.banner[hidden],.dot[hidden]{display:none!important}
+[hidden]{display:none!important}   /* a class rule with display beats the UA rule */
 .modal-head{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
 .modal-head h2{flex:1}
 .modal-body{padding:14px;overflow:auto}
@@ -489,8 +489,16 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
           <button class="btn" id="btnEmail" type="button">✉ Email to supervisor</button>
           <button class="btn ghost" id="btnCopy" type="button">Copy summary</button>
         </div>
-        <p class="hint">Email opens your mail program with a written summary ready to send.
-          Save the PDF first and attach it — a link like this cannot carry an attachment.</p>
+        <p class="hint">Opens your mail program with a written summary ready to send.
+          Save the PDF first and attach it — a mail link cannot carry an attachment.</p>
+        <div id="mailFallback" hidden>
+          <p class="hint" style="margin-top:6px">Nothing opened? Your computer may have no mail
+            program set up. Open a webmail compose window instead:</p>
+          <div class="btn-row">
+            <button class="btn sm ghost" id="btnOutlook" type="button">Outlook on the web</button>
+            <button class="btn sm ghost" id="btnGmail" type="button">Gmail</button>
+          </div>
+        </div>
         <p class="hint" id="colorHint" hidden>Full-colour printing needs
           <b>background graphics</b> (or "Print backgrounds") switched on in the print dialog,
           otherwise the blocks come out empty.</p>
@@ -591,7 +599,9 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         <p>Turn on the signature line under Display options and choose "Type my name" or "Draw my signature". A typed name prints in a script face; a drawn one is captured with your mouse, trackpad, or finger. The date fills in automatically and can be changed. Only your own line can be signed here — the chair and dean lines stay blank for them to sign.</p>
         <p>This is a convenience, not a verified signature. Nothing authenticates who typed or drew it, so check that your Institute Office accepts one before relying on it. A drawn signature is saved in this browser and is included if you save a draft file, so clear it before handing your laptop to someone else.</p></details>
       <details><summary>Can I email this to my chair or dean?</summary>
-        <p>Add their addresses under Your information, then use "Email to supervisor" in the export panel. Your mail program opens with a written summary of your courses, office hours, and load already in the message. Save the PDF first and attach it — a mail link cannot carry an attachment on its own. "Copy summary" puts the same text on the clipboard if you would rather paste it somewhere else.</p></details>
+        <p>Add their addresses under Your information, then use "Email to supervisor" in the export panel. Your mail program opens with a written summary of your courses, office hours, and load already in the message. Save the PDF first and attach it — a mail link cannot carry an attachment on its own.</p></details>
+      <details><summary>Nothing happened when I clicked Email to supervisor</summary>
+        <p>That button hands the message to whatever mail program your computer is set up to use. If none is set up — common when you read mail in a browser tab rather than an app — nothing appears to happen. Buttons for <b>Outlook on the web</b> and <b>Gmail</b> appear underneath after the first attempt; those open a compose window in a new tab instead. "Copy summary" puts the text on your clipboard to paste into any message.</p></details>
       <details><summary>Can I print it in color?</summary>
         <p>Yes — "Print the blocks in full color" under Display options. Colors need <b>background graphics</b> switched on in the print dialog; without that the blocks print empty, which is why the plain version uses dark text with a colored edge instead.</p></details>
       <details><summary>Is my contact information stored anywhere?</summary>
@@ -1551,28 +1561,54 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     if(p.notes){ lines.push(""); lines.push(p.notes); }
     return lines.join("\n");
   }
-  function emailSchedule(){
+  function mailParts(){
     var p = state.profile;
-    if(!state.faculty.length && !state.custom.length){ toast("Build a schedule first."); return; }
+    if(!state.faculty.length && !state.custom.length){ toast("Build a schedule first."); return null; }
+    // Addresses go in raw: percent-encoding the @ makes some mail clients balk.
     var to = (p.supervisors || "").split(/[,;\s]+/).filter(Boolean).join(",");
     if(!to){
       toast("Add a supervisor email in step 4 first.");
       $("p4").open = true; $("fSupervisors").focus();
-      return;
+      return null;
     }
-    var subject = (p.termLabel || "Teaching") + " schedule — " + (p.name || state.faculty[0] || "");
-    var body = summaryText() + "\n\nThe printable schedule is attached.\n";
-    // Mail clients and browsers truncate very long mailto URLs.
-    if(body.length > 1600) body = body.slice(0, 1600) + "\n… (full details on the attached schedule)\n";
-    var url = "mailto:" + encodeURIComponent(to).replace(/%2C/g, ",") +
-              "?subject=" + encodeURIComponent(subject) +
-              "&body=" + encodeURIComponent(body);
-    // An anchor click is more reliable than location.href: some browsers block
-    // scripted navigation to mailto:, and this also works inside an iframe.
+    return {to: to,
+            subject: (p.termLabel || "Teaching") + " schedule — " + (p.name || state.faculty[0] || ""),
+            body: summaryText() + "\n\nThe printable schedule is attached.\n"};
+  }
+  function fitBody(prefixLen, body, limit){
+    // Windows passes mailto: to the shell with roughly a 2,000 character
+    // ceiling, and encoding can triple the length of the text. Over that the
+    // link silently does nothing, so trim until the whole URL fits.
+    var trimmed = body;
+    while(prefixLen + encodeURIComponent(trimmed).length > limit && trimmed.length > 200){
+      trimmed = trimmed.slice(0, Math.floor(trimmed.length * 0.85));
+    }
+    if(trimmed !== body) trimmed += "\n… full details on the attached schedule.\n";
+    return trimmed;
+  }
+  function openLink(url){
     var a = document.createElement("a");
     a.href = url; a.rel = "noopener";
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }
+  function emailSchedule(){
+    var m = mailParts(); if(!m) return;
+    var prefix = ("mailto:" + m.to + "?subject=" + encodeURIComponent(m.subject) + "&body=").length;
+    var body = fitBody(prefix, m.body, 1900);
+    openLink("mailto:" + m.to + "?subject=" + encodeURIComponent(m.subject) +
+             "&body=" + encodeURIComponent(body));
+    $("mailFallback").hidden = false;
     toast("Opening your mail program. Attach the saved PDF before sending.");
+  }
+  function webmail(which){
+    var m = mailParts(); if(!m) return;
+    var body = fitBody(400, m.body, 3500);
+    var url = which === "gmail"
+      ? "https://mail.google.com/mail/?view=cm&fs=1&to=" + encodeURIComponent(m.to) +
+        "&su=" + encodeURIComponent(m.subject) + "&body=" + encodeURIComponent(body)
+      : "https://outlook.office.com/mail/deeplink/compose?to=" + encodeURIComponent(m.to) +
+        "&subject=" + encodeURIComponent(m.subject) + "&body=" + encodeURIComponent(body);
+    window.open(url, "_blank", "noopener");
   }
   function copySummary(){
     var text = summaryText();
@@ -2210,6 +2246,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     $("btnPng").addEventListener("click", exportPng);
     $("btnEmail").addEventListener("click", emailSchedule);
     $("btnCopy").addEventListener("click", copySummary);
+    $("btnOutlook").addEventListener("click", function(){ webmail("outlook"); });
+    $("btnGmail").addEventListener("click", function(){ webmail("gmail"); });
     $("btnSave").addEventListener("click", function(){
       download(slug(state.profile.name||"schedule")+"-draft.json","application/json", JSON.stringify(state,null,2));
     });
