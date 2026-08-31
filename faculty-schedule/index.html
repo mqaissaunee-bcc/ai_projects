@@ -191,6 +191,36 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
 .print-measure table.tbl{font-size:8.5pt}
 .print-measure .pt-list,.print-measure .load-warn{font-size:8.5pt}
 .print-measure .sig-row{margin-top:22pt}
+.topbar-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:70}
+.modal{position:fixed;z-index:71;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:min(680px,calc(100vw - 24px));max-height:min(84vh,760px);display:flex;flex-direction:column;
+  background:var(--surface);border:1px solid var(--line-2);border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,.3)}
+/* a class rule with display beats the UA [hidden] rule, so restore it */
+.modal[hidden],.modal-backdrop[hidden],.tour-callout[hidden],.banner[hidden]{display:none!important}
+.modal-head{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.modal-head h2{flex:1}
+.modal-body{padding:14px;overflow:auto}
+.modal-body p{margin:0 0 10px}
+.tabs{display:flex;gap:4px;padding:8px 14px 0;border-bottom:1px solid var(--line)}
+.tab{border:1px solid transparent;border-bottom:0;background:transparent;padding:8px 13px;min-height:40px;
+  border-radius:8px 8px 0 0;font-size:.86rem;font-weight:600;color:var(--ink-2)}
+.tab.on{background:var(--surface-2);border-color:var(--line);color:var(--ink)}
+ol.walk{margin:0 0 12px;padding-left:22px}
+ol.walk li{margin-bottom:7px;font-size:.88rem}
+.modal-body details{border:1px solid var(--line);border-radius:8px;margin-bottom:7px;background:var(--surface)}
+.modal-body details summary{cursor:pointer;padding:10px 12px;min-height:44px;display:flex;align-items:center;
+  font-weight:600;font-size:.87rem;border-radius:8px}
+.modal-body details[open] summary{border-bottom:1px solid var(--line)}
+.modal-body details p{margin:0;padding:10px 12px;font-size:.85rem;color:var(--ink-2)}
+
+.tour-callout{position:absolute;z-index:72;width:min(330px,calc(100vw - 24px));background:var(--surface);
+  border:1px solid var(--accent);border-radius:10px;padding:12px 13px;box-shadow:0 10px 30px rgba(0,0,0,.22)}
+.tour-callout h3{margin:2px 0 6px;font-size:1rem}
+.tour-callout p{margin:0 0 10px;font-size:.85rem;color:var(--ink-2)}
+.tour-step{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3)}
+.tour-actions{display:flex;gap:6px;align-items:center}
+.tour-target{outline:3px solid var(--accent);outline-offset:3px;border-radius:var(--radius)}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);
   padding:10px 16px;border-radius:999px;font-size:.85rem;box-shadow:var(--shadow);z-index:60;opacity:0;pointer-events:none;transition:opacity .2s}
 .toast.show{opacity:1}
@@ -240,7 +270,10 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
     <h1>Faculty Schedule Builder</h1>
     <span class="sub">Brookdale Community College</span>
   </div>
-  <div class="status" id="dataStatus" aria-live="polite"></div>
+  <div class="topbar-right">
+    <button class="btn sm ghost no-print" id="btnHelp" type="button">? Help</button>
+    <div class="status" id="dataStatus" aria-live="polite"></div>
+  </div>
 </header>
 
 <div class="layout">
@@ -400,9 +433,83 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
       <span class="spacer"></span>
       <button class="btn ghost sm" id="btnLoadData" type="button">Load a different data file</button>
     </div>
+    <div class="banner info no-print" id="firstRun" hidden>
+      First time here? The guided tour takes about a minute.
+      <button class="btn sm" id="firstRunTour" type="button" style="margin-left:8px">Show me around</button>
+      <button class="btn sm ghost" id="firstRunSkip" type="button">No thanks</button>
+    </div>
     <div id="banners"></div>
     <div id="sheets"></div>
   </main>
+</div>
+
+<div class="tour-callout no-print" id="tourCallout" role="dialog" aria-modal="false" aria-labelledby="tourTitle" hidden>
+  <div class="tour-step" id="tourCount"></div>
+  <h3 id="tourTitle"></h3>
+  <p id="tourBody"></p>
+  <div class="tour-actions">
+    <button class="btn sm ghost" id="tourSkip" type="button">Skip</button>
+    <span style="flex:1"></span>
+    <button class="btn sm ghost" id="tourBack" type="button">Back</button>
+    <button class="btn sm primary" id="tourNext" type="button">Next</button>
+  </div>
+</div>
+
+<div class="modal-backdrop no-print" id="helpBackdrop" hidden></div>
+<div class="modal no-print" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle" hidden>
+  <div class="modal-head">
+    <h2 id="helpTitle">Help</h2>
+    <button class="btn sm ghost" id="helpClose" type="button" aria-label="Close help">✕</button>
+  </div>
+  <div class="tabs" role="tablist">
+    <button class="tab on" id="tabWalk" role="tab" aria-selected="true" aria-controls="paneWalk" type="button">Walkthrough</button>
+    <button class="tab" id="tabFaq" role="tab" aria-selected="false" aria-controls="paneFaq" type="button">Questions</button>
+  </div>
+  <div class="modal-body">
+    <section id="paneWalk" role="tabpanel" aria-labelledby="tabWalk">
+      <p>Building a schedule takes about two minutes. The six numbered panels on the left run in order.</p>
+      <ol class="walk">
+        <li><b>Find your sections.</b> Type your last name and pick yourself from the list. Your sections load automatically, and your name fills in for the printed sheet.</li>
+        <li><b>Check the sections.</b> Uncheck anything you are not teaching. <b>Edit</b> fixes a wrong room, time, or title, and sets contact hours when they differ from the published credits. <b>PT</b> marks a section as overload.</li>
+        <li><b>Add office hours.</b> Pick days, set a start and end, and add the block. Every block can be edited or removed later.</li>
+        <li><b>Fill in your information.</b> Office, phone, email, and any release time with what it was released for.</li>
+        <li><b>Set display options</b> if you want a signature line or a different grid density.</li>
+        <li><b>Export.</b> Print to PDF, or download a calendar file, image, or spreadsheet.</li>
+      </ol>
+      <p>Everything you enter is kept in this browser only, and it is still here next time you open the page.</p>
+      <button class="btn primary" id="startTour" type="button">Start the guided tour</button>
+    </section>
+    <section id="paneFaq" role="tabpanel" aria-labelledby="tabFaq" hidden>
+      <details><summary>My name is missing, or appears twice</summary>
+        <p>The published schedule writes instructor names inconsistently — some sections say "Jane Smith" and others "Smith, J". The tool merges those automatically where the match is unambiguous. If your name is still split, or a section is under a colleague's name, that is how the college's data has it. Tell your department chair so the source can be corrected.</p></details>
+      <details><summary>A course has the wrong room, time, or title</summary>
+        <p>Press <b>Edit</b> on that section. You can change days, start and end times, room, and the printed title, and add a second meeting pattern for a course that meets at two different times. Your corrections are saved and survive a page reload.</p></details>
+      <details><summary>Why is my 3-credit course counted as 4 hours?</summary>
+        <p>Load is counted in contact hours, but the schedule report only publishes credits, and the two differ for lab courses. Open <b>Edit</b> on the section and set "Contact hours for load" to the right number. The published credit value still prints in the course table.</p></details>
+      <details><summary>How do I mark an overload or part-time section?</summary>
+        <p>The <b>PT</b> button next to a section moves the whole thing out of your load. If only part of it is overload — a 4-hour course whose lab is paid separately — open <b>Edit</b> and put that number in "hours counted as PT / overload". The rest stays on load.</p></details>
+      <details><summary>Where do I enter release time?</summary>
+        <p>Under <b>Your information</b>, in the Load and release time section. Add a line for each assignment with the credits and what they were released for. Each line lowers the contact hours you owe, and the reasons print on the schedule.</p></details>
+      <details><summary>My 7-week or 11-week course is missing</summary>
+        <p>The tool currently carries 15-week sections only. Sections in other parts of term will appear once those are added to the schedule data — no change to the tool is needed.</p></details>
+      <details><summary>Clicking Print does not produce a PDF</summary>
+        <p>The button opens your browser's print dialog; the PDF comes from there. On Windows set the <b>destination</b> to "Save as PDF" or "Microsoft Print to PDF", then Save. If the destination is a physical printer, it prints on paper instead. Keep the orientation on landscape.</p></details>
+      <details><summary>It printed on two pages</summary>
+        <p>"Fit the printed schedule to one page" is on by default under Display options. It condenses the course table and, if that is not enough, shrinks the sheet. A very full schedule with office hours, a signature line, and a long course list can still exceed one page, in which case the tool tells you rather than printing something unreadable.</p></details>
+      <details><summary>Can I put office hours on one person's sheet only?</summary>
+        <p>Yes, when more than one person is selected. A "Whose schedule" picker appears in the office hours panel: choose a person, or "Everyone shown" for something like a department meeting.</p></details>
+      <details><summary>The calendar export asks for term dates</summary>
+        <p>A calendar file needs to know when the term starts and ends to repeat your classes weekly. Fill in Term start and Term end under Your information, then export again.</p></details>
+      <details><summary>The image download has no course table</summary>
+        <p>That is deliberate. The image is meant as a door sign — the weekly grid and nothing else. Use Print for the full sheet.</p></details>
+      <details><summary>Is my contact information stored anywhere?</summary>
+        <p>No. Course data is public and comes from the college's published schedule. Everything you type — office, phone, email, office hours — stays in your own browser and is never sent anywhere. Use "Save draft file" to move it to another computer, or "Reset everything" to clear it.</p></details>
+      <details><summary>Do I have to redo this every semester?</summary>
+        <p>No. Your contact block, office hours, and release time stay put. When the new term's data loads you pick your sections again and the rest is already filled in.</p></details>
+      <details><summary>How current is the course data?</summary>
+        <p>The header shows the date the schedule data was pulled. Rooms and times change during drop/add, so check the sheet against reality before you post it on a door.</p></details>
+    </section>
+  </div>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -1139,6 +1246,91 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
     renderChips(); renderSectionList(); renderWhoPicker(); renderCustomList(); renderReleaseList(); renderBanners(); renderSheets();
   }
 
+  /* ===== help, walkthrough, FAQ ===== */
+  var TOUR = [
+    {sel:"#p1", title:"Start with your name",
+     body:"Type your last name and pick yourself. Your sections load automatically and your printed name is filled in."},
+    {sel:"#p2", title:"Check what you are teaching",
+     body:"Uncheck anything that is not yours. Edit corrects a wrong room, time, or title, and sets contact hours when they differ from the published credits. PT marks a section as overload."},
+    {sel:"#p3", title:"Add your office hours",
+     body:"Choose days, set the times, and add the block. You can edit or remove any block afterwards, and the hours are totalled for you."},
+    {sel:"#p4", title:"Your details and release time",
+     body:"Office, phone, and email print at the top of the schedule. Add a line for any release time with what it was released for."},
+    {sel:"#p5", title:"How it prints",
+     body:"Fitting to one page is already on. Turn on the signature line here if your schedule needs approval."},
+    {sel:"#p6", title:"Export it",
+     body:"Print opens your browser's dialog — set the destination to Save as PDF to get a file. Calendar, image, and spreadsheet downloads are here too."}
+  ];
+  var tourIdx = -1, tourTarget = null;
+
+  function openHelp(tab){
+    $("helpBackdrop").hidden = false;
+    $("helpModal").hidden = false;
+    showHelpTab(tab || "walk");
+    $("helpClose").focus();
+  }
+  function closeHelp(){
+    $("helpBackdrop").hidden = true;
+    $("helpModal").hidden = true;
+    $("btnHelp").focus();
+  }
+  function showHelpTab(which){
+    var walk = which === "walk";
+    $("paneWalk").hidden = !walk; $("paneFaq").hidden = walk;
+    $("tabWalk").classList.toggle("on", walk); $("tabFaq").classList.toggle("on", !walk);
+    $("tabWalk").setAttribute("aria-selected", walk ? "true" : "false");
+    $("tabFaq").setAttribute("aria-selected", walk ? "false" : "true");
+  }
+  function clearTourTarget(){
+    if(tourTarget) tourTarget.classList.remove("tour-target");
+    tourTarget = null;
+  }
+  function endTour(){
+    clearTourTarget();
+    $("tourCallout").hidden = true;
+    tourIdx = -1;
+    try{ localStorage.setItem("bcc-faculty-schedule-tour", "seen"); }catch(e){}
+  }
+  function showTourStep(i){
+    if(i < 0 || i >= TOUR.length){ endTour(); return; }
+    tourIdx = i;
+    var step = TOUR[i], el2 = document.querySelector(step.sel);
+    if(!el2){ endTour(); return; }
+    clearTourTarget();
+    if(el2.tagName === "DETAILS") el2.open = true;
+    el2.classList.add("tour-target");
+    tourTarget = el2;
+    $("tourCount").textContent = "Step " + (i+1) + " of " + TOUR.length;
+    $("tourTitle").textContent = step.title;
+    $("tourBody").textContent = step.body;
+    $("tourBack").hidden = i === 0;
+    $("tourNext").textContent = i === TOUR.length - 1 ? "Done" : "Next";
+    var call = $("tourCallout");
+    call.hidden = false;
+    if(typeof el2.scrollIntoView === "function"){
+      try{ el2.scrollIntoView({block:"nearest", behavior:"smooth"}); }
+      catch(e){ el2.scrollIntoView(); }
+    }
+    // place beside the panel on a wide screen, below it on a narrow one
+    var r = el2.getBoundingClientRect(), cw = call.offsetWidth, ch = call.offsetHeight;
+    var top, left;
+    if(window.innerWidth > 900 && r.right + cw + 20 < window.innerWidth){
+      left = r.right + 14 + window.scrollX;
+      top  = r.top + window.scrollY;
+    } else {
+      left = Math.max(10, Math.min(r.left + window.scrollX, window.innerWidth - cw - 12));
+      top  = r.bottom + 10 + window.scrollY;
+    }
+    top = Math.max(window.scrollY + 8, Math.min(top, window.scrollY + window.innerHeight - ch - 10));
+    call.style.left = left + "px";
+    call.style.top = top + "px";
+  }
+  function startTour(){
+    closeHelp();
+    $("firstRun").hidden = true;
+    showTourStep(0);
+  }
+
   /* ===== fit to one page ===== */
   // Letter landscape at 96dpi, less the 0.45in margins set in @page.
   var PAGE_W = (11 - 0.9) * 96;
@@ -1395,6 +1587,26 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
         renderAll(); save(); toast("Block added");
       }
     });
+    $("btnHelp").addEventListener("click", function(){ openHelp("walk"); });
+    $("helpClose").addEventListener("click", closeHelp);
+    $("helpBackdrop").addEventListener("click", closeHelp);
+    $("tabWalk").addEventListener("click", function(){ showHelpTab("walk"); });
+    $("tabFaq").addEventListener("click", function(){ showHelpTab("faq"); });
+    $("startTour").addEventListener("click", startTour);
+    $("tourNext").addEventListener("click", function(){ showTourStep(tourIdx + 1); });
+    $("tourBack").addEventListener("click", function(){ showTourStep(tourIdx - 1); });
+    $("tourSkip").addEventListener("click", endTour);
+    $("firstRunTour").addEventListener("click", startTour);
+    $("firstRunSkip").addEventListener("click", function(){
+      $("firstRun").hidden = true;
+      try{ localStorage.setItem("bcc-faculty-schedule-tour","seen"); }catch(e){}
+    });
+    document.addEventListener("keydown", function(e){
+      if(e.key !== "Escape") return;
+      if(!$("helpModal").hidden) closeHelp();
+      else if(!$("tourCallout").hidden) endTour();
+    });
+    window.addEventListener("resize", function(){ if(tourIdx > -1) showTourStep(tourIdx); });
     $("addRelease").addEventListener("click", function(){
       var cr=parseFloat($("rCredits").value);
       if(isNaN(cr) || cr<=0){ toast("Enter the number of credits released."); $("rCredits").focus(); return; }
@@ -1462,6 +1674,9 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
     bindButtons();
     renderFacultyResults("");
     renderAll();
+    var seen = true;
+    try{ seen = !!localStorage.getItem("bcc-faculty-schedule-tour"); }catch(e){}
+    if(!seen && !state.faculty.length) $("firstRun").hidden = false;
     tryFetch(0);
   }
   if(document.readyState==="loading"){ document.addEventListener("DOMContentLoaded", init); } else { init(); }
