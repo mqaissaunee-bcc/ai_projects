@@ -162,6 +162,20 @@ textarea{min-height:60px;resize:vertical}
 .grid .timeslot{height:var(--rowh);border-bottom:1px solid var(--line);font-size:.68rem;color:var(--ink-3);
   padding:2px 6px 0 0;text-align:right;font-variant-numeric:tabular-nums}
 .grid .daycol{position:relative;border-left:1px solid var(--line)}
+.grid .online-label{font-size:.68rem;color:var(--ink-3);text-align:right;padding:5px 6px 5px 0;
+  border-bottom:1px solid var(--line-2);border-right:1px solid var(--line-2)}
+.grid .online-lane{display:flex;flex-wrap:wrap;gap:4px;padding:4px 6px;
+  border-bottom:1px solid var(--line-2);background:var(--surface-2)}
+.online-chip{font-size:.7rem;border:1px dashed var(--line-2);border-radius:5px;padding:1px 6px;
+  background:var(--surface);color:var(--ink-2)}
+.online-chip b{font-weight:700;color:var(--ink)}
+.grid .onlinecol{background:repeating-linear-gradient(135deg,transparent,transparent 7px,var(--surface-2) 7px,var(--surface-2) 14px);
+  padding:4px 3px;display:flex;flex-direction:column;gap:4px}
+.online-block{border:1px dashed var(--line-2);border-radius:6px;padding:4px 6px;background:var(--surface);
+  font-size:.7rem;line-height:1.25;color:var(--ink-2)}
+.online-block b{display:block;font-size:.74rem;color:var(--ink)}
+.online-block span{display:block}   /* .l3 only gets display:block inside .blk */
+.online-block .muted{opacity:.75;font-style:italic}
 .grid .daycol .line{height:var(--rowh);border-bottom:1px solid var(--line)}
 .grid .daycol .line.half{border-bottom:1px dotted var(--line)}
 .blk{position:absolute;left:2px;right:2px;min-height:20px;border-radius:6px;padding:3px 5px;overflow:hidden;color:#fff;
@@ -198,6 +212,7 @@ table.tbl tr.total-row td{border-top:2px solid var(--line-2);font-weight:700}
 .print-measure .blk{font-size:7.5pt;line-height:1.2;padding:2px 4px}
 .print-measure .blk b{font-size:8pt}
 .print-measure .blk .l2,.print-measure .blk .l3{font-size:7pt}
+.print-measure .online-chip,.print-measure .online-block{font-size:7pt}
 .print-measure table.tbl{font-size:8.5pt}
 .print-measure .pt-list,.print-measure .load-warn{font-size:8.5pt}
 .print-measure .sig-row{margin-top:22pt}
@@ -282,6 +297,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     border-color:var(--blkc)!important}
   body.color-print .blk b,body.color-print .blk .l2,body.color-print .blk .l3{color:#fff!important}
   .blk .l2,.blk .l3{font-size:7pt;opacity:1}
+  .online-chip,.online-block{font-size:7pt;background:#fff!important}
+  .grid .onlinecol,.grid .online-lane{background:#fff!important}
   table.tbl{font-size:8.5pt}
   .sig-row{break-inside:avoid;margin-top:22pt}
   .sig-img{print-color-adjust:exact;-webkit-print-color-adjust:exact}
@@ -467,7 +484,14 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         <label class="check"><input type="checkbox" id="optDept" checked> Lead with a department summary when several people are shown</label>
 
         <label class="check"><input type="checkbox" id="opt24"> Use 24-hour times</label>
-        <div class="field" style="margin-top:8px"><label for="optDensity">Grid height</label>
+        <div class="field" style="margin-top:8px"><label for="optOnline">Online courses with no meeting time</label>
+          <select id="optOnline">
+            <option value="banner">Show in a band across the top of the grid</option>
+            <option value="column">Show in a column beside the weekdays</option>
+            <option value="list">List them under the grid</option>
+          </select>
+        </div>
+        <div class="field"><label for="optDensity">Grid height</label>
           <select id="optDensity">
             <option value="46">Compact</option>
             <option value="58" selected>Standard</option>
@@ -581,6 +605,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         <p>Under <b>Your information</b>, in the Load and release time section. Add a line for each assignment with the credits and what they were released for. Each line lowers the contact hours you owe, and the reasons print on the schedule.</p></details>
       <details><summary>My 7-week or 11-week course is missing</summary>
         <p>The tool currently carries 15-week sections only, and says so in a notice at the top. Sections in other parts of term will appear once those are added to the schedule data — no change to the tool is needed. Until then, add a short-session course to your sheet as a block in step 3.</p></details>
+      <details><summary>Where do my online courses appear?</summary>
+        <p>By default they sit in a band across the top of the weekly grid, which shows them as part of your schedule without claiming a meeting time they do not have. Under Display options you can move them to a column beside the weekdays instead, or list them under the grid. A course with no meeting time cannot become a calendar event, so the calendar export leaves those out and names them in a note.</p></details>
       <details><summary>Does the calendar export know about holidays?</summary>
         <p>Yes. It leaves out the Thanksgiving recess, and it handles the December schedule changes: because 22 December runs a Thursday schedule and 23 December a Friday one, your Tuesday and Wednesday classes are skipped on those dates and your Thursday and Friday classes are added to them. The dates print at the bottom of the schedule as well.</p></details>
       <details><summary>Clicking Print does not produce a PDF</summary>
@@ -621,6 +647,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
           <li>The calendar export knows the term calendar: it skips the Thanksgiving recess, and a
             Thursday class correctly appears on Tuesday 22 December when that day runs a Thursday schedule.</li>
           <li>A notice makes clear that only 15-week sections are included.</li>
+          <li>Online courses with no meeting time now appear on the grid — in a band across the top,
+            or a column beside the weekdays, your choice under Display options.</li>
         </ul></div>
 
       <div class="rel"><h3>Version 1.5</h3>
@@ -713,7 +741,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     sig: {mode:"blank", typed:"", drawn:"", date:""},   // faculty signature only
     profile: {name:"",title:"",dept:"",office:"",phone:"",email:"",zoom:"",termLabel:"",termStart:"",termEnd:"",notes:"",loadBase:"15",ohRequired:"5",released:"",releasedFor:""},
     pot: "15W",
-    opts: {code:true, credits:true, weekend:false, color:true, table:true, h24:false, load:true, sign:false, fit:true, dept:true, printColor:false, density:58}
+    opts: {code:true, credits:true, weekend:false, color:true, table:true, h24:false, load:true, sign:false, fit:true, dept:true, printColor:false, online:"banner", density:58}
   };
 
   /* ===== small helpers ===== */
@@ -1135,16 +1163,37 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     });
     return sorted;
   }
-  function buildGrid(blocks){
+  function buildGrid(blocks, online){
     var wrap=el("div","grid-wrap");
     var bounds=gridBounds(blocks), cols=daysShown(blocks), rowh=state.opts.density;
+    var mode = state.opts.online || "banner";
+    var showOnline = online && online.length && mode !== "list";
+    var asColumn = showOnline && mode === "column";
     var grid=el("div","grid");
     grid.style.setProperty("--rowh", rowh+"px");
     grid.dataset.min = bounds.min; grid.dataset.rowh = rowh;
-    grid.style.gridTemplateColumns="62px repeat("+cols.length+",minmax(90px,1fr))";
+    grid.style.gridTemplateColumns="62px repeat("+(cols.length + (asColumn?1:0))+",minmax(90px,1fr))";
     var hours=(bounds.max-bounds.min)/60;
     grid.appendChild(el("div","hcell corner",""));
     cols.forEach(function(d){ grid.appendChild(el("div","hcell",d.short)); });
+    if(asColumn) grid.appendChild(el("div","hcell","Online"));
+
+    // A band under the day headers: present on the grid without claiming a time.
+    if(showOnline && !asColumn){
+      grid.appendChild(el("div","online-label","Online"));
+      var lane = el("div","online-lane");
+      lane.style.gridColumn = "2 / -1";
+      online.forEach(function(e){
+        var c = el("div","online-chip");
+        // Someone can teach the same course in person and online, so the
+        // section suffix has to be here or the two are indistinguishable.
+        c.appendChild(el("b",null, e.course));
+        if(state.opts.code) c.appendChild(el("span",null, " " + e.id.replace(e.course+"-","")));
+        c.appendChild(el("span",null, " · " + e.title));
+        lane.appendChild(c);
+      });
+      grid.appendChild(lane);
+    }
     var timecol=el("div","timecol");
     for(var h=0;h<hours;h++){
       var t=el("div","timeslot", fmtTime(bounds.min+h*60));
@@ -1183,6 +1232,18 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       });
       grid.appendChild(col);
     });
+    if(asColumn){
+      var oc = el("div","daycol onlinecol");
+      online.forEach(function(e){
+        var c = el("div","online-block");
+        c.appendChild(el("b",null, e.course));
+        c.appendChild(el("span","l3", e.id.replace(e.course+"-","")));
+        c.appendChild(el("span","l3", e.title));
+        c.appendChild(el("span","l3 muted", "asynchronous"));
+        oc.appendChild(c);
+      });
+      grid.appendChild(oc);
+    }
     wrap.appendChild(grid);
     return wrap;
   }
@@ -1330,8 +1391,9 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     sheet.appendChild(head);
 
     var blocks=blocksFor(state.faculty.length>1 ? name : null);
+    var online=unscheduledFor(state.faculty.length>1 ? name : null);
     if(blocks.length){
-      sheet.appendChild(buildGrid(blocks));
+      sheet.appendChild(buildGrid(blocks, online));
     } else {
       sheet.appendChild(el("p","empty","No scheduled meeting times yet. Select sections or add office hours."));
     }
@@ -1346,7 +1408,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       (cal.swaps || []).forEach(function(s){ notes.push(s.date + " — " + (s.label || "schedule change")); });
       sheet.appendChild(el("div","cal-note", notes.join("  ·  ")));
     }
-    var unsched=unscheduledFor(state.faculty.length>1 ? name : null);
+    // With the band or column showing them, the list below would just repeat it.
+    var unsched = (state.opts.online === "list" || !blocks.length) ? online : [];
     if(unsched.length){
       var box=el("div","aside-list");
       box.appendChild(el("h3",null,"Not on the weekly grid"));
@@ -2012,10 +2075,20 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         lines.push("END:VEVENT");
       });
     });
+    var async = unscheduledFor(state.faculty.length>1 ? null : (state.faculty[0]||null));
+    if(async.length){
+      // No start time means no event. Recorded as a comment rather than
+      // invented as an all-day entry repeating for fifteen weeks.
+      lines.push("X-COMMENT:Not included (no meeting time): " +
+        async.map(function(e){ return e.id; }).join(" "));
+    }
     lines.push("END:VCALENDAR");
     if(n===0){ toast("Nothing to export yet."); return; }
+    var skipped = unscheduledFor(state.faculty.length>1 ? null : (state.faculty[0]||null));
     download(slug(p.name||state.faculty[0]||"schedule")+"-schedule.ics","text/calendar", lines.join("\r\n"));
-    toast(n+" recurring events exported");
+    toast(n + " events exported" + (skipped.length
+      ? ". " + skipped.length + " online course" + (skipped.length===1?"":"s") + " with no meeting time left out."
+      : ""));
   }
   function exportCsv(){
     var rows=[["Type","Section","Course","Days","Start","End","Room","Mode","Part of term","Credits","Contact hours","Load hours","PT hours","CRN"]];
@@ -2056,6 +2129,11 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     g.font="14px system-ui, sans-serif"; g.fillStyle=muted;
     g.fillText([p.title,p.dept].filter(Boolean).join(" · "), 16, 52);
     g.fillText([p.termLabel||(DATA&&DATA.termLabel)||"", p.office?"Office "+p.office:"", p.email||""].filter(Boolean).join("   ·   "), 16, 72);
+    var onlineList = unscheduledFor(state.faculty.length>1 ? null : (state.faculty[0]||null));
+    if(onlineList.length && (state.opts.online||"banner") !== "list"){
+      g.font="12px system-ui, sans-serif"; g.fillStyle=muted;
+      g.fillText("Online: " + onlineList.map(function(e){ return e.course; }).join(", "), 16, 92);
+    }
     g.strokeStyle=line; g.lineWidth=1;
     g.font="600 13px system-ui, sans-serif"; g.fillStyle=ink; g.textAlign="center";
     cols.forEach(function(d,i){ g.fillText(d.short, padL+i*colW+colW/2, padT-14); });
@@ -2178,6 +2256,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         save(); renderAll();
       });
     });
+    var onl=$("optOnline"); onl.value=state.opts.online||"banner";
+    onl.addEventListener("change", function(){ state.opts.online=onl.value; save(); renderSheets(); });
     var dens=$("optDensity"); dens.value=String(state.opts.density);
     dens.addEventListener("change", function(){ state.opts.density=parseInt(dens.value,10); save(); renderSheets(); });
     var pot=$("potFilter"); pot.value=state.pot;
