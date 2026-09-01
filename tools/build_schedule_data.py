@@ -66,6 +66,10 @@ DAY_TOKENS = {"M": "M", "MO": "M", "MON": "M", "MONDAY": "M",
 
 ONLINE_CAMPUS = {"DE", "ONL", "ONLINE", "WEB"}
 HYBRID_CAMPUS = {"ONLH", "HYB"}
+# Campus codes that describe a delivery mode rather than a place. The official
+# faculty schedule form writes "Remote Live" where a room would go for ORLV.
+CAMPUS_ROOM_LABEL = {"ORLV": "Remote Live"}
+SYNC_ONLINE_CAMPUS = {"ORLV"}
 VALID_MODES = {"inperson", "online-async", "online-sync", "hybrid"}
 MODE_HINTS = [
     (r"asynchron|self.?paced|online.?async", "online-async"),
@@ -249,6 +253,8 @@ def infer_mode(mode_raw, mtype_raw, campus, days, start):
                 if re.search(pat, s, re.I):
                     return mode
     c = (campus or "").upper()
+    if c in SYNC_ONLINE_CAMPUS:
+        return "online-sync"
     if c in ONLINE_CAMPUS:
         return "online-sync" if days else "online-async"
     if c in HYBRID_CAMPUS:
@@ -359,6 +365,8 @@ def row_meetings(row, mapping):
         bld = bparts[i] if i < len(bparts) else None
         rm = rparts[i] if i < len(rparts) else None
         label = " ".join(str(x).strip() for x in (bld, rm) if not blank(x)) or None
+        if label is None:
+            label = CAMPUS_ROOM_LABEL.get(str(get(row, mapping, "campus") or "").strip().upper())
         gap = label is None and (any(not blank(x) for x in rparts) or any(not blank(x) for x in bparts))
         out.append({"d": days, "s": hhmm(st), "e": hhmm(en), "rm": label,
                     "est": st is not None and en is None, "_room_gap": gap})
@@ -454,6 +462,8 @@ def main():
     ap.add_argument("--default-pot", default="15W", help="used when the sheet has no part-of-term column")
     ap.add_argument("--names", default="auto", choices=["auto", "first-last", "as-is"],
                     help="auto/first-last flip 'Doe, Jane' to 'Jane Doe'; as-is leaves names alone")
+    ap.add_argument("--calendar", default=None,
+                    help="JSON with term start/end, closures, and swap days (see tools/calendar-26FA.json)")
     ap.add_argument("--keep-cancelled", action="store_true")
     ap.add_argument("--inspect", action="store_true", help="report column mapping and samples, write nothing")
     args = ap.parse_args()
@@ -528,12 +538,17 @@ def main():
     no_instr = sum(1 for s in sections if not s["i"])
     multi = sum(1 for s in sections if len(s["m"]) > 1)
 
+    calendar = None
+    if args.calendar:
+        with open(args.calendar) as cf:
+            calendar = json.load(cf)
     out = {
         "term": args.term,
         "termLabel": args.term_label or args.term,
         "generated": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
         "source": ", ".join(os.path.basename(p) for p in args.spreadsheet),
         "meetingSource": "scrape",
+        "calendar": calendar,
         "faculty": faculty,
         "sections": sections,
     }
@@ -548,6 +563,9 @@ def main():
     print(f"  {no_room} scheduled meetings with no room")
     print(f"  {no_instr} sections with no instructor (nobody's sheet will show them)")
     print(f"  {merged} instructor name variants merged")
+    if calendar:
+        print(f"  term {calendar.get('start')} to {calendar.get('end')}, "
+              f"{len(calendar.get('closures') or [])} closure(s), {len(calendar.get('swaps') or [])} swap day(s)")
     for w in warnings[:15]:
         print("  ! " + w)
     if len(warnings) > 15:
