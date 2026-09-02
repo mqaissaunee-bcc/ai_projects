@@ -166,6 +166,8 @@ textarea{min-height:60px;resize:vertical}
   border-bottom:1px solid var(--line-2);border-right:1px solid var(--line-2)}
 .grid .online-lane{display:flex;flex-wrap:wrap;gap:4px;padding:4px 6px;
   border-bottom:1px solid var(--line-2);background:var(--surface-2)}
+.grid .online-cell{display:flex;flex-wrap:wrap;gap:3px;padding:4px 4px;border-left:1px solid var(--line);
+  border-bottom:1px solid var(--line-2);background:var(--surface-2)}
 .online-chip{font-size:.7rem;border:1px dashed var(--line-2);border-radius:5px;padding:1px 6px;
   background:var(--surface);color:var(--ink-2)}
 .online-chip b{font-weight:700;color:var(--ink)}
@@ -298,7 +300,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
   body.color-print .blk b,body.color-print .blk .l2,body.color-print .blk .l3{color:#fff!important}
   .blk .l2,.blk .l3{font-size:7pt;opacity:1}
   .online-chip,.online-block{font-size:7pt;background:#fff!important}
-  .grid .onlinecol,.grid .online-lane{background:#fff!important}
+  .grid .onlinecol,.grid .online-lane,.grid .online-cell{background:#fff!important}
   table.tbl{font-size:8.5pt}
   .sig-row{break-inside:avoid;margin-top:22pt}
   .sig-img{print-color-adjust:exact;-webkit-print-color-adjust:exact}
@@ -607,6 +609,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         <p>The tool currently carries 15-week sections only, and says so in a notice at the top. Sections in other parts of term will appear once those are added to the schedule data — no change to the tool is needed. Until then, add a short-session course to your sheet as a block in step 3.</p></details>
       <details><summary>Where do my online courses appear?</summary>
         <p>By default they sit in a band across the top of the weekly grid, which shows them as part of your schedule without claiming a meeting time they do not have. Under Display options you can move them to a column beside the weekdays instead, or list them under the grid. A course with no meeting time cannot become a calendar event, so the calendar export leaves those out and names them in a note.</p></details>
+      <details><summary>Can I show an online course on a particular day?</summary>
+        <p>Yes. Open <b>Edit</b> on the section, tick the days you want it associated with — the day your work for it falls, or when assignments are due — and leave the start and end times blank. The course then appears in the band above those days instead of spanning the whole week, still with no time attached. Untick the days to put it back across the week.</p></details>
       <details><summary>Does the calendar export know about holidays?</summary>
         <p>Yes. It leaves out the Thanksgiving recess, and it handles the December schedule changes: because 22 December runs a Thursday schedule and 23 December a Friday one, your Tuesday and Wednesday classes are skipped on those dates and your Thursday and Friday classes are added to them. The dates print at the bottom of the schedule as well.</p></details>
       <details><summary>Clicking Print does not produce a PDF</summary>
@@ -649,6 +653,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
           <li>A notice makes clear that only 15-week sections are included.</li>
           <li>Online courses with no meeting time now appear on the grid — in a band across the top,
             or a column beside the weekdays, your choice under Display options.</li>
+          <li>An online course can be tied to particular weekdays while still showing no time:
+            tick the days in the section editor and leave the times blank.</li>
         </ul></div>
 
       <div class="rel"><h3>Version 1.5</h3>
@@ -850,6 +856,16 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     });
     return out;
   }
+  function onlineDaysOf(e){
+    // Days a course is pinned to without a meeting time — set by ticking days
+    // in the section editor and leaving start and end blank.
+    var out = [];
+    (e.meetings || []).forEach(function(m){
+      if(m.s) return;
+      (m.d || []).forEach(function(d){ if(out.indexOf(d) < 0) out.push(d); });
+    });
+    return out;
+  }
   function unscheduledFor(name){
     var list = name==null ? allSelectedSections() : sectionsFor(name);
     return list.filter(function(s){ return state.include[s.id]; }).map(eff).filter(function(e){
@@ -991,6 +1007,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     }
     patterns.forEach(addRow);
 
+    box.appendChild(el("p","hint","For an online course with no set time, tick the days you want it "
+      + "shown on and leave start and end blank. Tick nothing to keep it off the day columns."));
     var addBtn=el("button","btn sm ghost","+ Add a second meeting pattern"); addBtn.type="button";
     addBtn.addEventListener("click", function(){
       addRow({d:[],s:"",e:"",rm:""}, rows.children.length);
@@ -1136,8 +1154,9 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     if(max-min<4*60) max=min+4*60;
     return {min:min, max:max};
   }
-  function daysShown(blocks){
+  function daysShown(blocks, extraDays){
     var used={}; blocks.forEach(function(b){ used[b.day]=true; });
+    (extraDays||[]).forEach(function(d){ used[d]=true; });
     return DAYS.filter(function(d){
       if(d.k==="S"||d.k==="U") return state.opts.weekend || used[d.k];
       return true;
@@ -1165,8 +1184,14 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
   }
   function buildGrid(blocks, online){
     var wrap=el("div","grid-wrap");
-    var bounds=gridBounds(blocks), cols=daysShown(blocks), rowh=state.opts.density;
     var mode = state.opts.online || "banner";
+    var pinnedDays = [];
+    if(mode !== "list"){
+      (online||[]).forEach(function(e){
+        onlineDaysOf(e).forEach(function(d){ if(pinnedDays.indexOf(d) < 0) pinnedDays.push(d); });
+      });
+    }
+    var bounds=gridBounds(blocks), cols=daysShown(blocks, pinnedDays), rowh=state.opts.density;
     var showOnline = online && online.length && mode !== "list";
     var asColumn = showOnline && mode === "column";
     var grid=el("div","grid");
@@ -1179,20 +1204,38 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     if(asColumn) grid.appendChild(el("div","hcell","Online"));
 
     // A band under the day headers: present on the grid without claiming a time.
+    function onlineChip(e, withTitle){
+      var c = el("div","online-chip");
+      // Someone can teach the same course in person and online, so the
+      // section suffix has to be here or the two are indistinguishable.
+      c.appendChild(el("b",null, e.course));
+      if(state.opts.code) c.appendChild(el("span",null, " " + e.id.replace(e.course+"-","")));
+      if(withTitle) c.appendChild(el("span",null, " · " + e.title));
+      c.title = e.id + " · " + e.title + " · online, no meeting time";
+      return c;
+    }
     if(showOnline && !asColumn){
-      grid.appendChild(el("div","online-label","Online"));
-      var lane = el("div","online-lane");
-      lane.style.gridColumn = "2 / -1";
-      online.forEach(function(e){
-        var c = el("div","online-chip");
-        // Someone can teach the same course in person and online, so the
-        // section suffix has to be here or the two are indistinguishable.
-        c.appendChild(el("b",null, e.course));
-        if(state.opts.code) c.appendChild(el("span",null, " " + e.id.replace(e.course+"-","")));
-        c.appendChild(el("span",null, " · " + e.title));
-        lane.appendChild(c);
-      });
-      grid.appendChild(lane);
+      var pinned = online.filter(function(e){ return onlineDaysOf(e).length; });
+      var loose  = online.filter(function(e){ return !onlineDaysOf(e).length; });
+
+      // Courses tied to a day sit under that day; the rest span the week.
+      if(pinned.length){
+        grid.appendChild(el("div","online-label","Online"));
+        cols.forEach(function(d){
+          var cell = el("div","online-cell");
+          pinned.forEach(function(e){
+            if(onlineDaysOf(e).indexOf(d.k) > -1) cell.appendChild(onlineChip(e, false));
+          });
+          grid.appendChild(cell);
+        });
+      }
+      if(loose.length){
+        grid.appendChild(el("div","online-label", pinned.length ? "" : "Online"));
+        var lane = el("div","online-lane");
+        lane.style.gridColumn = "2 / -1";
+        loose.forEach(function(e){ lane.appendChild(onlineChip(e, true)); });
+        grid.appendChild(lane);
+      }
     }
     var timecol=el("div","timecol");
     for(var h=0;h<hours;h++){
@@ -1239,7 +1282,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         c.appendChild(el("b",null, e.course));
         c.appendChild(el("span","l3", e.id.replace(e.course+"-","")));
         c.appendChild(el("span","l3", e.title));
-        c.appendChild(el("span","l3 muted", "asynchronous"));
+        var pd = onlineDaysOf(e);
+        c.appendChild(el("span","l3 muted", pd.length ? dayLabel(pd) + " · no set time" : "asynchronous"));
         oc.appendChild(c);
       });
       grid.appendChild(oc);
