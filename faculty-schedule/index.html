@@ -134,6 +134,10 @@ textarea{min-height:60px;resize:vertical}
 .sig-note{margin-top:6px;font-size:.72rem;color:var(--ink-3)}
 #sigPad{border:1px dashed var(--line-2);border-radius:8px;background:var(--surface);touch-action:none;display:block}
 .sig-label{font-size:.72rem;color:var(--ink-3);padding-top:3px}
+.group-head{font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--ink-3);margin:12px 0 5px;padding-bottom:3px;border-bottom:1px solid var(--line)}
+.group-head:first-child{margin-top:0}
+.group-head.warn-head{color:var(--warn);border-color:var(--warn)}
 .custom-item.editing-item{border-color:var(--accent);background:var(--accent-soft)}
 .load-line{margin-top:14px;padding:7px 10px;border:1px solid var(--line-2);border-radius:7px;
   background:var(--surface-2);font-size:.82rem;color:var(--ink-2)}
@@ -620,7 +624,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       <details><summary>Can I draw office hours straight onto the grid?</summary>
         <p>Yes, with a mouse or trackpad. Drag across an empty part of a day column and a block is created, snapped to the nearest quarter hour. Drag an existing block to move it — including sideways into a different day — or its bottom edge to change the end time. A block set on several days shifts in time only, since moving one of its days elsewhere would be ambiguous; edit it in step 3 to change which days it falls on. On a touch screen use the form in step 3 instead, so dragging does not fight with scrolling. When several people are shown, a block you draw belongs to whichever person's schedule you drew it on.</p></details>
       <details><summary>Can I put office hours on one person's sheet only?</summary>
-        <p>Yes, when more than one person is selected. A "Whose schedule" picker appears in the office hours panel: choose a person, or "Everyone shown" for something like a department meeting.</p></details>
+        <p>Yes, when more than one person is selected. A "Whose schedule" picker appears in the office hours panel: choose a person, or "Everyone shown" for something like a department meeting. The list of saved blocks is grouped under each person's name, and the sections list is grouped the same way, so it stays clear whose is whose.</p>
+        <p>If you later remove someone from the selection, any block that belonged to them is kept and listed under "owner not selected" rather than disappearing. Edit it to reassign it, or remove it.</p></details>
       <details><summary>The calendar export asks for term dates</summary>
         <p>A calendar file needs to know when the term starts and ends to repeat your classes weekly. Fill in Term start and Term end under Your information, then export again.</p></details>
       <details><summary>The image download has no course table</summary>
@@ -655,6 +660,10 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
             or a column beside the weekdays, your choice under Display options.</li>
           <li>An online course can be tied to particular weekdays while still showing no time:
             tick the days in the section editor and leave the times blank.</li>
+          <li>With several people on screen, office hours and sections are grouped under the person
+            they belong to instead of running together in one list.</li>
+          <li>Removing someone no longer hides the blocks that belonged to them — they appear under
+            "owner not selected" so they can be reassigned or removed.</li>
         </ul></div>
 
       <div class="rel"><h3>Version 1.5</h3>
@@ -925,7 +934,18 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     var list=allSelectedSections();
     $("chipSections").textContent = list.length ? list.filter(function(s){return state.include[s.id];}).length+" of "+list.length : "";
     if(!list.length){ box.appendChild(el("div","empty","Pick an instructor in step 1.")); return; }
-    list.forEach(function(s){
+    var multi = state.faculty.length > 1, shown = {};
+    (multi ? state.faculty : [null]).forEach(function(who){
+      var mine = who ? sectionsFor(who).filter(function(s){ return !shown[s.id]; }) : list;
+      if(who){
+        if(!mine.length) return;
+        box.appendChild(el("div","group-head", who + " · " + mine.length));
+      }
+      mine.forEach(function(s){ shown[s.id] = 1; renderSectionRow(s, box); });
+    });
+  }
+  function renderSectionRow(s, box){
+    [s].forEach(function(s){
       var e=eff(s);
       var wrap=el("div","sec"); wrap.dataset.id=s.id;
       var head=el("div","sec-head");
@@ -1082,28 +1102,58 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     if(prev && state.faculty.indexOf(prev)>-1) sel.value=prev;
     else if(state.faculty.length===1) sel.value="";
   }
+  function customItem(c){
+    var item=el("div","custom-item");
+    var t=el("div","t");
+    t.appendChild(el("b",null,c.label||"Block"));
+    t.appendChild(el("div","sec-meta", dayLabel(c.days)+" · "+fmtTime(toMin(c.start))+"–"+fmtTime(toMin(c.end))+
+      (c.loc?" · "+c.loc:"")));
+    var ed=el("button","btn sm ghost","Edit"); ed.type="button";
+    ed.addEventListener("click", function(){ startEditCustom(c.id); });
+    var del=el("button","btn sm ghost danger","Remove"); del.type="button";
+    del.addEventListener("click", function(){
+      state.custom=state.custom.filter(function(x){ return x.id!==c.id; });
+      if(editingCustomId===c.id) resetCustomForm();
+      renderAll(); save();
+    });
+    item.appendChild(t); item.appendChild(ed); item.appendChild(del);
+    if(editingCustomId===c.id) item.classList.add("editing-item");
+    return item;
+  }
   function renderCustomList(){
     var box=$("customList"); clear(box);
     $("chipCustom").textContent = state.custom.length ? state.custom.length+"" : "";
     if(!state.custom.length){ box.appendChild(el("div","empty","No office hours added yet.")); return; }
-    state.custom.forEach(function(c){
-      var item=el("div","custom-item");
-      var t=el("div","t");
-      t.appendChild(el("b",null,c.label||"Block"));
-      t.appendChild(el("div","sec-meta", dayLabel(c.days)+" · "+fmtTime(toMin(c.start))+"–"+fmtTime(toMin(c.end))+
-        (c.loc?" · "+c.loc:"") + (state.faculty.length>1 ? " · " + (c.who || "everyone") : "")));
-      var ed=el("button","btn sm ghost","Edit"); ed.type="button";
-      ed.addEventListener("click", function(){ startEditCustom(c.id); });
-      var del=el("button","btn sm ghost danger","Remove"); del.type="button";
-      del.addEventListener("click", function(){
-        state.custom=state.custom.filter(function(x){ return x.id!==c.id; });
-        if(editingCustomId===c.id) resetCustomForm();
-        renderAll(); save();
-      });
-      item.appendChild(t); item.appendChild(ed); item.appendChild(del);
-      if(editingCustomId===c.id) item.classList.add("editing-item");
-      box.appendChild(item);
+
+    if(state.faculty.length < 2){
+      state.custom.forEach(function(c){ box.appendChild(customItem(c)); });
+      return;
+    }
+
+    // With several schedules on screen a flat list is unreadable, so blocks are
+    // grouped under the person they belong to.
+    var groups = [{key:"", label:"Everyone shown"}];
+    state.faculty.forEach(function(n){ groups.push({key:n, label:n}); });
+    var known = {};
+    state.faculty.forEach(function(n){ known[n]=1; });
+
+    groups.forEach(function(g){
+      var mine = state.custom.filter(function(c){ return (c.who||"") === g.key; });
+      if(!mine.length) return;
+      box.appendChild(el("div","group-head", g.label + " · " + mine.length));
+      mine.forEach(function(c){ box.appendChild(customItem(c)); });
     });
+
+    // Blocks whose owner is no longer selected would otherwise vanish silently.
+    var orphans = state.custom.filter(function(c){ return c.who && !known[c.who]; });
+    if(orphans.length){
+      box.appendChild(el("div","group-head warn-head", "Not shown — owner not selected"));
+      orphans.forEach(function(c){
+        var item = customItem(c);
+        item.querySelector(".sec-meta").appendChild(el("span",null, " · belongs to " + c.who));
+        box.appendChild(item);
+      });
+    }
   }
   var editingCustomId = null;
   function setCustomDays(days){
