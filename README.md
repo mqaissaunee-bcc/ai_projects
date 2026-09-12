@@ -51,6 +51,7 @@ When adding features, add the matching FAQ entry. The entries exist because some
 
 Modeled on the college's Faculty Teaching/Office Hours Schedule form, which counts **contact hours**, not credits:
 
+- **The required load is a 15-week figure**, so a section in any other session defaults to overload and is excluded from the contact-hour total. `defaultPtHours()` decides this from the section's session; the faculty member overrides it with the PT button or by entering 0 in the editor. An explicit 0 is stored rather than the key being cleared — clearing would fall back to the session default, which is the opposite of what "count this toward load" means.
 - Overload is tracked in hours, not as a yes/no flag, because a section can be split. The **PT** button flags a whole section; the section editor takes a number for a partial split, so a 4-hour course whose online lab is paid as overload contributes 3 to load and 1 to PT. PT hours are clamped to the section's contact hours.
 - PT sections leave the load total, are marked on the grid and in the course table (`3 load + 1 PT`), and are listed by name under the summary — the form's "List Part-time Sections" field.
 - When the load total goes above a full load, the summary says by how much rather than silently reporting an over-full schedule.

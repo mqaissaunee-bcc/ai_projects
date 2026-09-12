@@ -367,6 +367,29 @@ setTimeout(() => {
   ok('short-session courses reach the sheet', /11W/.test(anySheet()));
   ok('session dates footnoted', /run for part of the term/.test(anySheet()));
   ok('session dates shown in the footnote', /2026-\d\d-\d\d to 2026-\d\d-\d\d/.test(anySheet()));
+
+  // ---- short sessions are overload by default ----
+  const loadNums = () => {
+    const m = facultySheets()[0].querySelector('.load-line span').textContent
+      .match(/Contact hours: ([\d.]+) of ([\d.]+)/);
+    const p = facultySheets()[0].querySelector('.load-line span').textContent.match(/PT \/ overload: ([\d.]+)/);
+    return { load: parseFloat(m[1]), pt: p ? parseFloat(p[1]) : 0 };
+  };
+  const withShort = loadNums();
+  ok('short-session hours land in overload, not load', withShort.pt > 0);
+  ok('short-session courses named in the PT list',
+     /11W|7A|7B|DE01B/.test((facultySheets()[0].querySelector('.pt-list') || {}).textContent || ''));
+  ok('sheet states the 15-week rule', /required load is a 15-week figure/.test(anySheet()));
+
+  // and a faculty member can override one back onto load
+  const shortSec = [...$('sectionList').querySelectorAll('.sec')]
+    .find(s => /11W/.test(s.textContent) && s.querySelector('.pt-toggle'));
+  if (shortSec) {
+    shortSec.querySelector('.pt-toggle').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+    const after = loadNums();
+    ok('a short-session course can be counted toward load', after.load > withShort.load);
+    shortSec.querySelector('.pt-toggle').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  }
   boxes[elevenIdx].checked = false;
   boxes[elevenIdx].dispatchEvent(new window.Event('change', { bubbles: true }));
   ok('turning it off removes them again', $('sectionList').querySelectorAll('.sec').length === before11);

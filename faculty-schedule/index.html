@@ -181,6 +181,7 @@ textarea{min-height:60px;resize:vertical}
   font-size:.7rem;line-height:1.25;color:var(--ink-2)}
 .online-block b{display:block;font-size:.74rem;color:var(--ink)}
 .online-block span{display:block}   /* .l3 only gets display:block inside .blk */
+.online-block .sess-badge{display:inline-block}   /* …but the badge sits inline */
 .online-block .muted{opacity:.75;font-style:italic}
 .grid .daycol .line{height:var(--rowh);border-bottom:1px solid var(--line)}
 .grid .daycol .line.half{border-bottom:1px dotted var(--line)}
@@ -611,6 +612,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         <p>Press <b>Edit</b> on that section. You can change days, start and end times, room, and the printed title, and add a second meeting pattern for a course that meets at two different times. Your corrections are saved and survive a page reload.</p></details>
       <details><summary>Why is my 3-credit course counted as 4 hours?</summary>
         <p>Load is counted in contact hours, but the schedule report only publishes credits, and the two differ for lab courses. Open <b>Edit</b> on the section and set "Contact hours for load" to the right number. The published credit value still prints in the course table.</p></details>
+      <details><summary>Do my 7-week and 11-week courses count toward my load?</summary>
+        <p>Not by default. The required load — 15 contact hours and 5 office hours — is a 15-week figure, so anything in a short session is treated as overload and listed under part-time sections. If one of yours does count toward load, press <b>PT</b> on that section to switch it off, or open Edit and enter 0 in the overload hours. Your choice is remembered.</p></details>
       <details><summary>How do I mark an overload or part-time section?</summary>
         <p>The <b>PT</b> button next to a section moves the whole thing out of your load. If only part of it is overload — a 4-hour course whose lab is paid separately — open <b>Edit</b> and put that number in "hours counted as PT / overload". The rest stays on load.</p></details>
       <details><summary>Where do I enter release time?</summary>
@@ -668,6 +671,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
             genuine conflict.</li>
           <li>The calendar export uses each session's own dates, so an 11-week course starts in October
             and a 7B course in late October rather than repeating from September.</li>
+          <li>Because the required load is a 15-week figure, short-session courses count as overload
+            automatically. Use the PT button on a section to count one toward your load instead.</li>
         </ul></div>
 
       <div class="rel"><h3>Version 1.6</h3>
@@ -1051,8 +1056,13 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         ptb.classList.add("on");
         if(isPartlyPt(e)){ ptb.classList.add("partial"); ptb.textContent = ptNow + " PT"; }
       }
+      ptb.title = (e.pot && e.pot !== "15W")
+        ? "Short-session courses count as overload by default. Switch off to count this one toward load."
+        : "Count the whole section as overload. For a split, use Edit.";
       ptb.addEventListener("click", function(){
-        if(ptHoursFor(e)) { delete state.pt[s.id]; } else { state.pt[s.id]=true; }
+        // 0 is stored rather than cleared, so a short-session course can be
+        // deliberately counted toward load instead of reverting to the default.
+        if(ptHoursFor(e)) { state.pt[s.id] = 0; } else { state.pt[s.id] = true; }
         renderAll(); save();
       });
       var edit=el("button","btn sm ghost","Edit"); edit.type="button";
@@ -1121,10 +1131,12 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     var fp=el("div","field");
     fp.appendChild(el("label",null,"Of those, hours counted as PT / overload"));
     var ip=document.createElement("input"); ip.type="number"; ip.min="0"; ip.max="20"; ip.step="0.5";
-    ip.value = ptHoursFor(e) || "";
-    ip.placeholder = "0";
+    ip.value = (state.pt[s.id] === undefined || state.pt[s.id] === "") ? "" : ptHoursFor(e);
+    ip.placeholder = String(defaultPtHours(e));
     ip.setAttribute("aria-label","PT hours for "+s.id); fp.appendChild(ip);
-    fp.appendChild(el("p","hint","Leave at 0 for a normal load section. A 4-hour course with a 1-hour lab paid as overload takes 1 here."));
+    fp.appendChild(el("p","hint", (e.pot && e.pot !== "15W")
+      ? "Short-session courses count as overload by default. Enter 0 to count this one toward your load instead, or a number for a split."
+      : "Leave blank for a normal load section. A 4-hour course with a 1-hour lab paid as overload takes 1 here."));
     box.appendChild(fp);
     var ft=el("div","field"); ft.appendChild(el("label",null,"Title as printed"));
     var it=document.createElement("input"); it.type="text"; it.value=e.title||"";
@@ -1140,7 +1152,9 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       state.overrides[s.id]=o;
       if(ih.value.trim()==="") { delete state.hrs[s.id]; } else { state.hrs[s.id]=ih.value.trim(); }
       var pv = parseFloat(ip.value);
-      if(ip.value.trim()==="" || isNaN(pv) || pv<=0) { delete state.pt[s.id]; } else { state.pt[s.id]=pv; }
+      if(ip.value.trim()===""){ delete state.pt[s.id]; }        // back to the session default
+      else if(isNaN(pv) || pv < 0){ delete state.pt[s.id]; }
+      else { state.pt[s.id] = pv; }                              // 0 means "counts toward load"
       renderAll(); save(); toast("Section updated");
     });
     var rvb=el("button","btn sm ghost","Revert to feed"); rvb.type="button";
@@ -1415,7 +1429,16 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         c.appendChild(el("span","l3", e.id.replace(e.course+"-","")));
         c.appendChild(el("span","l3", e.title));
         var pd = onlineDaysOf(e);
-        c.appendChild(el("span","l3 muted", pd.length ? dayLabel(pd) + " · no set time" : "asynchronous"));
+        var when = pd.length ? dayLabel(pd) + " · no set time" : "asynchronous";
+        if(e.pot && e.pot !== "15W"){
+          var badge = el("span","sess-badge inline", e.pot);
+          var line = el("span","l3");
+          line.appendChild(badge);
+          line.appendChild(document.createTextNode(" " + when));
+          c.appendChild(line);
+        } else {
+          c.appendChild(el("span","l3 muted", when));
+        }
         oc.appendChild(c);
       });
       grid.appendChild(oc);
@@ -1423,11 +1446,17 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     wrap.appendChild(grid);
     return wrap;
   }
+  function defaultPtHours(e){
+    // The required load is a 15-week figure, so anything in a short session is
+    // overload unless the faculty member says otherwise.
+    return (e.pot && e.pot !== "15W") ? hoursFor(e) : 0;
+  }
   function ptHoursFor(e){
     // A section can be split: some hours count toward load, the rest as overload.
     // `true` is the legacy all-or-nothing value and still means the whole section.
     var v = state.pt[e.id];
-    if(v === undefined || v === null || v === "" || v === false) return 0;
+    if(v === undefined || v === null || v === "") return defaultPtHours(e);
+    if(v === false) return 0;
     var total = hoursFor(e);
     if(v === true) return total;
     var n = parseFloat(v);
@@ -1592,7 +1621,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     if(extraPots.length){
       sheet.appendChild(el("div","cal-note",
         "Includes short-session courses: " + extraPots.map(sessionLabel).join("  ·  ") +
-        ". These run for part of the term only."));
+        ". These run for part of the term only and count as overload unless marked otherwise; " +
+        "the required load is a 15-week figure."));
     }
     var unsched = (state.opts.online === "list" || !blocks.length) ? online : [];
     if(unsched.length){
