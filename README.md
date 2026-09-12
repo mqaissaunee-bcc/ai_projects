@@ -25,7 +25,9 @@ Faculty search their name, their sections load, they add office hours and contac
 
 Office hours can be drawn directly on the grid: drag across an empty part of a day column to create a block snapped to the quarter hour, drag a block to move it (sideways into another day as well as up and down), or drag its bottom edge to resize. A block that falls on several days shifts in time only — moving one of its days to a different column would be ambiguous. Course blocks are not draggable, and a plain click creates nothing. This is enabled only for `(pointer: fine)` — on touch, a drag would fight with scrolling, so the step 3 form remains the path there and the only fully keyboard-accessible one.
 
-With more than one person on screen, each office-hours or commitment block gets an owner: a named person, or "Everyone shown" for something like a department meeting. Owned blocks appear only on that person's sheet and count only toward that person's office-hour total. A block drawn by dragging takes the owner of the sheet it was drawn on. With one person selected the picker is hidden and everything belongs to them.
+With more than one person on screen, both the sections list and the office-hours list are grouped under headings by person, and a block whose owner is no longer selected is listed under "owner not selected" instead of silently disappearing — it still exists in storage, so hiding it would lose work with no way to get it back.
+
+Each office-hours or commitment block gets an owner: a named person, or "Everyone shown" for something like a department meeting. Owned blocks appear only on that person's sheet and count only toward that person's office-hour total. A block drawn by dragging takes the owner of the sheet it was drawn on. With one person selected the picker is hidden and everything belongs to them.
 
 ### Checks that catch a form before a dean does
 
@@ -110,6 +112,20 @@ The export panel now says plainly: save the PDF, attach it to your own email. "C
 
 Off by default. The default print style is dark text on white with a colored left edge, which survives a print dialog that has background graphics switched off. Turning color on fills the blocks and flips the text white, which only works when background graphics are enabled — the option shows that warning when ticked.
 
+### Online courses with no meeting time
+
+Asynchronous sections have no day or time, so they cannot be placed on a time grid honestly. Three presentations, chosen per person under Display options:
+
+- **Band** (default) — a strip under the day headers listing each course. Present on the grid without asserting a meeting time. Includes the section suffix, since someone can teach the same course both in person and online.
+- **Column** — an extra hatched column beside the weekdays, with a block per course.
+- **List** — the original section beneath the grid.
+
+The band and column replace the list rather than sitting alongside it; showing both would repeat the same courses twice on one page.
+
+An untimed course can also be tied to particular weekdays: tick days in the section editor and leave the times blank. The course then sits in the band above those columns instead of spanning the week, still with no time. This needed no data-model change — a meeting with days and no start time was already representable; the band just had to read it, and `daysShown()` had to include a day that only an untimed course uses, or a course pinned to Saturday would have had nowhere to go.
+
+A course with no start time cannot become a calendar event. The `.ics` export leaves those out, names them in an `X-COMMENT` line, and the toast says how many were skipped — better than inventing an all-day event that repeats for fifteen weeks and clutters someone's calendar.
+
 ### Academic calendar
 
 `tools/calendar-26FA.json` carries the term dates and the exceptions, and is merged into the feed with `--calendar`:
@@ -130,21 +146,48 @@ Term dates prefill the export fields, so the `.ics` works without anyone typing 
 
 Update this file each term. It is the one piece of information the enrollment export does not carry.
 
-### Parts of term
+### Sessions
 
-15-week only for now. The current feed is a single 15W export, and the app defaults to 15W and hides the part-of-term control when the feed carries only one session — no dead control on screen. It also shows a standing notice so nobody teaching a short session assumes the tool is broken; the notice disappears by itself once the feed carries more than one part of term.
-
-The piping stays in place. Build with several files and the control reappears on its own, listing the sessions it found:
+The feed carries all four parts of term, built from one export per session:
 
 ```bash
 python3 tools/build_schedule_data.py \
-  data/raw/26FA_15W.xlsx data/raw/26FA_11W.xlsx data/raw/26FA_7A.xlsx data/raw/26FA_7B.xlsx \
+  data/raw/26FA_Course_Enrollment_Report_091226.xlsx \
+  data/raw/26FA11_Course_Enrollment_Report_091226.xlsx \
+  data/raw/26FA7A_Course_Enrollment_Report_091226.xlsx \
+  data/raw/26FA7B_Course_Enrollment_Report_091226.xlsx \
   --pot-labels 15W,11W,7A,7B \
   --term 26FA --term-label "Fall 2026" \
+  --calendar tools/calendar-26FA.json \
   --out faculty-schedule/data/26FA/sections.json
 ```
 
-Nothing in the app needs changing when that happens. Short-session sections carry their session label into the course table and the "Not on the weekly grid" list, and `--pot 15W` on the generator restricts the feed itself if that's ever wanted instead.
+A section appearing in two files is kept once, from the first, with a warning — `HIST-136-DE02A` currently does.
+
+In the app, step 1 lists a checkbox per session with its section count. **15-week is on by default and the short sessions are opt-in**, because the printed sheet is a 15-week form and a 7B course on it may confuse whoever approves it. At least one session must stay ticked.
+
+Switched on, a short-session course carries its session code on the grid block and a dashed edge, the band chip gets the same badge, the course table appends it to the mode column, and a footnote under the grid names the sessions on show.
+
+7A and 7B occupy different halves of the term, so two courses at the same hour in different sessions may never actually collide. The conflict check says so rather than calling it a clash: *different sessions (7A and 7B), check the dates*.
+
+**Session dates are not in the enrollment export**, so they live in the `sessions` block of `calendar-26FA.json`. Fall 2026:
+
+| Session | Start | End |
+|---|---|---|
+| 15W | 2026-09-08 | 2026-12-23 |
+| 7A | 2026-09-08 | 2026-10-26 |
+| 11W | 2026-10-01 | 2026-12-18 |
+| 7B | 2026-10-29 | 2026-12-18 |
+
+With these in place the calendar export bounds each course to its own session, so an 11-week course starts in October and a 7B course in late October instead of repeating from September. Closures and swap days are clipped to the session too: 7A ends before Thanksgiving, so it gets no exclusion, and only 15W runs on 22 and 23 December.
+
+They also let the conflict check tell a real clash from an apparent one. 7A and 7B never run at the same time, so two of their courses sharing an hour is listed under "overlaps that are not clashes"; 15W and 11W do overlap from October, so that is reported as a genuine conflict. Leave a session's dates null and it falls back to "different sessions, check the dates".
+
+**Update these each term.** Wrong dates produce confidently wrong calendar exports.
+
+### A section is included unless it is unticked
+
+`isIncluded()` treats an unset value as included. Seeding inclusion when a faculty member was picked looked equivalent, but it meant that switching a session on later revealed sections that were silently excluded — present in the list, unticked, absent from the sheet, with nothing explaining why.
 
 ### Data loading
 

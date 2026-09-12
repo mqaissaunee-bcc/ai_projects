@@ -7,6 +7,7 @@ const { window } = dom;
 const doc = window.document;
 const $ = id => doc.getElementById(id);
 let fails = 0;
+const state_customCount = (w) => JSON.parse(w.localStorage.getItem('bcc-faculty-schedule-v1')).custom.length;
 const ok = (label, cond) => { console.log((cond ? '  PASS  ' : '! FAIL  ') + label); if (!cond) fails++; };
 
 // captured downloads
@@ -22,12 +23,19 @@ window.confirm = () => false;
 setTimeout(() => {
   const facultySheets = () => [...doc.querySelectorAll('.sheet[data-owner]')];
   ok('data status populated', $('dataStatus').textContent.length > 0);
-  ok('15-week is the default scope', $('potFilter').value === '15W');
-  ok('15-week notice shown for a single-session feed', $('potNotice').hidden === false);
+  // the dropdown is now a checkbox per session
+  const sessBoxes = () => [...$('potBoxes').querySelectorAll('input[type=checkbox]')];
+  const sessLabels = () => [...$('potBoxes').querySelectorAll('label')].map(l => l.textContent.trim());
+  ok('a checkbox per session in the feed', sessBoxes().length === 4);
+  ok('15-week is on by default', sessBoxes()[0].checked === true);
+  ok('short sessions are off by default', sessBoxes().slice(1).every(b => !b.checked));
+  ok('session counts shown', sessLabels().some(l => /11W\s+\(\d+ sections\)/.test(l)));
+  ok('notice hidden when the feed has several sessions', $('potNotice').hidden === true);
   ok('term dates prefilled from the feed',
      /^\d{4}-\d{2}-\d{2}$/.test($('fTermStart').value) && /^\d{4}-\d{2}-\d{2}$/.test($('fTermEnd').value));
   ok('calendar notes printed on the sheet', /Thanksgiving/.test(doc.body.textContent));
-  ok('part-of-term filter hidden for a single-session feed', $('potField').hidden === true);
+  ok('What\'s new is flagged as a pill', !!$('newsDot') && /New/i.test($('newsDot').textContent));
+  ok('session picker shown when the feed has several sessions', $('potField').hidden === false);
 
   // 1. faculty search
   const s = $('facSearch');
@@ -54,7 +62,41 @@ setTimeout(() => {
   const blocks = doc.querySelectorAll('.blk');
   ok('course blocks drawn (' + blocks.length + ')', blocks.length > 0);
   ok('no estimate banner with complete data', !/estimated end time/.test($('banners').textContent));
-  ok('async sections listed separately', /Not on the weekly grid/.test(sheet.textContent));
+  // default is the band across the top of the grid, not the list beneath it
+  ok('online courses shown in the band', !!sheet.querySelector('.online-lane'));
+  ok('band names the online course', /DE01A|DE01B/.test(sheet.querySelector('.online-lane').textContent));
+  ok('no duplicate list when the band is on', !/Not on the weekly grid/.test(sheet.textContent));
+  // pin an untimed online course to a weekday: tick days, leave times blank
+  const onlineSec = [...$('sectionList').querySelectorAll('.sec')]
+    .find(s => /DE01A/.test(s.textContent));
+  [...onlineSec.querySelectorAll('button')].find(b => b.textContent === 'Edit')
+    .dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  const pat = onlineSec.querySelector('.sec-edit .pattern');
+  pat.querySelector('input[value=W]').checked = true;
+  pat.querySelectorAll('input[type=time]').forEach(i => { i.value = ''; });
+  [...onlineSec.querySelectorAll('.sec-edit .btn')].find(b => b.textContent === 'Apply')
+    .dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  sheet = doc.querySelector('.sheet');
+  ok('pinned course moves into a day cell', !!sheet.querySelector('.online-cell'));
+  const cells = [...sheet.querySelectorAll('.online-cell')];
+  ok('exactly one day cell holds it', cells.filter(c => c.textContent.trim()).length === 1);
+  ok('pinned course no longer spans the week', !sheet.querySelector('.online-lane'));
+  ok('it still has no time on the grid', !/DE01A/.test(
+     [...sheet.querySelectorAll('.blk')].map(b => b.textContent).join(' ')));
+
+  $('optOnline').value = 'column';
+  $('optOnline').dispatchEvent(new window.Event('change', { bubbles: true }));
+  sheet = doc.querySelector('.sheet');
+  ok('column mode adds an online column', !!sheet.querySelector('.onlinecol'));
+  ok('column header present', [...sheet.querySelectorAll('.hcell')].some(h => h.textContent === 'Online'));
+  $('optOnline').value = 'list';
+  $('optOnline').dispatchEvent(new window.Event('change', { bubbles: true }));
+  sheet = doc.querySelector('.sheet');
+  ok('list mode restores the section below', /Not on the weekly grid/.test(sheet.textContent));
+  ok('list mode drops the band', !sheet.querySelector('.online-lane'));
+  $('optOnline').value = 'banner';
+  $('optOnline').dispatchEvent(new window.Event('change', { bubbles: true }));
+  sheet = doc.querySelector('.sheet');
   ok('course table rendered', !!sheet.querySelector('table.tbl'));
 
   // 3. block geometry sanity
@@ -313,6 +355,54 @@ setTimeout(() => {
   };
   ok('office-hour totals differ per sheet', officeOf(0) !== officeOf(1));
 
+  // ---- switching a short session on ----
+  const before11 = $('sectionList').querySelectorAll('.sec').length;
+  const boxes = [...$('potBoxes').querySelectorAll('input[type=checkbox]')];
+  const elevenIdx = [...$('potBoxes').querySelectorAll('label')].findIndex(l => /11W/.test(l.textContent));
+  boxes[elevenIdx].checked = true;
+  boxes[elevenIdx].dispatchEvent(new window.Event('change', { bubbles: true }));
+  ok('turning on 11W adds sections', $('sectionList').querySelectorAll('.sec').length > before11);
+  // in chair mode the first sheet is the department summary, so check a faculty sheet
+  const anySheet = () => facultySheets().map(s => s.textContent).join(' ');
+  ok('short-session courses reach the sheet', /11W/.test(anySheet()));
+  ok('session dates footnoted', /run for part of the term/.test(anySheet()));
+  ok('session dates shown in the footnote', /2026-\d\d-\d\d to 2026-\d\d-\d\d/.test(anySheet()));
+  boxes[elevenIdx].checked = false;
+  boxes[elevenIdx].dispatchEvent(new window.Event('change', { bubbles: true }));
+  ok('turning it off removes them again', $('sectionList').querySelectorAll('.sec').length === before11);
+
+  // at least one session must stay selected
+  const first = [...$('potBoxes').querySelectorAll('input[type=checkbox]')][0];
+  first.checked = false;
+  first.dispatchEvent(new window.Event('change', { bubbles: true }));
+  ok('cannot switch every session off',
+     [...$('potBoxes').querySelectorAll('input[type=checkbox]')].some(b => b.checked));
+
+  // ---- lists grouped by person in chair mode ----
+  const heads = () => [...$('customList').querySelectorAll('.group-head')].map(h => h.textContent);
+  ok('office hours grouped by owner', heads().length >= 2);
+  ok('shared blocks grouped under Everyone', heads().some(h => /Everyone shown/.test(h)));
+  ok('a person with blocks gets their own heading',
+     heads().some(h => h.indexOf(names[1]) === 0));
+  ok('sections grouped by instructor too',
+     [...$('sectionList').querySelectorAll('.group-head')].length === 2);
+
+  // a block whose owner is dropped must stay visible, not vanish
+  const blocksBeforeRemoval = state_customCount(window);
+  [...$('facChips').querySelectorAll('.chip button')][1]
+    .dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  ok('removing a person keeps their blocks', state_customCount(window) === blocksBeforeRemoval);
+  ok('their blocks are shown as unassigned, not hidden',
+     [...$('customList').querySelectorAll('.group-head')].some(h => /owner not selected/.test(h.textContent))
+     || $('customList').querySelectorAll('.custom-item').length > 0);
+  // re-add so later tests still see two people
+  const s3 = $('facSearch');
+  s3.value = names[1].split(' ').pop().slice(0, 4);
+  s3.dispatchEvent(new window.Event('input', { bubbles: true }));
+  const again = [...$('facResults').querySelectorAll('button')].find(b => b.textContent.indexOf(names[1]) === 0);
+  if (again) again.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  ok('back to two people', facultySheets().length === 2);
+
   // 10. accessibility basics
   ok('skip link present', !!doc.querySelector('.skip-link'));
   ok('all inputs labelled', [...doc.querySelectorAll('input:not([type=checkbox]):not([type=file]), select, textarea')]
@@ -434,10 +524,10 @@ setTimeout(() => {
   $('btnNews').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   ok('news button opens the news tab', $('paneNews').hidden === false && $('helpModal').hidden === false);
   ok('news lists several versions', $('paneNews').querySelectorAll('.rel').length >= 5);
-  ok('news names the current version', /1\.6/.test($('paneNews').textContent));
+  ok('news names the current version', /1\.7/.test($('paneNews').textContent));
   ok('opening news clears the dot', $('newsDot').hidden === true);
   ok('hidden always wins over a class display rule', /\[hidden\]\{display:none!important\}/.test(html));
-  ok('version recorded', window.localStorage.getItem('bcc-faculty-schedule-seen') === '1.6');
+  ok('version recorded', window.localStorage.getItem('bcc-faculty-schedule-seen') === '1.7');
   $('tabWalk').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   ok('other tabs still work', $('paneWalk').hidden === false && $('paneNews').hidden === true);
   $('helpClose').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
