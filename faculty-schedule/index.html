@@ -184,6 +184,9 @@ textarea{min-height:60px;resize:vertical}
 .online-block .sess-badge{display:inline-block}   /* …but the badge sits inline */
 .online-block .muted{opacity:.75;font-style:italic}
 .grid .daycol .line{height:var(--rowh);border-bottom:1px solid var(--line)}
+.grid .daycol .line.gap-line{height:calc(var(--rowh) * .45);
+  background:repeating-linear-gradient(135deg,transparent,transparent 5px,var(--surface-2) 5px,var(--surface-2) 10px)}
+.grid .timeslot.gap-slot{height:calc(var(--rowh) * .45);font-size:.6rem;font-style:italic;color:var(--ink-3)}
 .grid .daycol .line.half{border-bottom:1px dotted var(--line)}
 .blk{position:absolute;left:2px;right:2px;min-height:20px;border-radius:6px;padding:3px 5px;overflow:hidden;color:#fff;
   border-left:4px solid rgba(0,0,0,.28);font-size:.7rem;line-height:1.25}
@@ -460,6 +463,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         <label class="check"><input type="checkbox" id="optCode" checked> Show section codes</label>
         <label class="check"><input type="checkbox" id="optCredits" checked> Show credits in the course table</label>
         <label class="check"><input type="checkbox" id="optWeekend"> Always show Saturday and Sunday</label>
+        <label class="check"><input type="checkbox" id="optTrimDays"> Hide days with nothing on them</label>
+        <label class="check"><input type="checkbox" id="optTrimHours"> Collapse long empty stretches of the day</label>
         <label class="check"><input type="checkbox" id="optColor" checked> Color-code courses on screen</label>
         <label class="check"><input type="checkbox" id="optPrintColor"> Print the blocks in full color</label>
         <label class="check"><input type="checkbox" id="optTable" checked> Include the course detail table</label>
@@ -630,6 +635,10 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         <p>Yes. It leaves out the Thanksgiving recess, and it handles the December schedule changes: because 22 December runs a Thursday schedule and 23 December a Friday one, your Tuesday and Wednesday classes are skipped on those dates and your Thursday and Friday classes are added to them. The dates print at the bottom of the schedule as well.</p></details>
       <details><summary>Clicking Print does not produce a PDF</summary>
         <p>The button opens your browser's print dialog; the PDF comes from there. On Windows set the <b>destination</b> to "Save as PDF" or "Microsoft Print to PDF", then Save. If the destination is a physical printer, it prints on paper instead. Keep the orientation on landscape.</p></details>
+      <details><summary>My schedule takes up more of the page than it needs to</summary>
+        <p>Two options under Display options help. <b>Hide days with nothing on them</b> drops empty weekday columns, so a Monday-and-Tuesday schedule prints as two columns rather than five. <b>Collapse long empty stretches</b> folds hours with nothing in them into a thin row labelled with the range it covers, so a gap between a morning and an evening class no longer takes up half the page. Both are off by default, since a full weekday grid is what most people expect to see.</p></details>
+      <details><summary>The room or office is missing from my printed schedule</summary>
+        <p>Those come from what you enter, not from the course data. Office, phone, and email print at the top only when filled in under Your information, and an office-hours block shows a location only when its Location field is set. Course rooms come from the published schedule and print automatically.</p></details>
       <details><summary>It printed on two pages</summary>
         <p>"Fit the printed schedule to one page" is on by default under Display options. It condenses the course table and, if that is not enough, shrinks the sheet. A very full schedule with office hours, a signature line, and a long course list can still exceed one page, in which case the tool tells you rather than printing something unreadable.</p></details>
       <details><summary>Can I draw office hours straight onto the grid?</summary>
@@ -673,6 +682,9 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
             and a 7B course in late October rather than repeating from September.</li>
           <li>Because the required load is a 15-week figure, short-session courses count as overload
             automatically. Use the PT button on a section to count one toward your load instead.</li>
+          <li>Two ways to tighten the printed grid, under Display options: hide days with nothing on
+            them, and collapse empty stretches of the day into a thin labelled row.</li>
+          <li>Online courses in the side column now show which session they belong to.</li>
         </ul></div>
 
       <div class="rel"><h3>Version 1.6</h3>
@@ -785,7 +797,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     profile: {name:"",title:"",dept:"",office:"",phone:"",email:"",zoom:"",termLabel:"",termStart:"",termEnd:"",notes:"",loadBase:"15",ohRequired:"5",released:"",releasedFor:""},
     pot: "15W",                 // legacy; migrated into sessions on load
     sessions: null,             // {15W:true, 11W:false, …} — null until the feed is known
-    opts: {code:true, credits:true, weekend:false, color:true, table:true, h24:false, load:true, sign:false, fit:true, dept:true, printColor:false, online:"banner", density:58}
+    opts: {code:true, credits:true, weekend:false, trimDays:false, trimHours:false, color:true, table:true, h24:false, load:true, sign:false, fit:true, dept:true, printColor:false, online:"banner", density:58}
   };
 
   /* ===== small helpers ===== */
@@ -1288,6 +1300,42 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
   }
 
   /* ===== sheet rendering ===== */
+  var GAP_UNITS = 0.45;   // a collapsed stretch is a shorter row, in grid-row units
+  function buildSegments(bounds, blocks){
+    // Rows of the grid: one per hour, with runs of empty hours folded into a
+    // single short row. No block can span a fold, since a folded hour is empty.
+    var hours = [], h;
+    for(h = bounds.min; h < bounds.max; h += 60){
+      var busy = blocks.some(function(b){ return b.start < h + 60 && b.end > h; });
+      hours.push({at: h, busy: busy});
+    }
+    if(!state.opts.trimHours) return hours.map(function(x){ return {type:"hour", at:x.at}; });
+    var out = [], i = 0;
+    while(i < hours.length){
+      if(hours[i].busy){ out.push({type:"hour", at:hours[i].at}); i++; continue; }
+      var j = i;
+      while(j < hours.length && !hours[j].busy) j++;
+      // Fold any empty stretch, including a single hour — a lone empty row is
+      // exactly what this option is meant to shrink.
+      out.push({type:"gap", from: hours[i].at, to: hours[j-1].at + 60});
+      i = j;
+    }
+    return out;
+  }
+  function unitsBefore(segs, mins){
+    // Position of a moment, measured in grid-row units from the top.
+    var u = 0;
+    for(var i = 0; i < segs.length; i++){
+      var s = segs[i];
+      if(s.type === "gap"){
+        if(mins >= s.to){ u += GAP_UNITS; continue; }
+        return u;                                  // inside a fold: pin to its top
+      }
+      if(mins >= s.at + 60){ u += 1; continue; }
+      return u + Math.max(0, (mins - s.at) / 60);
+    }
+    return u;
+  }
   function gridBounds(blocks){
     var min=8*60, max=17*60;
     blocks.forEach(function(b){ min=Math.min(min,b.start); max=Math.max(max,b.end); });
@@ -1298,10 +1346,12 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
   function daysShown(blocks, extraDays){
     var used={}; blocks.forEach(function(b){ used[b.day]=true; });
     (extraDays||[]).forEach(function(d){ used[d]=true; });
-    return DAYS.filter(function(d){
+    var cols = DAYS.filter(function(d){
       if(d.k==="S"||d.k==="U") return state.opts.weekend || used[d.k];
-      return true;
+      return !state.opts.trimDays || used[d.k];
     });
+    // Never end up with an empty grid.
+    return cols.length ? cols : DAYS.slice(0,5);
   }
   function layoutOverlaps(list){
     // assign column index / count to overlapping blocks within one day
@@ -1338,8 +1388,9 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     var grid=el("div","grid");
     grid.style.setProperty("--rowh", rowh+"px");
     grid.dataset.min = bounds.min; grid.dataset.rowh = rowh;
+    var segs = buildSegments(bounds, blocks);
+    grid.dataset.segs = JSON.stringify(segs);
     grid.style.gridTemplateColumns="62px repeat("+(cols.length + (asColumn?1:0))+",minmax(90px,1fr))";
-    var hours=(bounds.max-bounds.min)/60;
     grid.appendChild(el("div","hcell corner",""));
     cols.forEach(function(d){ grid.appendChild(el("div","hcell",d.short)); });
     if(asColumn) grid.appendChild(el("div","hcell","Online"));
@@ -1383,18 +1434,22 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       }
     }
     var timecol=el("div","timecol");
-    for(var h=0;h<hours;h++){
-      var t=el("div","timeslot", fmtTime(bounds.min+h*60));
-      timecol.appendChild(t);
-    }
+    segs.forEach(function(s){
+      if(s.type === "gap"){
+        var g = el("div","timeslot gap-slot", fmtTime(s.from) + "–" + fmtTime(s.to));
+        timecol.appendChild(g);
+      } else {
+        timecol.appendChild(el("div","timeslot", fmtTime(s.at)));
+      }
+    });
     grid.appendChild(timecol);
     cols.forEach(function(d){
       var col=el("div","daycol");
       col.dataset.day = d.k;
-      for(var h=0;h<hours;h++){ col.appendChild(el("div","line")); }
+      segs.forEach(function(s){ col.appendChild(el("div", s.type === "gap" ? "line gap-line" : "line")); });
       var dayBlocks=layoutOverlaps(blocks.filter(function(b){ return b.day===d.k; }));
       dayBlocks.forEach(function(b){
-        var topH=(b.start-bounds.min)/60, durH=(b.end-b.start)/60;
+        var topH=unitsBefore(segs, b.start), durH=unitsBefore(segs, b.end) - topH;
         var n=el("div","blk"+(b.kind==="oh"?" oh":"")+(b.kind==="other"?" other":"")+(b.est?" est":"")+(state.opts.color&&b.kind==="course"?" print-color":"")+(b.pot&&b.pot!=="15W"?" short-session":""));
         // sized in grid rows so the print stylesheet can rescale --rowh
         n.style.top="calc(var(--rowh) * "+topH.toFixed(4)+")";
@@ -1992,7 +2047,21 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
   }
   function minutesAt(col, clientY){
     var g = gridInfo(col), r = col.getBoundingClientRect();
-    return g.min + ((clientY - r.top) / g.rowh) * 60;
+    var units = (clientY - r.top) / g.rowh;
+    var segs = JSON.parse(col.parentNode.dataset.segs || "null");
+    if(!segs) return g.min + units * 60;
+    // Walk the same rows the grid was drawn from, so dragging lands where the
+    // cursor is even when stretches of the day are folded away.
+    var u = 0;
+    for(var i = 0; i < segs.length; i++){
+      var s = segs[i], h = (s.type === "gap") ? GAP_UNITS : 1;
+      if(units < u + h || i === segs.length - 1){
+        if(s.type === "gap") return s.from;
+        return s.at + Math.max(0, Math.min(60, (units - u) * 60));
+      }
+      u += h;
+    }
+    return g.min;
   }
   function ownerOf(node){
     var sheet = node.closest ? node.closest(".sheet") : null;
@@ -2494,7 +2563,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     });
   }
   function bindOptions(){
-    var map={optCode:"code",optCredits:"credits",optWeekend:"weekend",optColor:"color",optTable:"table",optLoad:"load",optSign:"sign",optFit:"fit",optDept:"dept",optPrintColor:"printColor",opt24:"h24"};
+    var map={optCode:"code",optCredits:"credits",optWeekend:"weekend",optTrimDays:"trimDays",optTrimHours:"trimHours",optColor:"color",optTable:"table",optLoad:"load",optSign:"sign",optFit:"fit",optDept:"dept",optPrintColor:"printColor",opt24:"h24"};
     Object.keys(map).forEach(function(id){
       var node=$(id); node.checked=!!state.opts[map[id]];
       node.addEventListener("change", function(){
