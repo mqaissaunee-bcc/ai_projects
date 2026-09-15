@@ -299,7 +299,9 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
   .grid .timeslot{font-size:7.5pt}
   /* Black on white with a colored spine: legible whether or not the user
      enables background graphics in the print dialog. */
-  .blk{background:#fff!important;color:#000!important;font-size:7.5pt;line-height:1.2;padding:2px 4px;
+  /* a half-hour block is barely two lines tall once rows shrink, so let it keep
+     its own height rather than clipping the text away */
+  .blk{min-height:24px;background:#fff!important;color:#000!important;font-size:7.5pt;line-height:1.15;padding:1px 4px;
     border-top:1px solid #9a9a9a!important;border-right:1px solid #9a9a9a!important;border-bottom:1px solid #9a9a9a!important;
     border-left-style:solid!important;border-left-width:5px!important;border-left-color:var(--blkc,#333)!important;
     print-color-adjust:exact;-webkit-print-color-adjust:exact}
@@ -685,6 +687,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
           <li>Two ways to tighten the printed grid, under Display options: hide days with nothing on
             them, and collapse empty stretches of the day into a thin labelled row.</li>
           <li>Online courses in the side column now show which session they belong to.</li>
+          <li>Fixed: the location on an office-hours block was missing from the printed schedule.
+            It now shares a line with the time, so it survives the smaller print rows.</li>
         </ul></div>
 
       <div class="rel"><h3>Version 1.6</h3>
@@ -1462,8 +1466,15 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         n.style.setProperty("--blkc", spine);
         if(b.kind==="course" && state.opts.color) n.style.background=b.color;
         n.appendChild(el("b",null,b.title));
-        n.appendChild(el("span","l2", fmtTime(b.start)+"–"+fmtTime(b.end)));
-        if(b.sub) n.appendChild(el("span","l3", b.sub));
+        // Office-hours blocks are often only an hour, which is three lines of
+        // text in a two-line box once print shrinks the rows — and the third
+        // line, the location, was being clipped away. Keep it on the time line.
+        if(b.kind !== "course"){
+          n.appendChild(el("span","l2", fmtTime(b.start)+"–"+fmtTime(b.end) + (b.sub ? " · " + b.sub : "")));
+        } else {
+          n.appendChild(el("span","l2", fmtTime(b.start)+"–"+fmtTime(b.end)));
+          if(b.sub) n.appendChild(el("span","l3", b.sub));
+        }
         if(b.sub2 && durH*rowh>62) n.appendChild(el("span","l3", b.sub2));
         if(b.pot && b.pot!=="15W") n.appendChild(el("span","sess-badge", b.pot));
         n.title=b.title+" "+fmtTime(b.start)+"–"+fmtTime(b.end)+(b.sub?" · "+b.sub:"")+(b.est?" (estimated end time)":"");
