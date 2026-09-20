@@ -449,6 +449,46 @@ def build(rows, mapping, args, warn):
     return sections
 
 
+
+def diff_feeds(old_path, sections):
+    """What changed since the last build, recorded in the feed itself."""
+    try:
+        with open(old_path) as f:
+            old = json.load(f)
+    except (IOError, ValueError):
+        return None
+    o = {s["id"]: s for s in old.get("sections", [])}
+    n = {s["id"]: s for s in sections}
+
+    def pattern(sec):
+        return [[m.get("d"), m.get("s"), m.get("e"), m.get("rm")] for m in sec.get("m", [])]
+
+    def where(sec):
+        rooms = [m.get("rm") for m in sec.get("m", []) if m.get("rm")]
+        return ", ".join(rooms) if rooms else (sec.get("campus") or "")
+
+    instructor, meeting = [], []
+    for code in sorted(set(o) & set(n)):
+        a, b = o[code], n[code]
+        if sorted(a.get("i", [])) != sorted(b.get("i", [])):
+            instructor.append({"id": code, "from": a.get("i", []), "to": b.get("i", [])})
+        if pattern(a) != pattern(b):
+            meeting.append({"id": code, "from": where(a), "to": where(b),
+                            "roomOnly": [m.get("d") for m in a.get("m", [])] == [m.get("d") for m in b.get("m", [])]
+                                        and [m.get("s") for m in a.get("m", [])] == [m.get("s") for m in b.get("m", [])]})
+
+    return {
+        "since": (old.get("generated") or "")[:10],
+        "added": sorted(set(n) - set(o)),
+        "removed": sorted(set(o) - set(n)),
+        "instructor": instructor[:300],
+        "meeting": meeting[:300],
+        "unstaffed": {"before": sum(1 for s in o.values() if not s.get("i")),
+                      "after": sum(1 for s in n.values() if not s.get("i"))},
+        "totals": {"before": len(o), "after": len(n)},
+    }
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("spreadsheet", nargs="+",
@@ -462,6 +502,8 @@ def main():
     ap.add_argument("--default-pot", default="15W", help="used when the sheet has no part-of-term column")
     ap.add_argument("--names", default="auto", choices=["auto", "first-last", "as-is"],
                     help="auto/first-last flip 'Doe, Jane' to 'Jane Doe'; as-is leaves names alone")
+    ap.add_argument("--previous", default=None,
+                    help="the sections.json this build replaces; its differences are recorded in the feed")
     ap.add_argument("--calendar", default=None,
                     help="JSON with term start/end, closures, and swap days (see tools/calendar-26FA.json)")
     ap.add_argument("--keep-cancelled", action="store_true")
@@ -538,6 +580,7 @@ def main():
     no_instr = sum(1 for s in sections if not s["i"])
     multi = sum(1 for s in sections if len(s["m"]) > 1)
 
+    changes = diff_feeds(args.previous, sections) if args.previous else None
     calendar = None
     if args.calendar:
         with open(args.calendar) as cf:
@@ -549,6 +592,7 @@ def main():
         "source": ", ".join(os.path.basename(p) for p in args.spreadsheet),
         "meetingSource": "scrape",
         "calendar": calendar,
+        "changes": changes,
         "faculty": faculty,
         "sections": sections,
     }
@@ -563,6 +607,10 @@ def main():
     print(f"  {no_room} scheduled meetings with no room")
     print(f"  {no_instr} sections with no instructor (nobody's sheet will show them)")
     print(f"  {merged} instructor name variants merged")
+    if changes:
+        print(f"  since {changes['since']}: {len(changes['added'])} added, {len(changes['removed'])} removed, "
+              f"{len(changes['instructor'])} instructor changes, {len(changes['meeting'])} meeting or room changes, "
+              f"unstaffed {changes['unstaffed']['before']} -> {changes['unstaffed']['after']}")
     if calendar:
         print(f"  term {calendar.get('start')} to {calendar.get('end')}, "
               f"{len(calendar.get('closures') or [])} closure(s), {len(calendar.get('swaps') or [])} swap day(s)")
