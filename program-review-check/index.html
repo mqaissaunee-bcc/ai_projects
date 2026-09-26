@@ -1,0 +1,1028 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Program Review Check</title>
+<meta name="description" content="Analyze a draft Brookdale five-year program review: summary, SWOT, gaps, wording fixes, and a team email.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
+<style>
+:root{
+  --paper:#F3F5F8; --sheet:#FFFFFF; --ink:#18233A; --muted:#5A6478; --rule:#D8DEE7; --soft:#EEF1F5;
+  --accent:#1D4F91; --accent-ink:#FFFFFF;
+  --s:#2B7A57; --s-tint:#EAF5EF; --w:#B03D2E; --w-tint:#FBEDEA;
+  --o:#2C5C9E; --o-tint:#EAF1FB; --t:#9C6410; --t-tint:#FBF2E3;
+  --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+  --sans:"Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0F141C; --sheet:#161D28; --ink:#E6EBF2; --muted:#9BA6B8; --rule:#2A3445; --soft:#1C2533;
+    --accent:#7FA8E3; --accent-ink:#0F141C;
+    --s:#6CC39A; --s-tint:#15261E; --w:#E88B7C; --w-tint:#2A1816;
+    --o:#8BB2EC; --o-tint:#152036; --t:#E2B25F; --t-tint:#2A2113;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0F141C; --sheet:#161D28; --ink:#E6EBF2; --muted:#9BA6B8; --rule:#2A3445; --soft:#1C2533;
+  --accent:#7FA8E3; --accent-ink:#0F141C;
+  --s:#6CC39A; --s-tint:#15261E; --w:#E88B7C; --w-tint:#2A1816;
+  --o:#8BB2EC; --o-tint:#152036; --t:#E2B25F; --t-tint:#2A2113;
+}
+:root{ box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
+html{ scroll-padding-top:env(safe-area-inset-top,0px); }
+*,*::before,*::after{ box-sizing:inherit; }
+body{ margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); font-size:16px; line-height:1.55; }
+img{ max-width:100%; }
+button,input,textarea{ font:inherit; color:inherit; }
+:focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }
+
+.wrap{ max-width:1180px; margin:0 auto; padding:28px 20px 60px; }
+header.top{ margin-bottom:24px; max-width:760px; }
+header.top h1{ font-family:var(--serif); font-weight:700; font-size:clamp(28px,4vw,40px); line-height:1.1; margin:0 0 8px; letter-spacing:-0.01em; }
+header.top p{ margin:0; color:var(--muted); max-width:62ch; }
+
+.layout{ display:grid; grid-template-columns:320px minmax(0,1fr); gap:24px; align-items:start; }
+@media (max-width:860px){ .layout{ grid-template-columns:1fr; } }
+
+.panel{ background:var(--sheet); border:1px solid var(--rule); border-radius:10px; padding:18px; }
+.side{ position:sticky; top:calc(16px + env(safe-area-inset-top,0px)); display:flex; flex-direction:column; gap:14px; }
+@media (max-width:860px){ .side{ position:static; } }
+.side h2{ font-size:15px; font-weight:700; margin:0 0 4px; }
+.hint{ font-size:13.5px; color:var(--muted); margin:0; }
+
+.drop{ display:block; border:1.5px dashed var(--rule); border-radius:8px; padding:14px; cursor:pointer; background:var(--soft); transition:border-color .15s, background .15s; }
+.drop:hover,.drop.over{ border-color:var(--accent); }
+.drop input{ position:absolute; width:1px; height:1px; opacity:0; }
+.drop .fname{ font-weight:600; word-break:break-word; }
+.drop .fmeta{ font-size:13px; color:var(--muted); }
+.drop.filled{ border-style:solid; background:var(--sheet); }
+.slot + .slot{ margin-top:12px; }
+.slot-label{ font-size:14px; font-weight:600; margin:0 0 6px; }
+.clear-file{ background:none; border:0; padding:0; color:var(--accent); font-size:13px; cursor:pointer; text-decoration:underline; }
+
+.btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; border-radius:8px; border:1px solid var(--rule); background:var(--sheet); padding:9px 14px; font-weight:600; cursor:pointer; }
+.btn:hover{ border-color:var(--accent); }
+.btn.primary{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); width:100%; padding:11px 14px; }
+.btn[disabled]{ opacity:.5; cursor:not-allowed; }
+.btn.small{ padding:6px 10px; font-size:14px; }
+
+.steps{ list-style:none; margin:0; padding:0; font-size:14px; }
+.steps li{ display:flex; gap:10px; align-items:baseline; padding:4px 0; color:var(--muted); }
+.steps li .dot{ width:9px; height:9px; border-radius:50%; border:1.5px solid var(--rule); flex:none; transform:translateY(1px); }
+.steps li.running{ color:var(--ink); font-weight:600; }
+.steps li.running .dot{ border-color:var(--accent); background:var(--accent); animation:pulse 1.2s ease-in-out infinite; }
+.steps li.done{ color:var(--ink); }
+.steps li.done .dot{ background:var(--s); border-color:var(--s); }
+.steps li.failed .dot{ background:var(--w); border-color:var(--w); }
+.steps li.skipped{ text-decoration:line-through; opacity:.6; }
+@keyframes pulse{ 50%{ opacity:.35; } }
+@media (prefers-reduced-motion:reduce){ .steps li.running .dot{ animation:none; } }
+
+.note{ font-size:13px; color:var(--muted); border-top:1px solid var(--rule); padding-top:12px; margin:0; }
+.alert{ border-left:4px solid var(--w); background:var(--w-tint); padding:10px 12px; border-radius:6px; font-size:14px; }
+.info{ border-left:4px solid var(--o); background:var(--o-tint); padding:10px 12px; border-radius:6px; font-size:14px; }
+
+/* main */
+.main{ min-width:0; }
+.empty h2{ font-family:var(--serif); font-size:24px; margin:0 0 10px; }
+.empty ul{ margin:0; padding-left:20px; }
+.empty li{ margin:4px 0; }
+
+.doc-title{ font-family:var(--serif); font-size:clamp(22px,3vw,30px); font-weight:700; margin:0 0 4px; line-height:1.2; }
+.doc-meta{ color:var(--muted); font-size:14px; margin:0 0 16px; }
+
+.tabs{ display:flex; gap:4px; border-bottom:1px solid var(--rule); margin-bottom:18px; overflow-x:auto; }
+.tabs button{ background:none; border:0; border-bottom:3px solid transparent; padding:9px 12px; font-weight:600; color:var(--muted); cursor:pointer; white-space:nowrap; }
+.tabs button[aria-selected="true"]{ color:var(--ink); border-bottom-color:var(--accent); }
+.tabs .count{ font-weight:500; font-size:12.5px; color:var(--muted); margin-left:4px; }
+
+.prose p{ font-family:var(--serif); font-size:17.5px; line-height:1.65; max-width:70ch; margin:0 0 14px; }
+h3.sec{ font-size:15px; font-weight:700; margin:22px 0 10px; }
+.items{ list-style:none; margin:0; padding:0; max-width:78ch; }
+.items li{ padding:9px 0; border-top:1px solid var(--rule); }
+.items li:first-child{ border-top:0; }
+.items b{ font-weight:700; }
+.items .loc{ display:block; font-size:13px; color:var(--muted); margin-top:2px; }
+
+/* SWOT: the one bold element */
+.swot{ display:grid; grid-template-columns:1fr 1fr; gap:0; border:1px solid var(--rule); border-radius:10px; overflow:hidden; }
+@media (max-width:640px){ .swot{ grid-template-columns:1fr; } }
+.quad{ padding:18px 18px 12px; background:var(--sheet); border-top:6px solid var(--c); }
+.quad h3{ font-family:var(--serif); font-size:24px; margin:0 0 10px; color:var(--c); display:flex; align-items:baseline; gap:10px; }
+.quad h3 .letter{ font-size:44px; line-height:.8; font-weight:700; opacity:.9; }
+.quad ul{ margin:0; padding-left:18px; }
+.quad li{ margin:0 0 9px; font-size:15px; }
+.quad li::marker{ color:var(--c); }
+.quad.s{ --c:var(--s); background:linear-gradient(var(--s-tint),var(--s-tint)); }
+.quad.w{ --c:var(--w); background:linear-gradient(var(--w-tint),var(--w-tint)); }
+.quad.o{ --c:var(--o); background:linear-gradient(var(--o-tint),var(--o-tint)); }
+.quad.t{ --c:var(--t); background:linear-gradient(var(--t-tint),var(--t-tint)); }
+
+.checklist{ display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:6px 16px; font-size:14px; margin:0; padding:0; list-style:none; }
+.checklist li{ display:flex; gap:8px; align-items:baseline; }
+.checklist .mk{ font-weight:700; width:14px; flex:none; }
+.checklist .ok .mk{ color:var(--s); }
+.checklist .miss .mk{ color:var(--w); }
+.checklist .miss{ font-weight:600; }
+
+.fixes-wrap{ overflow-x:auto; }
+table.fixes{ border-collapse:collapse; width:100%; min-width:640px; font-size:14.5px; }
+table.fixes th{ text-align:left; font-size:13px; color:var(--muted); font-weight:600; padding:6px 10px; border-bottom:1px solid var(--rule); }
+table.fixes td{ vertical-align:top; padding:10px; border-bottom:1px solid var(--rule); }
+table.fixes .orig{ text-decoration:line-through; text-decoration-color:var(--w); color:var(--muted); }
+table.fixes .sugg{ color:var(--ink); font-weight:600; }
+@media (max-width:640px){
+  table.fixes{ min-width:0; } table.fixes thead{ display:none; }
+  table.fixes tr{ display:block; border-bottom:1px solid var(--rule); padding:8px 0; }
+  table.fixes td{ display:block; border:0; padding:3px 0; }
+}
+
+.email-box label{ display:block; font-size:13px; font-weight:600; color:var(--muted); margin:10px 0 4px; }
+.email-box input,.email-box textarea{ width:100%; border:1px solid var(--rule); border-radius:8px; padding:10px 12px; background:var(--sheet); }
+.email-box textarea{ min-height:320px; line-height:1.5; resize:vertical; }
+.row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:10px; }
+.status{ font-size:13.5px; color:var(--muted); }
+.thinking{ color:var(--muted); font-style:italic; }
+.field{ width:100%; border:1px solid var(--rule); border-radius:8px; padding:9px 11px; background:var(--sheet); font-size:14.5px; }
+.check{ display:flex; gap:8px; align-items:center; font-size:14px; margin-top:10px; cursor:pointer; }
+[hidden]{ display:none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Program Review Check</h1>
+    <p>Upload a draft of a Brookdale five-year program review. You'll get a summary, a SWOT analysis, the gaps to fix before submission, suggested wording fixes, and a short email for your team.</p>
+  </header>
+
+  <div class="layout">
+    <aside class="side">
+      <section class="panel">
+        <div class="slot">
+          <p class="slot-label">Current draft</p>
+          <label class="drop" id="dropCur">
+            <input type="file" id="fileCur" accept=".docx">
+            <span class="fname" id="nameCur">Choose a .docx file</span><br>
+            <span class="fmeta" id="metaCur">or drop it here</span>
+          </label>
+        </div>
+        <div class="slot">
+          <p class="slot-label">Earlier draft <span class="hint" style="font-weight:400">(optional, to compare)</span></p>
+          <label class="drop" id="dropPrev">
+            <input type="file" id="filePrev" accept=".docx">
+            <span class="fname" id="namePrev">Choose a .docx file</span><br>
+            <span class="fmeta" id="metaPrev">or drop it here</span>
+          </label>
+          <button class="clear-file" id="clearPrev" hidden>Remove earlier draft</button>
+        </div>
+      </section>
+
+      <section class="panel" id="accessPanel">
+        <p class="slot-label" id="accessLabel">Access</p>
+        <div id="keyBox" hidden>
+          <label class="hint" for="apiKey" style="display:block;margin-bottom:6px">Anthropic API key (from the person who gave you access)</label>
+          <input id="apiKey" class="field" type="password" autocomplete="off" spellcheck="false" placeholder="sk-ant-…">
+        </div>
+        <div id="passBox" hidden>
+          <label class="hint" for="passcode" style="display:block;margin-bottom:6px">Passcode (from the person who gave you access)</label>
+          <input id="passcode" class="field" type="password" autocomplete="off" spellcheck="false">
+        </div>
+        <label class="check"><input type="checkbox" id="remember"> Remember on this computer</label>
+        <p class="hint" id="accessState" style="margin-top:6px"></p>
+      </section>
+
+      <section class="panel">
+        <button class="btn primary" id="runBtn" disabled>Analyze draft</button>
+        <div class="row" id="stopRow" hidden><button class="btn small" id="stopBtn">Stop</button><span class="status" id="runStatus"></span></div>
+        <ul class="steps" id="steps" style="margin-top:12px"></ul>
+        <p class="note" style="margin-top:12px">The draft is sent to Anthropic's Claude API for analysis. Treat the results as a reviewer's checklist, not a final judgment. Charts and images in the document aren't read.</p>
+      </section>
+    </aside>
+
+    <main class="main" id="main">
+      <section class="panel empty" id="emptyState">
+        <h2>Start with a draft</h2>
+        <p class="hint" style="font-size:15px;margin-bottom:12px">Add the current draft on the left and select <b>Analyze draft</b>. A full analysis usually takes two to four minutes. You'll get:</p>
+        <ul>
+          <li>A one-page summary of the review and its main concerns</li>
+          <li>A SWOT analysis grounded in the draft's own data</li>
+          <li>Gaps: missing sections, inconsistencies, weak evidence, and recommendations that don't match the findings</li>
+          <li>Automated checks for leftover template text, empty appendices, blank table rows, and math errors</li>
+          <li>Suggested wording fixes, a comparison with an earlier draft, and a team email</li>
+          <li>A Word version of the full report</li>
+        </ul>
+        <p class="info" id="noAI" hidden style="margin-top:14px">Enter your access details on the left to run the full analysis. Without them, only the automated checks run.</p>
+      </section>
+
+      <section id="results" hidden>
+        <h2 class="doc-title" id="resTitle"></h2>
+        <p class="doc-meta" id="resMeta"></p>
+        <div class="row" style="margin:0 0 14px">
+          <button class="btn small" id="dlBtn" hidden>Download Word report</button>
+          <span class="status" id="dlStatus"></span>
+        </div>
+        <div id="banners"></div>
+        <nav class="tabs" role="tablist" id="tabs"></nav>
+        <div id="tabPanels"></div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script>
+(() => {
+"use strict";
+
+/* ---------- small helpers ---------- */
+const $ = (id) => document.getElementById(id);
+function el(tag, attrs, ...kids){
+  const n = document.createElement(tag);
+  if (attrs) for (const [k,v] of Object.entries(attrs)){
+    if (v == null || v === false) continue;
+    if (k === "class") n.className = v;
+    else if (k === "text") n.textContent = v;
+    else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+    else n.setAttribute(k, v === true ? "" : v);
+  }
+  for (const k of kids.flat()){ if (k == null || k === false) continue; n.append(k instanceof Node ? k : document.createTextNode(String(k))); }
+  return n;
+}
+const clean = (s) => String(s || "").replace(/\s+/g, " ").trim();
+const bytes = (s) => new TextEncoder().encode(s).length;
+const arr = (x) => Array.isArray(x) ? x : [];
+const item = (x) => typeof x === "string" ? { label: "", text: x } : { label: clean(x && x.label), text: clean(x && x.text) };
+const excerpt = (s, n = 90) => { s = clean(s); return s.length > n ? s.slice(0, n - 1) + "…" : s; };
+
+/* ---------- state ---------- */
+const S = { cur: null, prev: null, result: null, running: false, ctl: null };
+/* ============ CONFIGURATION ============
+   PROXY_URL: leave empty to have each user paste an Anthropic API key.
+   Set it to your Cloudflare Worker URL (for example "https://program-review.yourname.workers.dev")
+   to hide the key behind a passcode instead. */
+const PROXY_URL = "";
+const MODEL = "claude-opus-5-5";
+const MAX_TOKENS = 16000;
+/* ======================================== */
+
+const STORE_KEY = "prc-access";
+let access = "";
+function loadAccess(){
+  try { const v = localStorage.getItem(STORE_KEY); if (v){ access = v; $("remember").checked = true; } } catch {}
+  (PROXY_URL ? $("passcode") : $("apiKey")).value = access;
+}
+function saveAccess(){
+  access = (PROXY_URL ? $("passcode") : $("apiKey")).value.trim();
+  try { if ($("remember").checked && access) localStorage.setItem(STORE_KEY, access); else localStorage.removeItem(STORE_KEY); } catch {}
+  updateAccessUI();
+}
+function hasAccess(){ return !!access; }
+function updateAccessUI(){
+  $("accessState").textContent = access ? (PROXY_URL ? "Passcode entered." : "Key entered.") : "Not entered yet.";
+  $("noAI").hidden = hasAccess();
+}
+$("keyBox").hidden = !!PROXY_URL; $("passBox").hidden = !PROXY_URL;
+["apiKey","passcode"].forEach(id => $(id).addEventListener("input", saveAccess));
+$("remember").addEventListener("change", saveAccess);
+loadAccess(); updateAccessUI();
+
+async function callClaude(prompt, { signal, maxTokens = MAX_TOKENS } = {}){
+  const headers = { "content-type": "application/json" };
+  if (PROXY_URL) headers["x-passcode"] = access;
+  else {
+    headers["x-api-key"] = access;
+    headers["anthropic-version"] = "2023-06-01";
+    headers["anthropic-dangerous-direct-browser-access"] = "true";
+  }
+  let res;
+  try {
+    res = await fetch(PROXY_URL || "https://api.anthropic.com/v1/messages", {
+      method: "POST", headers, signal,
+      body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, messages: [{ role: "user", content: prompt }] }),
+    });
+  } catch (e){
+    if (e && e.name === "AbortError") throw { code: "cancelled" };
+    throw { code: "network" };
+  }
+  let data = null; try { data = await res.json(); } catch {}
+  if (!res.ok){
+    const msg = (data && data.error && data.error.message) || "";
+    const type = (data && data.error && data.error.type) || "";
+    if (type === "passcode") throw { code: "passcode" };
+    if (res.status === 401) throw { code: "auth" };
+    if (res.status === 403) throw { code: "forbidden", message: msg };
+    if (res.status === 429) throw { code: "rate_limited" };
+    if (/credit|billing|spend/i.test(msg)) throw { code: "billing" };
+    if (res.status === 413) throw { code: "prompt_too_large" };
+    if (res.status >= 500) throw { code: "overloaded" };
+    throw { code: "bad_request", message: msg };
+  }
+  const text = (data && Array.isArray(data.content) ? data.content : []).filter(b => b.type === "text").map(b => b.text).join("\n").trim();
+  if (!text) throw { code: "empty_completion" };
+  return { text, truncated: data.stop_reason === "max_tokens" };
+}
+
+/* ---------- reading .docx ---------- */
+async function readDocx(file){
+  if (!window.mammoth) throw new Error("The document reader didn't load. Check your connection and reload the page.");
+  const buf = await file.arrayBuffer();
+  let images = 0;
+  const res = await window.mammoth.convertToHtml({ arrayBuffer: buf }, {
+    convertImage: window.mammoth.images.imgElement(() => { images++; return Promise.resolve({ src: "" }); }),
+  });
+  const dom = new DOMParser().parseFromString(res.value, "text/html");
+  const blocks = [];
+  walk(dom.body, blocks);
+  return { name: file.name, size: file.size, blocks, images };
+}
+function walk(node, out){
+  for (const c of Array.from(node.children)){
+    const tag = c.tagName.toLowerCase();
+    if (/^h[1-6]$/.test(tag)){
+      const t = clean(c.textContent); if (t) out.push({ type: "h", level: +tag[1], text: t });
+    } else if (tag === "p"){
+      const t = clean(c.textContent); if (!t) continue;
+      const strong = clean(Array.from(c.querySelectorAll("strong")).map(s => s.textContent).join(" "));
+      if (t.length <= 100 && strong && strong.replace(/\s/g,"") === t.replace(/\s/g,"") && !/[.:;,]$/.test(t)){
+        out.push({ type: "h", level: 4, text: t, pseudo: true });
+      } else out.push({ type: "p", text: t });
+    } else if (tag === "ul" || tag === "ol"){
+      for (const li of Array.from(c.children)){ const t = clean(li.textContent); if (t) out.push({ type: "li", text: t }); }
+    } else if (tag === "table"){
+      const rows = [];
+      for (const tr of Array.from(c.querySelectorAll("tr"))){
+        if (tr.closest("table") !== c) continue;
+        rows.push(Array.from(tr.children).filter(x => /^(td|th)$/i.test(x.tagName)).map(td => clean(td.textContent)));
+      }
+      if (rows.length) out.push({ type: "table", rows });
+    } else {
+      walk(c, out);
+    }
+  }
+}
+function serialize(blocks, cellMax = 400, rowMax = 80){
+  const out = [];
+  for (const b of blocks){
+    if (b.type === "h") out.push("\n" + "#".repeat(Math.min(b.level, 4)) + " " + b.text);
+    else if (b.type === "p") out.push(b.text);
+    else if (b.type === "li") out.push("- " + b.text);
+    else if (b.type === "table"){
+      const rows = b.rows.slice(0, rowMax).map(r => "| " + r.map(c => c.length > cellMax ? c.slice(0, cellMax) + "…" : c).join(" | ") + " |");
+      if (b.rows.length > rowMax) rows.push(`| … ${b.rows.length - rowMax} more rows |`);
+      out.push("[Table]\n" + rows.join("\n"));
+    }
+  }
+  return out.join("\n").trim();
+}
+function blockText(b){ return b.type === "table" ? b.rows.map(r => r.join(" | ")).join(" | ") : b.text; }
+
+/* ---------- automated checks ---------- */
+const TEMPLATE_SECTIONS = [
+  ["Mission and alignment", /mission/i],
+  ["Catalog information", /catalog/i],
+  ["Program learning outcomes (PLOs)", /\bPLOs?\b|program learning outcome/i],
+  ["Course-to-program outcome map (CLO/PLO)", /\bCLOs?\b|course learning outcome/i],
+  ["Assessment findings and actions", /assessment/i],
+  ["Career readiness (NACE)", /\bNACE\b|career readiness/i],
+  ["Student perspective / survey", /survey|student perspective/i],
+  ["Transferability", /transfer/i],
+  ["Consultant report", /consultant/i],
+  ["Credit hour verification", /credit hour/i],
+  ["Demographics", /demographic/i],
+  ["Enrollment trends", /enrollment/i],
+  ["Recommendations", /recommendation/i],
+];
+function runChecks(doc){
+  const B = doc.blocks, full = B.map(blockText).join("\n");
+  const findings = [];
+  const headingBefore = (i) => { for (let j = i; j >= 0; j--) if (B[j].type === "h") return B[j].text; return "start of document"; };
+  const add = (label, text, where) => findings.push({ label, text, where });
+
+  // leftover template / placeholder text
+  const ph = [
+    [/\bTO ?DO\b/, "“TO DO” note"],
+    [/\bto[ -]do\s*:/i, "“To do” note"],
+    [/\binsert (the|and|a|an|your|here|each)\b/i, "Template instruction (“Insert…”)"],
+    [/\[\s*(insert|add|enter|describe)[^\]]*\]/i, "Bracketed placeholder"],
+    [/\bTBD\b|\bTBA\b|lorem ipsum|\bXXX+\b/i, "Placeholder text"],
+  ];
+  const seenPh = new Set();
+  B.forEach((b, i) => {
+    const t = blockText(b);
+    for (const [re, name] of ph){
+      const m = t.match(re);
+      if (m){
+        const key = name + "|" + headingBefore(i);
+        if (seenPh.has(key)) continue; seenPh.add(key);
+        const at = Math.max(0, m.index - 30);
+        add(name, `“${excerpt(t.slice(at), 110)}”`, headingBefore(i));
+      }
+    }
+  });
+
+  // empty sections and appendices
+  B.forEach((b, i) => {
+    if (b.type !== "h") return;
+    const isAppendix = /^appendix\s+[A-Z]\b/i.test(b.text);
+    if (b.pseudo && !isAppendix) return;
+    let j = i + 1, content = 0;
+    for (; j < B.length; j++){
+      const n = B[j];
+      if (n.type === "h"){
+        if (/^appendix\s+[A-Z]\b/i.test(n.text)) break;
+        if (!n.pseudo && n.level <= b.level) break;
+        if (n.pseudo) { content++; continue; }
+        content++; break; // has subsections
+      }
+      if (blockText(n).length > 2) content++;
+    }
+    if (!content) add(isAppendix ? "Empty appendix" : "Empty section", `“${excerpt(b.text, 80)}” has no content under it.`, b.text);
+  });
+
+  // blank table rows
+  B.forEach((b, i) => {
+    if (b.type !== "table" || b.rows.length < 2) return;
+    const blank = b.rows.slice(1).filter(r => r.every(c => !c.replace(/[\s\u00a0]/g, ""))).length;
+    if (blank) add("Blank table rows", `A table has ${blank} blank row${blank > 1 ? "s" : ""}. Fill ${blank > 1 ? "them" : "it"} in or delete ${blank > 1 ? "them" : "it"}.`, headingBefore(i));
+  });
+
+  // degenerate year ranges
+  B.forEach((b, i) => {
+    const t = blockText(b); const re = /\b(20\d\d)\s*[–—-]\s*\1\b/g; let m;
+    while ((m = re.exec(t))) add("Year range typo", `“${m[0]}” starts and ends in the same year.`, headingBefore(i));
+  });
+
+  // percentage arithmetic
+  B.forEach((b, i) => {
+    const t = blockText(b);
+    const pats = [
+      [/(\d+)\s+(?:[a-z]+\s+){0,2}\((\d+(?:\.\d+)?)\s*%\)\s+(?:out\s+)?of\s+(?:the\s+)?(\d+)/gi, (m) => [+m[1], +m[3], +m[2]]],
+      [/(\d+)\s+(?:out\s+)?of\s+(?:the\s+)?(\d+)\s+(?:[a-z]+\s+){0,2}\((\d+(?:\.\d+)?)\s*%\)/gi, (m) => [+m[1], +m[2], +m[3]]],
+    ];
+    for (const [re, f] of pats){ let m; while ((m = re.exec(t))){
+      const [n, d, p] = f(m); if (!d || n > d * 5) continue;
+      const actual = n / d * 100;
+      if (Math.abs(actual - p) > 1.5) add("Percentage doesn't compute", `“${excerpt(m[0], 90)}”: ${n} of ${d} is ${actual.toFixed(1)}%, not ${p}%.`, headingBefore(i));
+    }}
+  });
+
+  // doubled words
+  let dbl = 0;
+  B.forEach((b, i) => {
+    if (dbl >= 6 || b.type === "table") return;
+    const t = blockText(b); const re = /\b([A-Za-z]{2,})\s+\1\b/gi; let m;
+    while ((m = re.exec(t)) && dbl < 6){ if (/^(that|had|is)$/i.test(m[1])) continue; dbl++; add("Repeated word", `“${excerpt(t.slice(Math.max(0, m.index - 25), m.index + m[0].length + 25), 80)}”`, headingBefore(i)); }
+  });
+
+  const sections = TEMPLATE_SECTIONS.map(([name, re]) => ({ name, found: re.test(full) }));
+  return { findings, sections };
+}
+
+/* ---------- comparing drafts ---------- */
+function units(doc){
+  const u = [];
+  for (const b of doc.blocks){
+    if (b.type === "table") b.rows.forEach(r => { const s = clean(r.join(" | ")); if (s.replace(/[|\s]/g, "").length > 3) u.push(s); });
+    else if (b.text.length > 3) u.push(b.text);
+  }
+  return u;
+}
+const norm = (s) => s.toLowerCase().replace(/[^a-z0-9%.]+/g, " ").trim();
+function words(s){ return new Set(norm(s).split(" ").filter(w => w.length > 2)); }
+function similarity(a, b){ const A = words(a), B = words(b); if (!A.size || !B.size) return 0; let k = 0; for (const w of A) if (B.has(w)) k++; return k / (A.size + B.size - k); }
+function diffDocs(prev, cur){
+  const P = units(prev), C = units(cur);
+  const pset = new Set(P.map(norm)), cset = new Set(C.map(norm));
+  let removed = P.filter(x => !cset.has(norm(x)));
+  let added = C.filter(x => !pset.has(norm(x)));
+  const modified = [];
+  if (removed.length * added.length < 250000){
+    const used = new Set();
+    removed = removed.filter(r => {
+      let best = -1, bs = 0.45;
+      added.forEach((a, i) => { if (used.has(i)) return; const s = similarity(r, a); if (s > bs){ bs = s; best = i; } });
+      if (best >= 0){ used.add(best); modified.push([r, added[best]]); return false; }
+      return true;
+    });
+    added = added.filter((_, i) => !used.has(i));
+  }
+  return { added, removed, modified };
+}
+function capList(list, maxBytes, fmt){ const out = []; let n = 0; for (const x of list){ const s = fmt(x); n += bytes(s); if (n > maxBytes){ out.push(`(… ${list.length - out.length} more not shown)`); break; } out.push(s); } return out.join("\n"); }
+
+/* ---------- prompts ---------- */
+const PROMPT_LIMIT = 62000, DOC_LIMIT = 52000;
+function promptAnalysis(docText, checks, part = "gaps"){
+  const found = checks.findings.length ? checks.findings.map(f => `- ${f.label} (${f.where}): ${f.text}`).join("\n") : "- none";
+  const missing = checks.sections.filter(s => !s.found).map(s => s.name).join(", ") || "none";
+  const head = `You are an experienced community college program review evaluator. Analyze the draft five-year academic program review below (Brookdale Community College template). Work only from the document and do not invent facts. When you cite figures, use the document's own numbers and course codes.
+
+The Brookdale template normally includes: mission and alignment; catalog information and changes; recommended course sequence; CLO/PLO and PLO/ILO maps; assessment findings and actions; NACE career readiness map; career information; student perspective (survey); transferability report and articulation agreements; consultant report and faculty response; credit hour verification; demographics (enrollment status, GPA, retention, graduation); enrollment trends (majors, headcount, student credit hours); recommendations with resources and implementation dates; appendices A-E.`;
+  const fmt = `Every item has a "label" (2 to 6 words, ending with a period) and "text" (one or two sentences, at most 45 words, with specific evidence). Be direct and specific; a program team will use this to revise the draft.
+Inside text values, never use double quotation marks; use single quotes if you must quote. Reply with only the JSON object, no other text.`;
+  let task;
+  if (part === "summary") task = `Produce:
+- "program": the program's name as the document gives it.
+- "summary": 3 or 4 short paragraphs (each at most 90 words) of plain prose describing the program, the review's main argument, key data, curriculum changes, assessment results, transfer, and how complete the draft is.
+- "key_concerns": 3 to 5 items.
+${fmt}
+Shape: {"program":"","summary":[""],"key_concerns":[{"label":"","text":""}]}`;
+  else if (part === "swot") task = `Produce a SWOT analysis with 5 to 7 items per quadrant. Strengths and weaknesses are internal and evidenced in the document. Opportunities and threats are external or forward-looking.
+${fmt}
+Shape: {"swot":{"strengths":[{"label":"","text":""}],"weaknesses":[],"opportunities":[],"threats":[]}}`;
+  else task = `Automated checks already found the items below. They are shown to the reader separately, so do not repeat them unless you add a new point:
+${found}
+Template sections not detected by keyword: ${missing}
+
+Identify the gaps the team must address, 3 to 6 items per group:
+- "missing": missing or unfinished sections or content
+- "inconsistencies": contradictions, numeric errors, mismatched names, credits or course lists, tables that disagree with the text
+- "weak_evidence": dated data, missing benchmarks or sample sizes, claims without data, reliance on the previous review's data
+- "recommendations": mismatches between the findings and the recommendations, missing resources, dates or costs, improvement areas with no recommendation
+For gaps, the text also says what to do.
+${fmt}
+Shape: {"gaps":{"missing":[{"label":"","text":""}],"inconsistencies":[],"weak_evidence":[],"recommendations":[]}}`;
+  return `${head}
+
+${task}
+
+DOCUMENT:
+<<<
+${docText}
+>>>`;
+}
+
+/* Recover JSON from a reply that was cut short or slightly malformed. */
+function closers(str){
+  const st = []; let inStr = false, esc = false;
+  for (const ch of str){
+    if (inStr){ if (esc) esc = false; else if (ch === "\\") esc = true; else if (ch === '"') inStr = false; continue; }
+    if (ch === '"') inStr = true;
+    else if (ch === "{" || ch === "[") st.push(ch);
+    else if (ch === "}" || ch === "]") st.pop();
+  }
+  if (inStr) return null;
+  return st.reverse().map(c => c === "{" ? "}" : "]").join("");
+}
+function salvageJSON(text){
+  if (!text) return null;
+  let s = String(text).replace(/```(?:json)?/gi, "");
+  const start = s.search(/[\[{]/); if (start < 0) return null;
+  s = s.slice(start);
+  const noTrail = (x) => x.replace(/,\s*([}\]])/g, "$1");
+  for (const x of [s, noTrail(s)]){ try { return JSON.parse(x); } catch {} }
+  let end = s.length;
+  for (let k = 0; k < 300; k++){
+    const idx = Math.max(s.lastIndexOf("}", end - 1), s.lastIndexOf("]", end - 1));
+    if (idx <= 0) break;
+    const pre = s.slice(0, idx + 1), c = closers(pre);
+    if (c !== null){ try { return JSON.parse(noTrail(pre + c)); } catch {} }
+    end = idx;
+  }
+  return null;
+}
+async function askJSON(prompt, opts, label){
+  const r = await callClaude(prompt, opts);
+  const v = salvageJSON(r.text);
+  if (!v || typeof v !== "object") throw { code: "invalid_json" };
+  if (r.truncated && label && S.result) S.result.notices.push(`The ${label} reply was cut off, so it may be missing its last few items. Select Analyze again for a complete version.`);
+  return v;
+}
+
+function promptFixes(docText){
+  return `You are copyediting a draft academic program review. Find up to 20 specific wording problems worth fixing: misspellings (especially of people's names, titles and organizations), grammar errors, wrong or inconsistent program names and terminology, wrong course codes, leftover template instructions, awkward sentences, and numeric statements that don't compute. Skip trivial style preferences.
+
+For each, quote the original text exactly as it appears in the document (at most 25 words), give the corrected wording, the section where it appears, and a brief reason.
+
+Reply with only a JSON array: [{"section":"","original":"","suggested":"","reason":""}]
+
+DOCUMENT:
+<<<
+${docText}
+>>>`;
+}
+function promptCompare(diff, prevName, curName){
+  const mod = capList(diff.modified, 16000, ([a, b]) => `BEFORE: ${a}\nAFTER: ${b}\n`);
+  const add = capList(diff.added, 14000, x => `+ ${x}`);
+  const rem = capList(diff.removed, 8000, x => `- ${x}`);
+  return `Two drafts of the same academic program review were compared paragraph by paragraph. Earlier draft: "${prevName}". Current draft: "${curName}". Formatting-only changes were ignored.
+
+Explain the substantive changes: what content was added, removed, or revised, and how each change affects the review's strengths, weaknesses, opportunities, threats, or unresolved gaps. Group small related edits together. Ignore trivial punctuation changes.
+
+Reply with only JSON: {"overview":"2-3 sentences","changes":[{"area":"section or topic","change":"what changed","effect":"effect on the SWOT or gaps"}]}
+
+REVISED PARAGRAPHS:
+${mod || "(none)"}
+
+ADDED:
+${add || "(none)"}
+
+REMOVED:
+${rem || "(none)"}`;
+}
+function promptEmail(R){
+  const brief = {
+    program: R.program,
+    key_concerns: R.key_concerns.map(k => `${k.label} ${k.text}`),
+    gaps: Object.fromEntries(Object.entries(R.gaps).map(([k, v]) => [k, v.map(x => x.label)])),
+    automated_checks: R.checks.findings.map(f => `${f.label} (${f.where})`).slice(0, 12),
+    changes_since_earlier_draft: R.compare ? R.compare.overview : null,
+  };
+  return `Write a short email to a program review team sharing the results of a review of their draft. Plain, friendly, collegial tone. 150 to 230 words. Start with one or two sentences of overview, then list the 4 to 6 most important things to address as short lines starting with "- ", then a one-line close. Mention that the full analysis is attached as a Word document. End with "[Your name]". Do not invent details beyond this data.
+
+DATA:
+${JSON.stringify(brief)}
+
+Reply with only JSON: {"subject":"","body":""}`;
+}
+function promptCondense(chunk, i, n){
+  return `This is part ${i} of ${n} of a long academic program review draft. Rewrite it as dense notes that preserve every section heading, every number, percentage, course code, name, date, table value that matters, every placeholder or unfinished item (such as "TO DO" or empty sections), and anything that looks inconsistent or wrong. Keep the original section order. Plain text only.
+
+PART:
+<<<
+${chunk}
+>>>`;
+}
+
+/* ---------- running ---------- */
+const STEP_DEFS = [
+  ["read", "Reading the document"],
+  ["checks", "Running automated checks"],
+    ["analysis", "Writing the summary, SWOT, and gaps"],
+  ["fixes", "Finding wording fixes"],
+  ["compare", "Comparing with the earlier draft"],
+  ["email", "Drafting the team email"],
+];
+function setSteps(visible){
+  const ul = $("steps"); ul.textContent = "";
+  for (const [id, label] of STEP_DEFS){ if (!visible.includes(id)) continue; ul.append(el("li", { id: "st-" + id, hidden: id === "condense" }, el("span", { class: "dot" }), el("span", { text: label }))); }
+}
+function step(id, st){ const li = $("st-" + id); if (!li) return; li.className = st; if (id === "condense" && st !== "skipped") li.hidden = false; }
+
+function errCopy(e){
+  const c = e && e.code;
+  switch (c){
+    case "auth": return PROXY_URL ? "The service's API key was rejected. Contact the person who gave you access." : "The API key was rejected. Check that it was pasted correctly.";
+    case "passcode": return "The passcode wasn't accepted. Check it with the person who gave you access.";
+    case "forbidden": return "This key isn't allowed to use the analysis model. Contact the person who gave you access.";
+    case "billing": return "The API account is out of credit or over its spend limit. Contact the person who gave you access.";
+    case "rate_limited": return "Too many requests at once. Wait a minute, then select Analyze again.";
+    case "overloaded": return "Anthropic's service is busy or unavailable. Try again in a few minutes.";
+    case "network": return "The analysis service couldn't be reached. Check your internet connection and try again.";
+    case "prompt_too_large": return "The document is too long to analyze. Try removing appendices that are only pasted reports.";
+    case "invalid_json": return "The analysis came back in an unexpected format. Select Analyze again.";
+    case "empty_completion": return "The analysis came back empty. Select Analyze again.";
+    case "bad_request": return "The request was rejected" + (e.message ? ": " + e.message : ".");
+    default: return "The analysis was interrupted. Select Analyze again.";
+  }
+}
+const isFatalAI = (e) => ["auth","passcode","forbidden","billing","rate_limited","network"].includes(e && e.code);
+
+async function prepareText(doc){
+  let t = serialize(doc.blocks, 1500, 300);
+  if (bytes(t) > 700000) return { text: t.slice(0, 650000) + "\n[…truncated]", condensed: true };
+  return { text: t, condensed: false };
+}
+
+async function run(){
+  if (S.running || !S.curFile) return;
+  S.running = true; S.ctl = new AbortController(); const signal = S.ctl.signal;
+  $("runBtn").disabled = true; $("stopRow").hidden = false; $("runStatus").textContent = "";
+  const hasAI = hasAccess();
+  const vis = ["read", "checks"];
+  if (hasAI) vis.push("analysis", "fixes");
+  if (hasAI && S.prevFile) vis.push("compare");
+  if (hasAI) vis.push("email");
+  setSteps(vis);
+  const R = { program: "", summary: [], key_concerns: [], swot: { strengths: [], weaknesses: [], opportunities: [], threats: [] },
+    gaps: { missing: [], inconsistencies: [], weak_evidence: [], recommendations: [] }, fixes: null, compare: null, email: null,
+    checks: null, notices: [], errors: [], fileName: S.curFile.name, prevName: S.prevFile ? S.prevFile.name : null, date: new Date() };
+  S.result = R;
+  try {
+    step("read", "running");
+    S.cur = await readDocx(S.curFile);
+    S.prev = S.prevFile ? await readDocx(S.prevFile) : null;
+    step("read", "done");
+
+    step("checks", "running");
+    R.checks = runChecks(S.cur);
+    step("checks", "done");
+    if (S.cur.images) R.notices.push(`${S.cur.images} chart${S.cur.images > 1 ? "s or images" : " or image"} in the document ${S.cur.images > 1 ? "weren't" : "wasn't"} read.`);
+    render();
+
+    if (!hasAI){ R.notices.push("Only the automated checks ran. Enter your access details to run the full analysis."); render(); return; }
+
+    const prep = await prepareText(S.cur);
+    if (prep.condensed){ R.notices.push("The document was very long, so its end was cut before analysis."); }
+
+    step("analysis", "running"); step("fixes", "running");
+    $("runStatus").textContent = "This part takes two to four minutes.";
+    const pSum = askJSON(promptAnalysis(prep.text, R.checks, "summary"), { signal }, "summary");
+    const pSwot = askJSON(promptAnalysis(prep.text, R.checks, "swot"), { signal }, "SWOT");
+    const pGaps = askJSON(promptAnalysis(prep.text, R.checks, "gaps"), { signal }, "gaps");
+    const pB = askJSON(promptFixes(prep.text), { signal }, "wording fixes");
+    const [aSum, aSwot, aGaps, b] = await Promise.allSettled([pSum, pSwot, pGaps, pB]);
+    for (const x of [aSum, aSwot, aGaps, b]) if (x.status === "rejected" && x.reason && x.reason.code === "cancelled") throw x.reason;
+
+    let anyOk = false, fatal = null;
+    const part = (res, name, apply) => {
+      if (res.status === "fulfilled" && res.value && typeof res.value === "object"){ apply(res.value); anyOk = true; }
+      else { R.errors.push(name + ": " + errCopy(res.reason)); if (isFatalAI(res.reason)) fatal = res.reason; }
+    };
+    part(aSum, "Summary", (v) => {
+      R.program = clean(v.program);
+      R.summary = arr(v.summary).map(clean).filter(Boolean);
+      R.key_concerns = arr(v.key_concerns).map(item).filter(x => x.text);
+    });
+    part(aSwot, "SWOT", (v) => { const w = v.swot || v; for (const k of Object.keys(R.swot)) R.swot[k] = arr(w[k]).map(item).filter(x => x.text); });
+    part(aGaps, "Gaps", (v) => { const g = v.gaps || v; for (const k of Object.keys(R.gaps)) R.gaps[k] = arr(g[k]).map(item).filter(x => x.text); });
+    step("analysis", anyOk ? "done" : "failed");
+    if (fatal && !anyOk){ R.errors = [errCopy(fatal)]; step("fixes", "failed"); ["compare","email"].forEach(s => step(s, "skipped")); render(); return; }
+    if (b.status === "fulfilled"){
+      R.fixes = arr(b.value).map(x => ({ section: clean(x && x.section), original: clean(x && x.original), suggested: clean(x && x.suggested), reason: clean(x && x.reason) })).filter(x => x.original || x.suggested);
+      step("fixes", "done");
+    } else {
+      step("fixes", "failed");
+      R.errors.push("Wording fixes: " + errCopy(b.reason));
+    }
+    render();
+
+    if (S.prev){
+      step("compare", "running"); $("runStatus").textContent = "Comparing drafts…";
+      const d = diffDocs(S.prev, S.cur);
+      R.diffStats = { added: d.added.length, removed: d.removed.length, modified: d.modified.length };
+      if (!d.added.length && !d.removed.length && !d.modified.length){
+        R.compare = { overview: "No text changes were found between the two drafts. Formatting-only changes, such as bolding or heading styles, aren't detected.", changes: [] };
+        step("compare", "done");
+      } else {
+        try {
+          const c = await askJSON(promptCompare(d, S.prev.name, S.cur.name), { signal }, "comparison");
+          R.compare = { overview: clean(c && c.overview), changes: arr(c && c.changes).map(x => ({ area: clean(x && x.area), change: clean(x && x.change), effect: clean(x && x.effect) })).filter(x => x.change) };
+          step("compare", "done");
+        } catch (e){ if (e && e.code === "cancelled") throw e; step("compare", "failed"); R.errors.push("Draft comparison: " + errCopy(e)); }
+      }
+      render();
+    }
+
+    if (R.summary.length || R.swot.strengths.length || R.gaps.missing.length){
+      step("email", "running"); $("runStatus").textContent = "Drafting the email…";
+      try {
+        const m = await askJSON(promptEmail(R), { signal, maxTokens: 4000 });
+        R.email = { subject: clean(m && m.subject), body: String((m && m.body) || "").trim() };
+        step("email", "done");
+      } catch (e){ if (e && e.code === "cancelled") throw e; step("email", "failed"); R.errors.push("Team email: " + errCopy(e)); }
+    } else step("email", "skipped");
+    render();
+  } catch (e){
+    if (e && e.code === "cancelled"){ R.notices.push("Analysis stopped. Results so far are shown."); }
+    else { R.errors.push(errCopy(e)); }
+    for (const [id] of STEP_DEFS){ const li = $("st-" + id); if (li && li.className === "running") li.className = "failed"; }
+    render();
+  } finally {
+    S.running = false; S.ctl = null;
+    $("stopRow").hidden = true; $("runStatus").textContent = "";
+    $("runBtn").disabled = !S.curFile; $("runBtn").textContent = "Analyze again";
+  }
+}
+
+/* ---------- rendering ---------- */
+let activeTab = "summary";
+function itemsList(list, withWhere){
+  return el("ul", { class: "items" }, list.map(x => el("li", null, x.label ? el("b", { text: x.label + " " }) : null, x.text, withWhere && x.where ? el("span", { class: "loc", text: "In: " + x.where }) : null)));
+}
+function render(){
+  const R = S.result; if (!R) return;
+  const first = $("results").hidden;
+  $("emptyState").hidden = true; $("results").hidden = false;
+  if (first && window.matchMedia("(max-width:860px)").matches) $("results").scrollIntoView({ block: "start" });
+  $("resTitle").textContent = R.program || "Program review analysis";
+  $("resMeta").textContent = `${R.fileName}${R.prevName ? " compared with " + R.prevName : ""} • Analyzed ${R.date.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}`;
+  const ban = $("banners"); ban.textContent = "";
+  R.errors.forEach(t => ban.append(el("p", { class: "alert", style: "margin:0 0 10px", text: t })));
+  R.notices.forEach(t => ban.append(el("p", { class: "info", style: "margin:0 0 10px", text: t })));
+
+  const pending = S.running;
+  const nGaps = Object.values(R.gaps).reduce((a, b) => a + b.length, 0) + (R.checks ? R.checks.findings.length : 0);
+  const tabs = [
+    ["summary", "Summary", null],
+    ["swot", "SWOT", null],
+    ["gaps", "Gaps", nGaps || null],
+    ["fixes", "Wording fixes", R.fixes ? R.fixes.length : null],
+  ];
+  if (R.prevName) tabs.push(["changes", "Changes", R.compare ? R.compare.changes.length : null]);
+  tabs.push(["email", "Team email", null]);
+  if (!tabs.some(t => t[0] === activeTab)) activeTab = "summary";
+
+  const nav = $("tabs"); nav.textContent = "";
+  tabs.forEach(([id, label, n]) => nav.append(el("button", { role: "tab", "aria-selected": String(id === activeTab), "aria-controls": "panel-" + id, id: "tab-" + id,
+    onclick: () => { activeTab = id; render(); } }, label, n != null ? el("span", { class: "count", text: String(n) }) : null)));
+
+  const wait = (what) => el("p", { class: "thinking", text: pending ? `${what} will appear here when ready.` : `${what} isn't available for this run.` });
+  const P = $("tabPanels"); P.textContent = "";
+  const panel = el("section", { role: "tabpanel", id: "panel-" + activeTab, "aria-labelledby": "tab-" + activeTab });
+  P.append(panel);
+
+  if (activeTab === "summary"){
+    if (R.summary.length){
+      panel.append(el("div", { class: "prose" }, R.summary.map(p => el("p", { text: p }))));
+      if (R.key_concerns.length){ panel.append(el("h3", { class: "sec", text: "Main concerns" }), itemsList(R.key_concerns)); }
+    } else panel.append(wait("The summary"));
+  }
+  if (activeTab === "swot"){
+    const has = Object.values(R.swot).some(v => v.length);
+    if (!has) panel.append(wait("The SWOT analysis"));
+    else {
+      const q = (cls, letter, name, list) => el("div", { class: "quad " + cls }, el("h3", null, el("span", { class: "letter", "aria-hidden": "true", text: letter }), name),
+        el("ul", null, list.map(x => el("li", null, x.label ? el("b", { text: x.label + " " }) : null, x.text))));
+      panel.append(el("div", { class: "swot" },
+        q("s", "S", "Strengths", R.swot.strengths), q("w", "W", "Weaknesses", R.swot.weaknesses),
+        q("o", "O", "Opportunities", R.swot.opportunities), q("t", "T", "Threats", R.swot.threats)));
+    }
+  }
+  if (activeTab === "gaps"){
+    if (R.checks){
+      panel.append(el("h3", { class: "sec", style: "margin-top:0", text: "Template sections" }),
+        el("ul", { class: "checklist" }, R.checks.sections.map(s => el("li", { class: s.found ? "ok" : "miss" }, el("span", { class: "mk", "aria-hidden": "true", text: s.found ? "✓" : "✕" }), s.name + (s.found ? "" : " (not found)")))),
+        el("h3", { class: "sec", text: "Automated checks" }),
+        R.checks.findings.length ? itemsList(R.checks.findings, true) : el("p", { class: "hint", text: "No leftover template text, empty appendices, blank table rows, or arithmetic errors were found." }));
+    }
+    const groups = [["missing", "Missing or unfinished"], ["inconsistencies", "Internal inconsistencies"], ["weak_evidence", "Weak or dated evidence"], ["recommendations", "Recommendations vs. findings"]];
+    const any = groups.some(([k]) => R.gaps[k].length);
+    if (!any) panel.append(el("h3", { class: "sec", text: "Reviewer findings" }), wait("Reviewer findings"));
+    groups.forEach(([k, name]) => { if (R.gaps[k].length) panel.append(el("h3", { class: "sec", text: name }), itemsList(R.gaps[k])); });
+  }
+  if (activeTab === "fixes"){
+    if (!R.fixes) panel.append(wait("Wording fixes"));
+    else if (!R.fixes.length) panel.append(el("p", { class: "hint", text: "No wording problems worth fixing were found." }));
+    else {
+      panel.append(el("p", { class: "hint", style: "margin:0 0 10px", text: "Search the draft for the original text to find each spot." }));
+      panel.append(el("div", { class: "fixes-wrap" }, el("table", { class: "fixes" },
+        el("thead", null, el("tr", null, el("th", { text: "Original" }), el("th", { text: "Suggested" }), el("th", { text: "Why" }))),
+        el("tbody", null, R.fixes.map(f => el("tr", null,
+          el("td", null, el("span", { class: "orig", text: f.original }), f.section ? el("span", { class: "loc", style: "display:block;font-size:12.5px;color:var(--muted);margin-top:4px", text: f.section }) : null),
+          el("td", { class: "sugg", text: f.suggested }), el("td", { text: f.reason })))))));
+    }
+  }
+  if (activeTab === "changes"){
+    if (!R.compare) panel.append(wait("The comparison"));
+    else {
+      if (R.diffStats) panel.append(el("p", { class: "hint", style: "margin:0 0 10px", text: `${R.diffStats.modified} revised, ${R.diffStats.added} added, and ${R.diffStats.removed} removed paragraphs or table rows. Formatting-only changes aren't counted.` }));
+      panel.append(el("div", { class: "prose" }, el("p", { text: R.compare.overview })));
+      if (R.compare.changes.length) panel.append(el("ul", { class: "items" }, R.compare.changes.map(c => el("li", null, c.area ? el("b", { text: c.area + ". " }) : null, c.change, c.effect ? el("span", { class: "loc", text: "Effect: " + c.effect }) : null))));
+    }
+  }
+  if (activeTab === "email"){
+    if (!R.email) panel.append(wait("The team email"));
+    else {
+      const subj = el("input", { id: "emSubj", value: R.email.subject });
+      const body = el("textarea", { id: "emBody" }); body.value = R.email.body;
+      subj.addEventListener("input", () => { R.email.subject = subj.value; });
+      body.addEventListener("input", () => { R.email.body = body.value; });
+      const st = el("span", { class: "status" });
+      panel.append(el("div", { class: "email-box" },
+        el("label", { for: "emSubj", text: "Subject" }), subj,
+        el("label", { for: "emBody", text: "Message" }), body,
+        el("div", { class: "row" }, el("button", { class: "btn small", onclick: () => copyText(subj.value + "\n\n" + body.value, body, st) }, "Copy email"), st)));
+    }
+  }
+  refreshDownload();
+}
+async function copyText(t, field, st){
+  try { await navigator.clipboard.writeText(t); st.textContent = "Copied."; }
+  catch { field.focus(); field.select(); st.textContent = "Press Ctrl+C (or ⌘C) to copy the selected message."; }
+}
+
+/* ---------- Word export ---------- */
+function refreshDownload(){
+  const R = S.result;
+  const ready = R && !S.running && (R.summary.length || (R.checks && R.checks.findings.length));
+  $("dlBtn").hidden = !(ready && window.docx);
+}
+function buildDocx(R){
+  const D = window.docx;
+  const NAVY = "1F3864";
+  const run = (t, o = {}) => new D.TextRun({ text: t, ...o });
+  const para = (children, o = {}) => new D.Paragraph({ children, spacing: { after: 120 }, ...o });
+  const bullet = (label, text, size) => new D.Paragraph({ numbering: { reference: "b", level: 0 }, spacing: { after: 70 },
+    children: [label ? run(label + " ", { bold: true, size }) : null, run(text, { size })].filter(Boolean) });
+  const H1 = (t, o = {}) => new D.Paragraph({ heading: D.HeadingLevel.HEADING_1, children: [run(t)], ...o });
+  const H2 = (t) => new D.Paragraph({ heading: D.HeadingLevel.HEADING_2, children: [run(t)] });
+  const border = { style: D.BorderStyle.SINGLE, size: 4, color: "BFBFBF" };
+  const borders = { top: border, bottom: border, left: border, right: border };
+  const kids = [];
+  kids.push(new D.Paragraph({ alignment: D.AlignmentType.CENTER, spacing: { after: 60 }, children: [run("Program Review Analysis", { bold: true, size: 40, color: NAVY })] }));
+  if (R.program) kids.push(new D.Paragraph({ alignment: D.AlignmentType.CENTER, spacing: { after: 60 }, children: [run(R.program, { size: 26, color: NAVY })] }));
+  kids.push(new D.Paragraph({ alignment: D.AlignmentType.CENTER, spacing: { after: 240 }, border: { bottom: { style: D.BorderStyle.SINGLE, size: 8, color: NAVY, space: 6 } },
+    children: [run(`Review of ${R.fileName}${R.prevName ? " (compared with " + R.prevName + ")" : ""} • ${R.date.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}`, { italics: true, size: 20, color: "595959" })] }));
+  let n = 1;
+  if (R.summary.length){
+    kids.push(H1(`${n++}. Summary`));
+    R.summary.forEach(p => kids.push(para([run(p)])));
+    if (R.key_concerns.length){ kids.push(para([run("Main concerns:", { bold: true })], { spacing: { after: 60 } })); R.key_concerns.forEach(k => kids.push(bullet(k.label, k.text))); }
+  }
+  if (Object.values(R.swot).some(v => v.length)){
+    const cell = (title, list, fill, color) => new D.TableCell({ width: { size: 4680, type: D.WidthType.DXA }, borders,
+      shading: { fill, type: D.ShadingType.CLEAR, color: "auto" }, margins: { top: 80, bottom: 60, left: 130, right: 130 },
+      children: [new D.Paragraph({ spacing: { after: 60 }, children: [run(title, { bold: true, size: 26, color })] }), ...(list.length ? list.map(x => bullet(x.label, x.text, 18)) : [new D.Paragraph({ children: [] })])] });
+    kids.push(H1(`${n++}. SWOT Analysis`, { pageBreakBefore: true }));
+    kids.push(new D.Table({ width: { size: 9360, type: D.WidthType.DXA }, columnWidths: [4680, 4680], rows: [
+      new D.TableRow({ children: [cell("Strengths", R.swot.strengths, "EAF4EA", "2E7D32"), cell("Weaknesses", R.swot.weaknesses, "FDECEA", "C62828")] }),
+      new D.TableRow({ children: [cell("Opportunities", R.swot.opportunities, "E8F0FB", "1565C0"), cell("Threats", R.swot.threats, "FFF4E0", "E65100")] }),
+    ] }));
+  }
+  kids.push(H1(`${n++}. Gaps to Address`));
+  let sub = 1; const gn = n - 1;
+  if (R.checks){
+    const miss = R.checks.sections.filter(s => !s.found);
+    kids.push(H2(`${gn}.${sub++} Automated checks`));
+    if (miss.length) kids.push(bullet("Template sections not found:", miss.map(s => s.name).join(", ") + "."));
+    if (R.checks.findings.length) R.checks.findings.forEach(f => kids.push(bullet(f.label + ".", `${f.text} (In: ${f.where})`)));
+    if (!miss.length && !R.checks.findings.length) kids.push(para([run("No leftover template text, empty appendices, blank table rows, or arithmetic errors were found.")]));
+  }
+  [["missing", "Missing or unfinished sections"], ["inconsistencies", "Internal inconsistencies"], ["weak_evidence", "Weak or dated evidence"], ["recommendations", "Recommendations vs. findings"]].forEach(([k, name]) => {
+    if (!R.gaps[k].length) return;
+    kids.push(H2(`${gn}.${sub++} ${name}`)); R.gaps[k].forEach(x => kids.push(bullet(x.label, x.text)));
+  });
+  if (R.fixes && R.fixes.length){
+    kids.push(H1(`${n++}. Suggested Wording Fixes`));
+    const w = [3000, 3000, 3360];
+    const hc = (t, i) => new D.TableCell({ width: { size: w[i], type: D.WidthType.DXA }, borders, shading: { fill: "D9E2F3", type: D.ShadingType.CLEAR, color: "auto" }, margins: { top: 60, bottom: 60, left: 100, right: 100 }, children: [new D.Paragraph({ children: [run(t, { bold: true, size: 19 })] })] });
+    const bc = (runs, i) => new D.TableCell({ width: { size: w[i], type: D.WidthType.DXA }, borders, margins: { top: 60, bottom: 60, left: 100, right: 100 }, children: [new D.Paragraph({ children: runs })] });
+    kids.push(new D.Table({ width: { size: 9360, type: D.WidthType.DXA }, columnWidths: w, rows: [
+      new D.TableRow({ tableHeader: true, children: [hc("Original", 0), hc("Suggested", 1), hc("Why", 2)] }),
+      ...R.fixes.map(f => new D.TableRow({ children: [
+        bc([run(f.original, { size: 19 }), ...(f.section ? [new D.TextRun({ text: " (" + f.section + ")", size: 17, color: "7F7F7F", italics: true })] : [])], 0),
+        bc([run(f.suggested, { size: 19, bold: true })], 1), bc([run(f.reason, { size: 19 })], 2)] })),
+    ] }));
+  }
+  if (R.compare){
+    kids.push(H1(`${n++}. Changes Since the Earlier Draft`));
+    if (R.compare.overview) kids.push(para([run(R.compare.overview)]));
+    R.compare.changes.forEach(c => kids.push(bullet(c.area ? c.area + "." : "", c.change + (c.effect ? " Effect: " + c.effect : ""))));
+  }
+  return new D.Document({
+    styles: {
+      default: { document: { run: { font: "Calibri", size: 22 } } },
+      paragraphStyles: [
+        { id: "Heading1", name: "Heading 1", basedOn: "Normal", next: "Normal", quickFormat: true, run: { size: 30, bold: true, color: NAVY }, paragraph: { spacing: { before: 300, after: 140 }, outlineLevel: 0 } },
+        { id: "Heading2", name: "Heading 2", basedOn: "Normal", next: "Normal", quickFormat: true, run: { size: 24, bold: true, color: "2F5496" }, paragraph: { spacing: { before: 200, after: 100 }, outlineLevel: 1 } },
+      ],
+    },
+    numbering: { config: [{ reference: "b", levels: [{ level: 0, format: D.LevelFormat.BULLET, text: "\u2022", alignment: D.AlignmentType.LEFT, style: { paragraph: { indent: { left: 360, hanging: 260 } } } }] }] },
+    sections: [{
+      properties: { page: { size: { width: 12240, height: 15840 }, margin: { top: 1080, bottom: 1080, left: 1440, right: 1440 } } },
+      footers: { default: new D.Footer({ children: [new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [run("Program Review Analysis  |  Page ", { size: 16, color: "808080" }), new D.TextRun({ children: [D.PageNumber.CURRENT], size: 16, color: "808080" })] })] }) },
+      children: kids,
+    }],
+  });
+}
+async function downloadWord(){
+  const R = S.result; if (!R) return;
+  const st = $("dlStatus"); st.textContent = "Preparing the Word file…"; $("dlBtn").disabled = true;
+  try {
+    const blob = await window.docx.Packer.toBlob(buildDocx(R));
+    const base = (R.program || R.fileName.replace(/\.docx$/i, "")).replace(/[\\/:*?"<>|]+/g, " ").trim().slice(0, 80) || "Program review";
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = `${base} - Analysis.docx`;
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    st.textContent = "Downloaded.";
+  } catch (e){ st.textContent = "The Word file couldn't be created."; } finally { $("dlBtn").disabled = false; }
+}
+
+/* ---------- file inputs ---------- */
+function setupDrop(dropId, inputId, nameId, metaId, key){
+  const drop = $(dropId), input = $(inputId);
+  const setFile = (f) => {
+    if (f && !/\.docx$/i.test(f.name)){ $(metaId).textContent = "Choose a Word .docx file."; return; }
+    S[key] = f || null;
+    $(nameId).textContent = f ? f.name : "Choose a .docx file";
+    $(metaId).textContent = f ? `${Math.max(1, Math.round(f.size / 1024))} KB • select to replace` : "or drop it here";
+    drop.classList.toggle("filled", !!f);
+    if (key === "prevFile") $("clearPrev").hidden = !f;
+    $("runBtn").disabled = !S.curFile || S.running;
+    if (!S.running) $("runBtn").textContent = "Analyze draft";
+  };
+  input.addEventListener("change", () => setFile(input.files[0]));
+  ["dragenter", "dragover"].forEach(ev => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
+  drop.addEventListener("drop", (e) => { const f = e.dataTransfer && e.dataTransfer.files[0]; if (f) setFile(f); });
+  return setFile;
+}
+setupDrop("dropCur", "fileCur", "nameCur", "metaCur", "curFile");
+const setPrev = setupDrop("dropPrev", "filePrev", "namePrev", "metaPrev", "prevFile");
+$("clearPrev").addEventListener("click", () => { $("filePrev").value = ""; setPrev(null); });
+$("runBtn").addEventListener("click", run);
+$("stopBtn").addEventListener("click", () => S.ctl && S.ctl.abort());
+$("dlBtn").addEventListener("click", downloadWord);
+
+// expose pure functions for testing
+window.__prc = { readDocx, runChecks, serialize, diffDocs, buildDocx, promptAnalysis, salvageJSON };
+})();
+</script>
+</body>
+</html>
