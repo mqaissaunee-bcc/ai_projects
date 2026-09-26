@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
 <style>
 :root{
@@ -200,7 +201,7 @@ table.fixes .sugg{ color:var(--ink); font-weight:600; }
         <button class="btn primary" id="runBtn" disabled>Analyze draft</button>
         <div class="row" id="stopRow" hidden><button class="btn small" id="stopBtn">Stop</button><span class="status" id="runStatus"></span></div>
         <ul class="steps" id="steps" style="margin-top:12px"></ul>
-        <p class="note" style="margin-top:12px">The draft is sent to Anthropic's Claude API for analysis. Treat the results as a reviewer's checklist, not a final judgment. Charts and images in the document aren't read.</p>
+        <p class="note" style="margin-top:12px">The draft is sent to Anthropic's Claude API for analysis. Pictures in the document (including pasted charts) are sent as images, and native Word charts are read as data. Treat the results as a reviewer's checklist, not a final judgment.</p>
       </section>
     </aside>
 
@@ -264,7 +265,7 @@ const S = { cur: null, prev: null, result: null, running: false, ctl: null };
    PROXY_URL: leave empty to have each user paste an Anthropic API key.
    Set it to your Cloudflare Worker URL (for example "https://program-review.yourname.workers.dev")
    to hide the key behind a passcode instead. */
-const PROXY_URL = "https://program-review-check.mqaissaunee.workers.dev";
+const PROXY_URL = "";
 const MODEL = "claude-opus-5-5";
 const MAX_TOKENS = 16000;
 /* ======================================== */
@@ -330,28 +331,111 @@ async function callClaude(prompt, { signal, maxTokens = MAX_TOKENS } = {}){
 async function readDocx(file){
   if (!window.mammoth) throw new Error("The document reader didn't load. Check your connection and reload the page.");
   const buf = await file.arrayBuffer();
-  let images = 0;
+  const rawFigs = [];
   const res = await window.mammoth.convertToHtml({ arrayBuffer: buf }, {
-    convertImage: window.mammoth.images.imgElement(() => { images++; return Promise.resolve({ src: "" }); }),
+    convertImage: window.mammoth.images.imgElement(async (image) => {
+      const n = rawFigs.length + 1;
+      let b64 = ""; try { b64 = await image.read("base64"); } catch {}
+      rawFigs.push({ n, type: (image.contentType || "").toLowerCase(), b64 });
+      return { src: "fig:" + n };
+    }),
   });
   const dom = new DOMParser().parseFromString(res.value, "text/html");
   const blocks = [];
   walk(dom.body, blocks);
-  return { name: file.name, size: file.size, blocks, images };
+  const charts = await readCharts(buf).catch(() => []);
+  return { name: file.name, size: file.size, blocks, rawFigs, charts, images: rawFigs.length };
 }
+
+/* ---------- pictures: keep readable ones, sized for Claude ---------- */
+const IMG_OK = ["image/png", "image/jpeg", "image/gif", "image/webp"];
+const MAX_FIGS = 20, MAX_SIDE = 1568;
+async function prepareFigures(rawFigs){
+  const out = { figs: [], unreadable: 0, small: 0, dropped: 0 };
+  for (const f of rawFigs){
+    if (!f.b64 || !IMG_OK.includes(f.type)){ out.unreadable++; continue; }
+    try {
+      const bin = atob(f.b64), arr = new Uint8Array(bin.length);
+      for (let k = 0; k < bin.length; k++) arr[k] = bin.charCodeAt(k);
+      const bmp = await createImageBitmap(new Blob([arr], { type: f.type }));
+      const w = bmp.width, h = bmp.height;
+      if (w < 120 && h < 120){ out.small++; bmp.close && bmp.close(); continue; }
+      if (out.figs.length >= MAX_FIGS){ out.dropped++; bmp.close && bmp.close(); continue; }
+      let data = f.b64, media = f.type;
+      const scale = Math.min(1, MAX_SIDE / Math.max(w, h));
+      if (scale < 1 || f.b64.length > 1500000 || f.type === "image/gif"){
+        const cv = document.createElement("canvas");
+        cv.width = Math.round(w * scale); cv.height = Math.round(h * scale);
+        const ctx = cv.getContext("2d");
+        ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, cv.width, cv.height);
+        ctx.drawImage(bmp, 0, 0, cv.width, cv.height);
+        const png = cv.toDataURL("image/png");
+        const url = png.length < 1400000 ? png : cv.toDataURL("image/jpeg", 0.9);
+        media = url.slice(5, url.indexOf(";")); data = url.slice(url.indexOf(",") + 1);
+      }
+      bmp.close && bmp.close();
+      out.figs.push({ n: f.n, media, data });
+    } catch { out.unreadable++; }
+  }
+  return out;
+}
+
+/* ---------- native Word charts: read their data ---------- */
+async function readCharts(buf){
+  if (!window.JSZip) return [];
+  const zip = await window.JSZip.loadAsync(buf);
+  const names = Object.keys(zip.files).filter(n => /^word\/charts\/chart\d+\.xml$/i.test(n))
+    .sort((a, b) => +a.match(/(\d+)\.xml$/i)[1] - +b.match(/(\d+)\.xml$/i)[1]);
+  const charts = [];
+  const all = (node, name) => node ? Array.from(node.getElementsByTagName("*")).filter(e => e.localName === name) : [];
+  const first = (node, name) => all(node, name)[0] || null;
+  const pts = (node) => {
+    const m = new Map();
+    for (const pt of all(node, "pt")){ const v = first(pt, "v"); m.set(+pt.getAttribute("idx"), v ? v.textContent.trim() : ""); }
+    return m;
+  };
+  for (const name of names){
+    try {
+      const xml = new DOMParser().parseFromString(await zip.file(name).async("string"), "application/xml");
+      const chartEl = first(xml, "chart");
+      const titleEl = chartEl && Array.from(chartEl.children).find(e => e.localName === "title");
+      const title = titleEl ? clean(all(titleEl, "t").map(t => t.textContent).join("")) : "";
+      const plot = first(xml, "plotArea");
+      const types = plot ? Array.from(plot.children).map(e => e.localName).filter(n => /Chart$/.test(n)).map(n => n.replace(/Chart$/, "")) : [];
+      const series = all(xml, "ser").map(ser => {
+        const tx = Array.from(ser.children).find(e => e.localName === "tx");
+        const cat = Array.from(ser.children).find(e => e.localName === "cat" || e.localName === "xVal");
+        const val = Array.from(ser.children).find(e => e.localName === "val" || e.localName === "yVal");
+        return { name: tx ? clean(all(tx, "v").map(v => v.textContent).join(" ")) : "", cats: pts(cat), vals: pts(val) };
+      }).filter(s => s.vals.size);
+      if (!series.length) continue;
+      const idxs = [...new Set(series.flatMap(s => [...s.vals.keys()]))].sort((a, b) => a - b).slice(0, 60);
+      const catOf = (i) => { for (const s of series) if (s.cats.has(i)) return s.cats.get(i); return String(i + 1); };
+      const rows = [["Category", ...series.map((s, k) => s.name || `Series ${k + 1}`)]];
+      for (const i of idxs) rows.push([catOf(i), ...series.map(s => s.vals.has(i) ? s.vals.get(i) : "")]);
+      charts.push({ n: charts.length + 1, title, types, rows });
+    } catch {}
+  }
+  return charts;
+}
+
 function walk(node, out){
   for (const c of Array.from(node.children)){
     const tag = c.tagName.toLowerCase();
     if (/^h[1-6]$/.test(tag)){
       const t = clean(c.textContent); if (t) out.push({ type: "h", level: +tag[1], text: t });
+      pushFigs(c, out);
     } else if (tag === "p"){
-      const t = clean(c.textContent); if (!t) continue;
+      const t = clean(c.textContent);
+      if (!t){ pushFigs(c, out); continue; }
       const strong = clean(Array.from(c.querySelectorAll("strong")).map(s => s.textContent).join(" "));
       if (t.length <= 100 && strong && strong.replace(/\s/g,"") === t.replace(/\s/g,"") && !/[.:;,]$/.test(t)){
         out.push({ type: "h", level: 4, text: t, pseudo: true });
       } else out.push({ type: "p", text: t });
+      pushFigs(c, out);
     } else if (tag === "ul" || tag === "ol"){
       for (const li of Array.from(c.children)){ const t = clean(li.textContent); if (t) out.push({ type: "li", text: t }); }
+      pushFigs(c, out);
     } else if (tag === "table"){
       const rows = [];
       for (const tr of Array.from(c.querySelectorAll("tr"))){
@@ -359,9 +443,18 @@ function walk(node, out){
         rows.push(Array.from(tr.children).filter(x => /^(td|th)$/i.test(x.tagName)).map(td => clean(td.textContent)));
       }
       if (rows.length) out.push({ type: "table", rows });
+      pushFigs(c, out);
+    } else if (tag === "img"){
+      pushFigs({ querySelectorAll: () => [c] }, out);
     } else {
       walk(c, out);
     }
+  }
+}
+function pushFigs(node, out){
+  for (const img of Array.from(node.querySelectorAll("img"))){
+    const m = /^fig:(\d+)$/.exec(img.getAttribute("src") || "");
+    if (m) out.push({ type: "fig", n: +m[1] });
   }
 }
 function serialize(blocks, cellMax = 400, rowMax = 80){
@@ -370,6 +463,7 @@ function serialize(blocks, cellMax = 400, rowMax = 80){
     if (b.type === "h") out.push("\n" + "#".repeat(Math.min(b.level, 4)) + " " + b.text);
     else if (b.type === "p") out.push(b.text);
     else if (b.type === "li") out.push("- " + b.text);
+    else if (b.type === "fig") out.push(`[Figure ${b.n}: picture in the document at this point]`);
     else if (b.type === "table"){
       const rows = b.rows.slice(0, rowMax).map(r => "| " + r.map(c => c.length > cellMax ? c.slice(0, cellMax) + "…" : c).join(" | ") + " |");
       if (b.rows.length > rowMax) rows.push(`| … ${b.rows.length - rowMax} more rows |`);
@@ -378,7 +472,7 @@ function serialize(blocks, cellMax = 400, rowMax = 80){
   }
   return out.join("\n").trim();
 }
-function blockText(b){ return b.type === "table" ? b.rows.map(r => r.join(" | ")).join(" | ") : b.text; }
+function blockText(b){ if (b.type === "fig") return ""; return b.type === "table" ? b.rows.map(r => r.join(" | ")).join(" | ") : b.text; }
 
 /* ---------- automated checks ---------- */
 const TEMPLATE_SECTIONS = [
@@ -438,7 +532,7 @@ function runChecks(doc){
         if (n.pseudo) { content++; continue; }
         content++; break; // has subsections
       }
-      if (blockText(n).length > 2) content++;
+      if (n.type === "fig" || blockText(n).length > 2) content++;
     }
     if (!content) add(isAppendix ? "Empty appendix" : "Empty section", `“${excerpt(b.text, 80)}” has no content under it.`, b.text);
   });
@@ -486,6 +580,7 @@ function runChecks(doc){
 function units(doc){
   const u = [];
   for (const b of doc.blocks){
+    if (b.type === "fig") continue;
     if (b.type === "table") b.rows.forEach(r => { const s = clean(r.join(" | ")); if (s.replace(/[|\s]/g, "").length > 3) u.push(s); });
     else if (b.text.length > 3) u.push(b.text);
   }
@@ -519,7 +614,7 @@ const PROMPT_LIMIT = 62000, DOC_LIMIT = 52000;
 function promptAnalysis(docText, checks, part = "gaps"){
   const found = checks.findings.length ? checks.findings.map(f => `- ${f.label} (${f.where}): ${f.text}`).join("\n") : "- none";
   const missing = checks.sections.filter(s => !s.found).map(s => s.name).join(", ") || "none";
-  const head = `You are an experienced community college program review evaluator. Analyze the draft five-year academic program review below (Brookdale Community College template). Work only from the document and do not invent facts. When you cite figures, use the document's own numbers and course codes.
+  const head = `You are an experienced community college program review evaluator. Analyze the draft five-year academic program review below (Brookdale Community College template). Work only from the document and do not invent facts. When you cite figures, use the document's own numbers and course codes.\nPictures from the document (often charts, scanned tables, catalog pages, or program profiles) are attached as images labeled Figure N, and [Figure N] marks where each one appears in the text. Data from native Word charts, if any, is in the CHART DATA section. Treat all of these as part of the document: use their numbers as evidence, do not report content as missing if it appears in a figure, and point out where a figure disagrees with the text.
 
 The Brookdale template normally includes: mission and alignment; catalog information and changes; recommended course sequence; CLO/PLO and PLO/ILO maps; assessment findings and actions; NACE career readiness map; career information; student perspective (survey); transferability report and articulation agreements; consultant report and faculty response; credit hour verification; demographics (enrollment status, GPA, retention, graduation); enrollment trends (majors, headcount, student credit hours); recommendations with resources and implementation dates; appendices A-E.`;
   const fmt = `Every item has a "label" (2 to 6 words, ending with a period) and "text" (one or two sentences, at most 45 words, with specific evidence). Be direct and specific; a program team will use this to revise the draft.
@@ -684,8 +779,21 @@ const isFatalAI = (e) => ["auth","passcode","forbidden","billing","rate_limited"
 
 async function prepareText(doc){
   let t = serialize(doc.blocks, 1500, 300);
+  if (doc.charts && doc.charts.length){
+    t += "\n\n# CHART DATA (native Word charts; their position in the document isn't recorded)\n" +
+      doc.charts.map(c => `Chart ${c.n}: ${c.title || "(untitled)"}${c.types.length ? " [" + c.types.join(", ") + " chart]" : ""}\n` + c.rows.map(r => "| " + r.join(" | ") + " |").join("\n")).join("\n\n");
+  }
   if (bytes(t) > 700000) return { text: t.slice(0, 650000) + "\n[…truncated]", condensed: true };
   return { text: t, condensed: false };
+}
+function withFigures(prompt, figs){
+  if (!figs || !figs.length) return prompt;
+  const content = [{ type: "text", text: prompt }];
+  for (const f of figs){
+    content.push({ type: "text", text: `Figure ${f.n} from the document:` });
+    content.push({ type: "image", source: { type: "base64", media_type: f.media, data: f.data } });
+  }
+  return content;
 }
 
 async function run(){
@@ -711,7 +819,15 @@ async function run(){
     step("checks", "running");
     R.checks = runChecks(S.cur);
     step("checks", "done");
-    if (S.cur.images) R.notices.push(`${S.cur.images} chart${S.cur.images > 1 ? "s or images" : " or image"} in the document ${S.cur.images > 1 ? "weren't" : "wasn't"} read.`);
+    const F = hasAccess() ? await prepareFigures(S.cur.rawFigs) : { figs: [], unreadable: 0, small: 0, dropped: 0 };
+    S.cur.figs = F.figs;
+    const parts = [];
+    if (F.figs.length) parts.push(`${F.figs.length} picture${F.figs.length > 1 ? "s" : ""} sent to Claude as image${F.figs.length > 1 ? "s" : ""}`);
+    if (S.cur.charts.length) parts.push(`${S.cur.charts.length} Word chart${S.cur.charts.length > 1 ? "s" : ""} read as data`);
+    if (F.unreadable) parts.push(`${F.unreadable} picture${F.unreadable > 1 ? "s" : ""} in a format that can't be read (such as older Windows graphics); check ${F.unreadable > 1 ? "them" : "it"} manually`);
+    if (F.dropped) parts.push(`${F.dropped} more beyond the ${MAX_FIGS}-picture limit weren't sent`);
+    if (!hasAccess() && S.cur.rawFigs.length) parts.push(`${S.cur.rawFigs.length} picture${S.cur.rawFigs.length > 1 ? "s" : ""} will be read once you enter access details`);
+    if (parts.length) R.notices.push(parts.join("; ") + ".");
     render();
 
     if (!hasAI){ R.notices.push("Only the automated checks ran. Enter your access details to run the full analysis."); render(); return; }
@@ -721,9 +837,9 @@ async function run(){
 
     step("analysis", "running"); step("fixes", "running");
     $("runStatus").textContent = "This part takes two to four minutes.";
-    const pSum = askJSON(promptAnalysis(prep.text, R.checks, "summary"), { signal }, "summary");
-    const pSwot = askJSON(promptAnalysis(prep.text, R.checks, "swot"), { signal }, "SWOT");
-    const pGaps = askJSON(promptAnalysis(prep.text, R.checks, "gaps"), { signal }, "gaps");
+    const pSum = askJSON(withFigures(promptAnalysis(prep.text, R.checks, "summary"), S.cur.figs), { signal }, "summary");
+    const pSwot = askJSON(withFigures(promptAnalysis(prep.text, R.checks, "swot"), S.cur.figs), { signal }, "SWOT");
+    const pGaps = askJSON(withFigures(promptAnalysis(prep.text, R.checks, "gaps"), S.cur.figs), { signal }, "gaps");
     const pB = askJSON(promptFixes(prep.text), { signal }, "wording fixes");
     const [aSum, aSwot, aGaps, b] = await Promise.allSettled([pSum, pSwot, pGaps, pB]);
     for (const x of [aSum, aSwot, aGaps, b]) if (x.status === "rejected" && x.reason && x.reason.code === "cancelled") throw x.reason;
@@ -1021,7 +1137,7 @@ $("stopBtn").addEventListener("click", () => S.ctl && S.ctl.abort());
 $("dlBtn").addEventListener("click", downloadWord);
 
 // expose pure functions for testing
-window.__prc = { readDocx, runChecks, serialize, diffDocs, buildDocx, promptAnalysis, salvageJSON };
+window.__prc = { readCharts, prepareFigures, readDocx, runChecks, serialize, diffDocs, buildDocx, promptAnalysis, salvageJSON };
 })();
 </script>
 </body>
