@@ -130,10 +130,30 @@ textarea{min-height:60px;resize:vertical}
   line-height:1.1;padding:0 2px 2px;white-space:nowrap}
 .sig-date{font-size:.95rem}
 .sig-img{max-height:34px;max-width:100%;object-fit:contain;object-position:left bottom}
+/* ---- memorandum of agreement ---- */
+.moa-doc{max-width:7in;font-size:.95rem;line-height:1.5}
+.moa-doc .moa-title{font-family:var(--serif);text-align:center;font-size:1.15rem;margin-bottom:2px}
+.moa-doc .moa-inst{text-align:center;font-weight:700;margin-bottom:14px}
+.moa-doc .moa-p{margin:0 0 11px;text-align:justify}
+.moa-doc .moa-name{margin:0 0 10px;font-weight:600}
+.moa-table{width:100%;border-collapse:collapse;margin:12px 0 10px}
+.moa-table th{font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);
+  border-bottom:1px solid var(--line-2);padding:4px 6px;text-align:left}
+.moa-table th:nth-child(2),.moa-table th:nth-child(3){text-align:right}
+.moa-table td{padding:5px 6px;border-bottom:1px solid var(--line)}
+.moa-table td.num{text-align:right;font-variant-numeric:tabular-nums}
+.moa-table tr.total-row td{border-top:2px solid var(--line-2);font-weight:700}
+.moa-note{font-size:.78rem;color:var(--ink-3);margin:0 0 10px}
+.moa-sig{margin:16px 0 14px;max-width:3.2in}
+.moa-respond{text-align:center;font-weight:700;font-size:1rem;letter-spacing:.03em;margin:16px 0 8px}
+.moa-box{border:1px solid var(--ink-2);padding:7px 9px;font-size:.8rem;margin-top:10px}
+.draft-note{font-style:italic}
 .cal-note{margin-top:8px;font-size:.75rem;color:var(--ink-3)}
 .sig-note{margin-top:6px;font-size:.72rem;color:var(--ink-3)}
 #sigPad{border:1px dashed var(--line-2);border-radius:8px;background:var(--surface);touch-action:none;display:block}
 .sig-label{font-size:.72rem;color:var(--ink-3);padding-top:3px}
+.pay-group{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:8px}
+.pay-group .group-head{margin-top:0}
 .group-head{font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
   color:var(--ink-3);margin:12px 0 5px;padding-bottom:3px;border-bottom:1px solid var(--line)}
 .group-head:first-child{margin-top:0}
@@ -285,6 +305,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
 
 /* ---------- print ---------- */
 @page{size:letter landscape;margin:.45in}
+@page moa{size:letter portrait;margin:.6in}
 @media print{
   :root{--bg:#fff;--surface:#fff;--surface-2:#fff;--ink:#000;--ink-2:#333;--ink-3:#555;--line:#bbb;--line-2:#888}
   body{background:#fff;font-size:10.5pt}
@@ -294,6 +315,20 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
   /* zoom reflows percentage widths, so the sheet still fills the page width */
   .sheet{border:0;box-shadow:none;padding:0;margin:0;max-width:none;break-inside:auto;zoom:var(--fit,1)}
   .sheet+.sheet{break-before:page;margin-top:0}
+  .moa-doc{page:moa;max-width:none;font-size:10.5pt;line-height:1.35;zoom:1}
+  .moa-doc .moa-title{font-size:13pt}
+  .moa-doc .moa-p{margin-bottom:8pt}
+  .moa-doc .moa-sig{margin:12pt 0 10pt}
+  .moa-doc .sig-row{margin-top:16pt}
+  .moa-doc .moa-respond{margin:12pt 0 6pt}
+  .moa-table{font-size:10pt;margin:8pt 0}
+  .moa-table td{padding:3pt 5pt}
+  .moa-doc .sig-rule{border-bottom:1px solid #000}
+  .moa-box{border:1px solid #000}
+  /* on-screen guidance has no place on an agreement, and leaving it in produced
+     a stray landscape page before the first document */
+  body.moa-view .toolbar,body.moa-view #banners,body.moa-view #firstRun,
+  body.moa-view #potNotice{display:none!important}
   .grid{min-width:0;break-inside:avoid;--rowh:32px!important}
   .grid-wrap{overflow:visible}
   .grid .hcell{font-size:9pt;padding:3px 2px}
@@ -530,6 +565,50 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
           <button class="btn" id="btnPng" type="button">⤓ Image (.png)</button>
           <button class="btn" id="btnCsv" type="button">⤓ Spreadsheet (.csv)</button>
         </div>
+        <div id="moaBox" hidden>
+          <h3 style="margin:12px 0 6px;font-size:.9rem">Overload agreements</h3>
+          <p class="hint" id="moaSummary"></p>
+          <div class="btn-row">
+            <button class="btn" id="btnMoa" type="button">Open agreements</button>
+            <button class="btn ghost" id="btnMoaWord" type="button">⤓ Word file</button>
+          </div>
+          <details style="margin-top:8px" id="moaDetails">
+            <summary class="btn sm ghost" style="display:inline-flex">Agreement details</summary>
+
+            <div class="field" style="margin-top:8px">
+              <label for="moaInstSelect">Institute</label>
+              <select id="moaInstSelect"></select>
+            </div>
+            <div class="btn-row" style="margin-bottom:9px">
+              <button class="btn sm ghost" id="moaInstNew" type="button">Add an institute</button>
+              <button class="btn sm ghost danger" id="moaInstDel" type="button">Remove this one</button>
+            </div>
+            <div class="row2">
+              <div class="field"><label for="moaInstitute">Institute name</label>
+                <input type="text" id="moaInstitute" placeholder="STEAM Institute"></div>
+              <div class="field"><label for="moaPhone">Office phone</label>
+                <input type="text" id="moaPhone" placeholder="732-224-2430"></div>
+            </div>
+            <div class="field"><label for="moaDean">Institute dean</label>
+              <input type="text" id="moaDean" placeholder="Dr. James Crowder"></div>
+            <div class="field"><label for="moaContacts">Office staff to notify</label>
+              <input type="text" id="moaContacts" placeholder="April Brinson x2430 or Heidi Haupt x2406"></div>
+            <div class="field"><label for="moaRate">Rate per credit</label>
+              <input type="number" id="moaRate" min="0" step="1" placeholder="leave blank for the office"></div>
+
+            <h3 style="margin:14px 0 6px;font-size:.88rem">Payment schedule</h3>
+            <div id="moaSessionFields"></div>
+            <p class="hint">Entered once, these are kept for every agreement built afterwards.</p>
+
+            <div class="btn-row" style="margin-top:10px">
+              <button class="btn sm ghost" id="moaSaveCfg" type="button">Save settings file</button>
+              <button class="btn sm ghost" id="moaLoadCfg" type="button">Load settings file</button>
+            </div>
+            <input type="file" id="moaCfgFile" accept="application/json" class="sr-only">
+            <p class="hint">The settings file holds institutes, rate, and payment dates only — no
+              schedules or personal details — so one office can share it with another.</p>
+          </details>
+        </div>
         <p class="hint"><b>To submit your schedule:</b> use Print / Save as PDF, save the file,
           then attach it to an email to your chair or dean.</p>
         <div class="btn-row" style="margin-top:8px">
@@ -559,6 +638,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     <div class="toolbar no-print">
       <button class="btn primary" id="btnPrint2" type="button">⎙ Print / Save as PDF</button>
       <span class="spacer"></span>
+      <button class="btn sm" id="btnBackToSchedule" type="button" hidden>← Back to the schedule</button>
       <button class="btn ghost sm" id="btnLoadData" type="button">Load a different data file</button>
     </div>
     <div class="banner no-print" id="potNotice" hidden>
@@ -620,6 +700,11 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         <p>Press <b>Edit</b> on that section. You can change days, start and end times, room, and the printed title, and add a second meeting pattern for a course that meets at two different times. Your corrections are saved and survive a page reload.</p></details>
       <details><summary>Why is my 3-credit course counted as 4 hours?</summary>
         <p>Load is counted in contact hours, but the schedule report only publishes credits, and the two differ for lab courses. Open <b>Edit</b> on the section and set "Contact hours for load" to the right number. The published credit value still prints in the course table.</p></details>
+      <details><summary>How do I get the memorandum of agreement for my overload?</summary>
+        <p>Flag each overload section with the <b>PT</b> button, then use <b>Open agreements</b> in the export panel. One agreement is produced for each part of term you have overload in, listing those sections with their credits, and with the session dates filled in from the college calendar. Print it to PDF, or download the Word version to edit.</p>
+        <p>Under "Agreement details" the office enters the institute name, dean, phone, and staff to notify, plus a rate per credit and the payment dates for each part of term. All of it is remembered, so it only has to be done once. Several institutes can be saved and switched between. Left without a rate, the amount column prints empty for the Institute Office to complete. The dean's signature line is always left blank — that is for the dean to sign.</p>
+        <p>Office staff can share their setup with another office using "Save settings file" — it holds institutes, rate, and payment dates only, with no schedules or personal details in it.</p>
+        <p>What comes out is a draft built from the published schedule and your own flags. The Institute Office issues the real agreement.</p></details>
       <details><summary>Do my 7-week and 11-week courses count toward my load?</summary>
         <p>Not by default. The required load — 15 contact hours and 5 office hours — is a 15-week figure, so anything in a short session is treated as overload and listed under part-time sections. If one of yours does count toward load, press <b>PT</b> on that section to switch it off, or open Edit and enter 0 in the overload hours. Your choice is remembered.</p></details>
       <details><summary>How do I mark an overload or part-time section?</summary>
@@ -672,6 +757,26 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     <section id="paneNews" role="tabpanel" aria-labelledby="tabNews" hidden>
       <p>Changes to this tool, newest first.</p>
       <div id="dataChanges"></div>
+
+      <div class="rel"><h3>Version 1.10</h3>
+        <ul>
+          <li>Institute details are entered once and kept: name, dean, office phone, and the staff to
+            notify. Several institutes can be saved and picked from a list, since each has its own.</li>
+          <li>Payment dates and the respond-by date are set per part of term, because an 11-week
+            overload is paid over fewer months than a 15-week one.</li>
+          <li>Office staff can save a settings file and share it with another institute office. It
+            carries institutes, rate, and payment dates only — no schedules, no personal details.</li>
+        </ul></div>
+
+      <div class="rel"><h3>Version 1.9</h3>
+        <ul>
+          <li><b>Overload agreements are generated for you.</b> Flag your overload sections and the
+            tool builds a memorandum of agreement for each part of term — your name, the sections,
+            the credits, and the session dates already filled in.</li>
+          <li>Enter a rate per credit and the amounts are worked out and shown; leave it blank and
+            the column prints empty for the Institute Office.</li>
+          <li>Print to PDF, or download a Word file to edit. The dean's signature line is left blank.</li>
+        </ul></div>
 
       <div class="rel"><h3>Version 1.8</h3>
         <ul>
@@ -786,7 +891,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     "https://mqaissaunee-bcc.github.io/ai_projects/faculty-schedule/data/26FA/sections.json"
   ];
   var STORAGE_KEY = "bcc-faculty-schedule-v1";
-  var APP_VERSION = "1.8";
+  var APP_VERSION = "1.10";
   var DAYS = [
     {k:"M", short:"Mon", long:"Monday", ics:"MO", dow:1},
     {k:"T", short:"Tue", long:"Tuesday", ics:"TU", dow:2},
@@ -811,6 +916,9 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     custom: [],       // {id,label,type,days,start,end,loc,who} — who="" means everyone
     release: [],      // {id, credits, reason} — release time / extra compensation
     sig: {mode:"blank", typed:"", drawn:"", date:""},   // faculty signature only
+    view: "schedule",                                  // or "moa"
+    institutes: [],                                 // [{id,name,dean,phone,contacts}]
+    moa: {instituteId:"", rate:"", sessions:{}},    // sessions: {15W:{payDates,respondBy}, …}
     profile: {name:"",title:"",dept:"",office:"",phone:"",email:"",zoom:"",termLabel:"",termStart:"",termEnd:"",notes:"",loadBase:"15",ohRequired:"5",released:"",releasedFor:""},
     pot: "15W",                 // legacy; migrated into sessions on load
     sessions: null,             // {15W:true, 11W:false, …} — null until the feed is known
@@ -853,7 +961,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     try{
       var raw=localStorage.getItem(STORAGE_KEY); if(!raw) return;
       var s=JSON.parse(raw); if(!s||typeof s!=="object") return;
-      ["faculty","include","pt","hrs","overrides","custom","profile","opts","pot","sessions","nameAuto","release","sig"].forEach(function(k){
+      ["faculty","include","pt","hrs","overrides","custom","profile","opts","pot","sessions","nameAuto","release","sig","moa","institutes"].forEach(function(k){
         if(s[k]!=null){ if(k==="profile"||k==="opts"){ Object.assign(state[k], s[k]); } else { state[k]=s[k]; } }
       });
     }catch(e){}
@@ -977,6 +1085,63 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
   }
 
   /* ===== sidebar rendering ===== */
+  function renderMoaControls(){
+    var list = state.institutes || [];
+    if(!list.length){
+      list = state.institutes = [{id:"i"+Date.now(), name:"", dean:"", phone:"", contacts:""}];
+      state.moa.instituteId = list[0].id;
+    }
+    var inst = currentInstitute();
+    state.moa.instituteId = inst.id;
+
+    var sel = $("moaInstSelect"); clear(sel);
+    list.forEach(function(x){
+      var o = document.createElement("option");
+      o.value = x.id; o.textContent = x.name || "(unnamed institute)";
+      sel.appendChild(o);
+    });
+    sel.value = inst.id;
+    $("moaInstDel").disabled = list.length < 2;
+    $("moaInstitute").value = inst.name || "";
+    $("moaDean").value = inst.dean || "";
+    $("moaPhone").value = inst.phone || "";
+    $("moaContacts").value = inst.contacts || "";
+    $("moaRate").value = state.moa.rate || "";
+
+    // One pay line per session that actually needs an agreement.
+    var box = $("moaSessionFields"); clear(box);
+    var pots = {};
+    moaGroups().forEach(function(g){ pots[g.pot] = 1; });
+    var keys = Object.keys(pots).sort();
+    if(!keys.length){ box.appendChild(el("div","empty","Flag an overload section first.")); return; }
+    keys.forEach(function(pot){
+      var p = sessionPay(pot);
+      var wrap = el("div","pay-group");
+      wrap.appendChild(el("div","group-head", potWords(pot)));
+      var f1 = el("div","field"), id1 = "pay-"+pot;
+      var l1 = el("label",null,"Payment dates"); l1.setAttribute("for", id1); f1.appendChild(l1);
+      var i1 = document.createElement("input");
+      i1.type="text"; i1.id=id1; i1.value = p.payDates || "";
+      i1.placeholder = "e.g. Oct 30, Nov 30, Dec 31";
+      i1.addEventListener("input", function(){
+        state.moa.sessions[pot] = state.moa.sessions[pot] || {};
+        state.moa.sessions[pot].payDates = i1.value; save();
+        if(state.view === "moa") renderSheets();
+      });
+      f1.appendChild(i1); wrap.appendChild(f1);
+      var f2 = el("div","field"), id2 = "resp-"+pot;
+      var l2 = el("label",null,"Respond by"); l2.setAttribute("for", id2); f2.appendChild(l2);
+      var i2 = document.createElement("input");
+      i2.type="date"; i2.id=id2; i2.value = p.respondBy || "";
+      i2.addEventListener("change", function(){
+        state.moa.sessions[pot] = state.moa.sessions[pot] || {};
+        state.moa.sessions[pot].respondBy = i2.value; save();
+        if(state.view === "moa") renderSheets();
+      });
+      f2.appendChild(i2); wrap.appendChild(f2);
+      box.appendChild(wrap);
+    });
+  }
   function renderSessionPicker(){
     var box = $("potBoxes"); clear(box);
     var list = sessionsInFeed();
@@ -1775,6 +1940,148 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     sheet.appendChild(foot);
     return sheet;
   }
+  function currentInstitute(){
+    var list = state.institutes || [];
+    if(!list.length) return null;
+    return list.filter(function(x){ return x.id === state.moa.instituteId; })[0] || list[0];
+  }
+  function sessionPay(pot){
+    return (state.moa.sessions && state.moa.sessions[pot]) || {payDates:"", respondBy:""};
+  }
+  function moaCredits(e){
+    // A fully overload section is written for its published credits; a split one
+    // for the portion actually paid as overload.
+    var pt = ptHoursFor(e), full = hoursFor(e);
+    return (pt >= full) ? (parseFloat(e.credits) || full) : pt;
+  }
+  function moaGroups(){
+    // One agreement per person per session, as the Institute Office issues them.
+    var people = state.faculty.length ? state.faculty : [null];
+    var out = [];
+    people.forEach(function(who){
+      var byPot = {};
+      scheduledSections(who).forEach(function(e){
+        if(!ptHoursFor(e)) return;
+        var pot = e.pot || "15W";
+        (byPot[pot] = byPot[pot] || []).push(e);
+      });
+      Object.keys(byPot).sort().forEach(function(pot){
+        out.push({who: who || state.profile.name || "", pot: pot, rows: byPot[pot]});
+      });
+    });
+    return out;
+  }
+  function potWords(pot){
+    return pot === "15W" ? "15-week" :
+           pot === "11W" ? "11-week" :
+           pot === "7A"  ? "7-week (first half)" :
+           pot === "7B"  ? "7-week (second half)" : pot;
+  }
+  function money(n){
+    if(n === null || n === undefined || isNaN(n)) return "";
+    return "$" + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+  function longDate(iso){
+    if(!iso) return "";
+    var p = iso.split("-");
+    var months = ["January","February","March","April","May","June","July",
+                  "August","September","October","November","December"];
+    return months[parseInt(p[1],10)-1] + " " + parseInt(p[2],10) + ", " + p[0];
+  }
+  function buildMoaDoc(g){
+    var inst = currentInstitute() || {};
+    var pay = sessionPay(g.pot);
+    var rate = parseFloat(state.moa.rate);
+    var dates = sessionDates(g.pot) || {};
+    var doc = el("section","sheet moa-doc");
+
+    doc.appendChild(el("h2","moa-title","Memorandum of Agreement"));
+    doc.appendChild(el("div","moa-inst", inst.name || "Institute"));
+    doc.appendChild(el("p","moa-p",
+      "Listed below is the information we have concerning your payment for the " +
+      (state.profile.termLabel || (DATA && DATA.termLabel) || "") + " " + potWords(g.pot) +
+      " semester. If there is a discrepancy contact the Institute Office immediately at " +
+      (inst.phone || "") + "."));
+
+    var name = el("p","moa-name"); name.appendChild(el("b",null,"NAME:  "));
+    name.appendChild(document.createTextNode(g.who));
+    doc.appendChild(name);
+
+    var t = el("table","moa-table"), thead = el("thead"), hr = el("tr");
+    ["COURSE/SECTION","CREDITS","AMOUNT"].forEach(function(c){ hr.appendChild(el("th",null,c)); });
+    thead.appendChild(hr); t.appendChild(thead);
+    var tb = el("tbody"), total = 0, anyPartial = false;
+    g.rows.forEach(function(e){
+      var cr = moaCredits(e);
+      if(cr < hoursFor(e)) anyPartial = true;
+      var amt = isNaN(rate) ? "" : money(cr * rate);
+      if(!isNaN(rate)) total += cr * rate;
+      var r = el("tr");
+      r.appendChild(el("td",null,e.id));
+      r.appendChild(el("td","num", cr + (cr < hoursFor(e) ? " (partial)" : "")));
+      r.appendChild(el("td","num", amt));
+      tb.appendChild(r);
+    });
+    if(!isNaN(rate) && g.rows.length > 1){
+      var tr = el("tr","total-row");
+      tr.appendChild(el("td",null,"Total"));
+      tr.appendChild(el("td",null,""));
+      tr.appendChild(el("td","num", money(total)));
+      tb.appendChild(tr);
+    }
+    t.appendChild(tb); doc.appendChild(t);
+    if(!isNaN(rate)){
+      doc.appendChild(el("p","moa-note","Amounts calculated at " + money(rate) + " per credit."));
+    }
+    if(anyPartial){
+      doc.appendChild(el("p","moa-note",
+        "A partial entry covers only the portion of that section paid as overload."));
+    }
+
+    doc.appendChild(el("p","moa-p",
+      "The semester began on " + (longDate(dates.start) || "____________") +
+      ", and ends on " + (longDate(dates.end) || "____________") +
+      ". You will be paid in equal payments on the following dates: " +
+      (pay.payDates || "____________________") + ". All payments will be made via direct deposit."));
+    doc.appendChild(el("p","moa-p",
+      "If you miss a class, contact your Department Chair and Institute Office. In the event you are " +
+      "not able to teach for the entire semester, you will be paid on a per session basis for those " +
+      "sessions you have met."));
+    doc.appendChild(el("p","moa-p",
+      "To indicate your acceptance and understanding of this agreement, please confirm by email."));
+
+    // The dean signs this; the tool leaves the line empty.
+    var dean = el("div","moa-sig");
+    dean.appendChild(el("div","sig-rule"));
+    dean.appendChild(el("div","sig-label",
+      (inst.name || "Institute") + " Dean" + (inst.dean ? ", " + inst.dean : "")));
+    doc.appendChild(dean);
+
+    doc.appendChild(el("p","moa-p",
+      "The conditions of employment for a part-time instructor as outlined in this memorandum are " +
+      "reasonable and acceptable to me. This agreement does not obligate the College for future " +
+      "employment either full or part-time."));
+
+    var row = el("div","sig-row");
+    ["Faculty Signature","Date"].forEach(function(lbl){
+      var c = el("div","sig");
+      c.appendChild(el("div","sig-rule"));
+      c.appendChild(el("div","sig-label", lbl));
+      row.appendChild(c);
+    });
+    doc.appendChild(row);
+
+    if(pay.respondBy){
+      doc.appendChild(el("p","moa-respond","RESPOND VIA EMAIL BY " + longDate(pay.respondBy)));
+    }
+    doc.appendChild(el("p","moa-note","Please keep a copy of this form for your records."));
+    if(inst.contacts){
+      doc.appendChild(el("div","moa-box","NOTIFY: " + inst.contacts + " immediately if this information is incorrect."));
+    }
+    doc.appendChild(el("p","moa-note draft-note",
+      "Draft produced from the published schedule for review by the Institute Office."));
+    return doc;
+  }
   function buildDeptSummary(){
     var sheet = el("section","sheet");
     var head = el("div","sheet-head");
@@ -1824,6 +2131,16 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
   }
   function renderSheets(){
     var box=$("sheets"); clear(box);
+    if(state.view === "moa"){
+      var groups = moaGroups();
+      if(!groups.length){
+        box.appendChild(el("div","banner info",
+          "No overload sections are flagged, so there is nothing to agree. Mark a section PT in step 2."));
+        return;
+      }
+      groups.forEach(function(g){ box.appendChild(buildMoaDoc(g)); });
+      return;
+    }
     if(!state.faculty.length && !state.custom.length){
       var p=el("div","banner info","Start in step 1: search for your name to pull in your sections. You can edit anything the schedule feed gets wrong.");
       box.appendChild(p); return;
@@ -1945,6 +2262,18 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
   }
   function renderAll(){
     document.body.classList.toggle("color-print", !!state.opts.printColor);
+    document.body.classList.toggle("moa-view", state.view === "moa");
+    var groups = moaGroups();
+    $("moaBox").hidden = !groups.length;
+    if(groups.length){
+      $("moaSummary").textContent = groups.length + " agreement" + (groups.length===1?"":"s") +
+        " needed: " + groups.map(function(g){
+          return potWords(g.pot) + " (" + g.rows.length + " section" + (g.rows.length===1?"":"s") + ")" +
+                 (state.faculty.length > 1 ? " — " + g.who : "");
+        }).join("; ");
+    }
+    $("btnBackToSchedule").hidden = state.view !== "moa";
+    renderMoaControls();
     renderSessionPicker(); renderChips(); renderSectionList(); renderWhoPicker(); renderCustomList(); renderReleaseList(); renderBanners(); renderSheets();
   }
 
@@ -2006,6 +2335,38 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     try{ document.execCommand("copy"); done(); }
     catch(e){ toast("Could not copy automatically — use the print or spreadsheet export instead."); }
     document.body.removeChild(ta);
+  }
+
+  function exportMoaWord(){
+    var groups = moaGroups();
+    if(!groups.length){ toast("No overload sections are flagged."); return; }
+    var host = el("div");
+    groups.forEach(function(g, i){
+      var d = buildMoaDoc(g);
+      if(i) d.style.pageBreakBefore = "always";
+      host.appendChild(d);
+    });
+    // A Word-openable HTML document: no zip library needed, and the office can
+    // edit it like any other .doc.
+    var html = "<html xmlns:o='urn:schemas-microsoft-com:office:office' " +
+      "xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>" +
+      "<head><meta charset='utf-8'><title>Memorandum of Agreement</title>" +
+      "<style>body{font-family:Calibri,Arial,sans-serif;font-size:11pt}" +
+      "h2{font-size:12pt;text-align:center;margin:0 0 2pt}" +
+      ".moa-inst{text-align:center;font-weight:bold;margin-bottom:10pt}" +
+      ".moa-title{text-align:center}" +
+      "table{border-collapse:collapse;margin:10pt 0;width:100%}" +
+      "th,td{border-bottom:1px solid #999;padding:4pt 6pt;text-align:left}" +
+      "td.num,th:nth-child(2),th:nth-child(3){text-align:right}" +
+      ".sig-rule{border-bottom:1px solid #000;height:22pt;width:60%}" +
+      ".sig-label{font-size:9pt;color:#444}" +
+      ".moa-respond{text-align:center;font-weight:bold;font-size:12pt}" +
+      ".moa-box{border:1px solid #000;padding:6pt;margin-top:10pt;font-size:10pt}" +
+      ".draft-note{font-size:9pt;color:#555}" +
+      "</style></head><body>" + host.innerHTML + "</body></html>";
+    download(slug(state.profile.name || state.faculty[0] || "overload") + "-agreements.doc",
+             "application/msword", html);
+    toast(groups.length + " agreement" + (groups.length===1?"":"s") + " downloaded as a Word file");
   }
 
   /* ===== signature pad ===== */
@@ -2752,6 +3113,76 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     $("btnCsv").addEventListener("click", exportCsv);
     $("btnPng").addEventListener("click", exportPng);
     $("btnCopy").addEventListener("click", copySummary);
+    $("btnMoa").addEventListener("click", function(){
+      state.view = "moa"; save(); renderAll();
+      if(typeof $("sheets").scrollIntoView === "function"){
+        try{ $("sheets").scrollIntoView({block:"start"}); }catch(err){}
+      }
+      toast("Agreements shown. Print or save as PDF, then send to the Institute Office.");
+    });
+    $("btnBackToSchedule").addEventListener("click", function(){
+      state.view = "schedule"; save(); renderAll();
+    });
+    $("btnMoaWord").addEventListener("click", exportMoaWord);
+    var instMap = {moaInstitute:"name", moaDean:"dean", moaPhone:"phone", moaContacts:"contacts"};
+    Object.keys(instMap).forEach(function(id){
+      $(id).addEventListener("input", function(){
+        var inst = currentInstitute(); if(!inst) return;
+        inst[instMap[id]] = $(id).value; save();
+        if(id === "moaInstitute"){
+          var opt = $("moaInstSelect").querySelector('option[value="' + inst.id + '"]');
+          if(opt) opt.textContent = inst.name || "(unnamed institute)";
+        }
+        if(state.view === "moa") renderSheets();
+      });
+    });
+    $("moaRate").addEventListener("input", function(){
+      state.moa.rate = $("moaRate").value; save();
+      if(state.view === "moa") renderSheets();
+    });
+    $("moaInstSelect").addEventListener("change", function(){
+      state.moa.instituteId = $("moaInstSelect").value; save(); renderAll();
+    });
+    $("moaInstNew").addEventListener("click", function(){
+      var rec = {id:"i"+Date.now(), name:"", dean:"", phone:"", contacts:""};
+      state.institutes.push(rec);
+      state.moa.instituteId = rec.id;
+      save(); renderAll(); $("moaInstitute").focus();
+    });
+    $("moaInstDel").addEventListener("click", function(){
+      if(state.institutes.length < 2) return;
+      var inst = currentInstitute();
+      if(!window.confirm("Remove " + (inst.name || "this institute") + " from the saved list?")) return;
+      state.institutes = state.institutes.filter(function(x){ return x.id !== inst.id; });
+      state.moa.instituteId = state.institutes[0].id;
+      save(); renderAll();
+    });
+    $("moaSaveCfg").addEventListener("click", function(){
+      // Settings only: no schedule, no personal details, so it can be shared.
+      download("overload-agreement-settings.json", "application/json",
+        JSON.stringify({institutes: state.institutes, rate: state.moa.rate,
+                        sessions: state.moa.sessions}, null, 2));
+      toast("Settings saved — share this file with the other institute offices");
+    });
+    $("moaLoadCfg").addEventListener("click", function(){ $("moaCfgFile").click(); });
+    $("moaCfgFile").addEventListener("change", function(e){
+      var f = e.target.files[0]; if(!f) return;
+      var r = new FileReader();
+      r.onload = function(){
+        try{
+          var cfg = JSON.parse(r.result);
+          if(Array.isArray(cfg.institutes) && cfg.institutes.length){
+            state.institutes = cfg.institutes;
+            state.moa.instituteId = cfg.institutes[0].id;
+          }
+          if(cfg.rate !== undefined) state.moa.rate = cfg.rate;
+          if(cfg.sessions) state.moa.sessions = cfg.sessions;
+          save(); renderAll();
+          toast("Agreement settings loaded");
+        }catch(err){ toast("That file could not be read."); }
+      };
+      r.readAsText(f); e.target.value = "";
+    });
     $("btnSave").addEventListener("click", function(){
       download(slug(state.profile.name||"schedule")+"-draft.json","application/json", JSON.stringify(state,null,2));
     });
