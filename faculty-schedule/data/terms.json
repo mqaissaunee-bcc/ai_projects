@@ -1,0 +1,6 @@
+{
+  "terms": [
+    {"code": "27SP", "label": "Spring 2027", "path": "data/27SP/sections.json"},
+    {"code": "26FA", "label": "Fall 2026",   "path": "data/26FA/sections.json"}
+  ]
+}

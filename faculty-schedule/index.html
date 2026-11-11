@@ -380,6 +380,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     <span class="sub">Brookdale Community College</span>
   </div>
   <div class="topbar-right">
+    <label class="sr-only" for="termPick">Term</label>
+    <select id="termPick" class="no-print" hidden></select>
     <button class="btn sm ghost no-print" id="btnNews" type="button">What's new<span class="newpill" id="newsDot" hidden>New</span></button>
     <button class="btn sm ghost no-print" id="btnHelp" type="button">? Help</button>
     <div class="status" id="dataStatus" aria-live="polite"></div>
@@ -775,6 +777,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         <p>No. Course data is public and comes from the college's published schedule. Everything you type — office, phone, email, office hours — stays in your own browser and is never sent anywhere. Use "Save draft file" to move it to another computer, or "Reset everything" to clear it.</p></details>
       <details><summary>Do I have to redo this every semester?</summary>
         <p>No. Your contact block, office hours, and release time stay put. When the new term's data loads you pick your sections again and the rest is already filled in.</p></details>
+      <details><summary>How do I switch between Fall and Spring?</summary>
+        <p>Use the term menu at the top of the page. Each term keeps its own sections, overload flags, and office hours, so marking something part-time in one does not affect the other. Your name, contact details, release time, and agreement settings follow you across both.</p></details>
       <details><summary>Has anything changed since the last update?</summary>
         <p>Open <b>What's new</b> for the college-wide summary: sections added or removed, how many changed instructor or room, and how many are still unstaffed. Anything affecting a section of yours is shown as a notice at the top of the page, naming the section and what changed.</p></details>
       <details><summary>How current is the course data?</summary>
@@ -783,6 +787,16 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     <section id="paneNews" role="tabpanel" aria-labelledby="tabNews" hidden>
       <p>Changes to this tool, newest first.</p>
       <div id="dataChanges"></div>
+
+      <div class="rel"><h3>Version 1.14</h3>
+        <ul>
+          <li><b>Spring 2027 is here.</b> A term menu at the top switches between terms; your name,
+            contact details, and settings carry across, while the sections you pick and the flags you
+            set belong to each term on its own.</li>
+          <li>Spring carries 1,246 sections across the 15-week, 11-week, and 7B sessions.</li>
+          <li>Spring dates are in: 15-week 20 January to 11 May, 11-week from 17 February, 7A to
+            9 March, 7B from 24 March. The calendar export bounds each course to its own session.</li>
+        </ul></div>
 
       <div class="rel"><h3>Version 1.13</h3>
         <ul>
@@ -946,8 +960,16 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     "data/26FA/sections.json",
     "https://mqaissaunee-bcc.github.io/ai_projects/faculty-schedule/data/26FA/sections.json"
   ];
-  var STORAGE_KEY = "bcc-faculty-schedule-v1";
-  var APP_VERSION = "1.13";
+  var TERMS_INDEX = "data/terms.json";
+  var SHARED_KEYS = ["profile", "opts", "release", "sig", "moa", "institutes", "nameAuto"];
+  var activeTerm = "";
+  function storageKey(term){
+    // Section flags are per term, because a code like NETW-107-001RL exists in
+    // more than one of them and the two must not share state.
+    return "bcc-faculty-schedule-v1" + (term ? ":" + term : "");
+  }
+  var STORAGE_KEY = storageKey("");
+  var APP_VERSION = "1.14";
   var DAYS = [
     {k:"M", short:"Mon", long:"Monday", ics:"MO", dow:1},
     {k:"T", short:"Tue", long:"Tuesday", ics:"TU", dow:2},
@@ -1011,11 +1033,23 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
 
   /* ===== persistence ===== */
   function save(){
-    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+    try{ localStorage.setItem(storageKey(activeTerm), JSON.stringify(state)); }catch(e){}
   }
-  function load(){
+  function load(term){
     try{
-      var raw=localStorage.getItem(STORAGE_KEY); if(!raw) return;
+      var raw=localStorage.getItem(storageKey(term || ""));
+      if(!raw && term){
+        // First visit to this term: bring the settings forward, not the sections.
+        var prior = localStorage.getItem(storageKey("")) ||
+                    localStorage.getItem("bcc-faculty-schedule-v1");
+        if(prior){
+          var p = JSON.parse(prior);
+          SHARED_KEYS.forEach(function(k){ if(p[k] != null) state[k] = p[k]; });
+          if(p.faculty) state.faculty = p.faculty;      // the same person, a new term
+        }
+        return;
+      }
+      if(!raw) return;
       var s=JSON.parse(raw); if(!s||typeof s!=="object") return;
       ["faculty","include","pt","hrs","overrides","custom","profile","opts","pot","sessions","nameAuto","release","sig","moa","institutes"].forEach(function(k){
         if(s[k]!=null){ if(k==="profile"||k==="opts"){ Object.assign(state[k], s[k]); } else { state[k]=s[k]; } }
@@ -3118,20 +3152,70 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     }
     renderAll();
   }
-  function tryFetch(i){
-    if(i>=DATA_CANDIDATES.length){
+  var TERMS = null;
+  function fetchFeed(list, i){
+    if(i >= list.length){
       var demo=JSON.parse($("demoData").textContent);
       applyData(demo,"live feed not found");
       return;
     }
-    if(typeof fetch!=="function"){ tryFetch(DATA_CANDIDATES.length); return; }
-    fetch(DATA_CANDIDATES[i]+"?t="+Date.now()).then(function(r){
+    if(typeof fetch!=="function"){ fetchFeed(list, list.length); return; }
+    fetch(list[i]+"?t="+Date.now()).then(function(r){
       if(!r.ok) throw new Error("http "+r.status);
       return r.json();
     }).then(function(d){
       if(!d || !d.sections) throw new Error("bad payload");
       applyData(d);
-    }).catch(function(){ tryFetch(i+1); });
+    }).catch(function(){ fetchFeed(list, i+1); });
+  }
+  function renderTermPicker(){
+    var sel = $("termPick");
+    sel.hidden = !(TERMS && TERMS.length > 1);
+    if(sel.hidden) return;
+    clear(sel);
+    TERMS.forEach(function(t){
+      var o = document.createElement("option");
+      o.value = t.code; o.textContent = t.label || t.code;
+      sel.appendChild(o);
+    });
+    sel.value = activeTerm;
+  }
+  function feedPath(code){
+    var t = (TERMS || []).filter(function(x){ return x.code === code; })[0];
+    return t ? [t.path] : DATA_CANDIDATES;
+  }
+  function switchTerm(code){
+    if(code === activeTerm) return;
+    save();                                   // keep what this term had
+    activeTerm = code;
+    try{ localStorage.setItem("bcc-faculty-schedule-term", code); }catch(e){}
+    // Section flags belong to a term; settings and the person carry over.
+    state.include = {}; state.pt = {}; state.hrs = {};
+    state.overrides = {}; state.custom = []; state.sessions = null; state.view = "schedule";
+    load(code);
+    bindProfile(); bindOptions(); syncSigControls();
+    renderTermPicker();
+    fetchFeed(feedPath(code), 0);
+    toast("Showing " + ((TERMS || []).filter(function(x){ return x.code===code; })[0] || {}).label);
+  }
+  function loadTerms(){
+    fetch(TERMS_INDEX + "?t=" + Date.now()).then(function(r){
+      if(!r.ok) throw new Error("no index");
+      return r.json();
+    }).then(function(idx){
+      TERMS = (idx && idx.terms) || [];
+      if(!TERMS.length) throw new Error("empty index");
+      var saved = "";
+      try{ saved = localStorage.getItem("bcc-faculty-schedule-term") || ""; }catch(e){}
+      var pick = TERMS.filter(function(t){ return t.code === saved; })[0] || TERMS[0];
+      activeTerm = pick.code;
+      load(activeTerm);
+      bindProfile(); bindOptions(); syncSigControls();
+      renderTermPicker(); renderAll();
+      fetchFeed([pick.path], 0);
+    }).catch(function(){
+      fetchFeed(DATA_CANDIDATES, 0);          // no index: one feed, as before
+    });
   }
 
   /* ===== wiring ===== */
@@ -3384,7 +3468,9 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     var seen = true;
     try{ seen = !!localStorage.getItem("bcc-faculty-schedule-tour"); }catch(e){}
     if(!seen && !state.faculty.length) $("firstRun").hidden = false;
-    tryFetch(0);
+    $("termPick").addEventListener("change", function(){ switchTerm($("termPick").value); });
+    if(typeof fetch === "function"){ loadTerms(); }
+    else { fetchFeed(DATA_CANDIDATES, 0); }
   }
   if(document.readyState==="loading"){ document.addEventListener("DOMContentLoaded", init); } else { init(); }
 })();

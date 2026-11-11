@@ -41,6 +41,7 @@ ALIASES = OrderedDict([
     ("instructor",  ["instructor", "instructors", "primaryinstructor", "faculty", "teacher",
                      "instructorname", "assignedinstructor"]),
     ("days",        ["meetingdays", "days", "daysofweek", "meetingpattern", "daysmet", "day"]),
+    ("times",       ["sectiontimes", "meetingtimes", "times", "timeblock", "classtimes"]),
     ("start",       ["sectionstarttime", "starttime", "begintime", "meetingstart", "start", "timestart"]),
     ("end",         ["sectionendtime", "endtime", "stoptime", "meetingend", "end", "timeend"]),
     ("building",    ["building", "bldg", "buildingcode", "buildingname"]),
@@ -63,6 +64,25 @@ DAY_TOKENS = {"M": "M", "MO": "M", "MON": "M", "MONDAY": "M",
               "F": "F", "FR": "F", "FRI": "F", "FRIDAY": "F",
               "SA": "S", "S": "S", "SAT": "S", "SATURDAY": "S",
               "SU": "U", "U": "U", "SUN": "U", "SUNDAY": "U"}
+
+# Later exports spell the campus out instead of using a code.
+CAMPUS_ALIASES = {
+    "LINCROFT MAIN CAMPUS": "LINC",
+    "WALL CAMPUS": "WALL",
+    "DISTANCE EDUCATION": "DE",
+    "ONLINE REMOTE LIVE": "ORLV",
+    "ONLINE REMOTE HYBRID": "ONLH",
+    "OTHER OFF-CAMPUS": "OTHER",
+    "CULINARY ED CTR ASBURY PARK HS": "CECAP",
+}
+
+
+def campus_code(value):
+    if blank(value):
+        return None
+    v = " ".join(str(value).split())
+    return CAMPUS_ALIASES.get(v.upper(), v)
+
 
 ONLINE_CAMPUS = {"DE", "ONL", "ONLINE", "WEB"}
 HYBRID_CAMPUS = {"ONLH", "HYB"}
@@ -115,6 +135,17 @@ def to_min(t):
 
 def hhmm(mins):
     return None if mins is None else "%02d:%02d" % (mins // 60, mins % 60)
+
+
+def split_time_range(v):
+    """'9:00 AM-11:45 AM' -> ('9:00 AM', '11:45 AM'). None when it is not a range."""
+    if blank(v):
+        return (None, None)
+    txt = str(v).strip()
+    m = re.match(r"^(.+?)\s*(?:-|–|—|to)\s*(.+)$", txt)
+    if not m:
+        return (txt, None)
+    return (m.group(1).strip(), m.group(2).strip())
 
 
 def parse_days(s):
@@ -182,20 +213,26 @@ def parse_instructors(v, name_style="auto"):
     return names
 
 
-def canonicalize_names(sections, warn):
+def canonicalize_names(sections, warn, reference=None):
     """Merge 'M Qaissaunee' into 'Michael Qaissaunee' when it is unambiguous.
 
     Same person, two spellings, is the most damaging error this feed can carry:
     the picker lists them twice and each entry holds part of the schedule.
     """
     forms = {}
+    def note(n):
+        toks = n.split()
+        if len(toks) < 2:
+            return
+        forms.setdefault(" ".join(toks[1:]).lower(), set()).add(n)
+
     for s in sections:
         for n in s["i"]:
-            toks = n.split()
-            if len(toks) < 2:
-                continue
-            surname = " ".join(toks[1:]).lower()
-            forms.setdefault(surname, set()).add(n)
+            note(n)
+    # Full names already known from the feed being replaced, so an export that
+    # only gives "Dornemann, S" can still be shown as "Sandra Dornemann".
+    for n in (reference or []):
+        note(n)
 
     rewrite = {}
     for surname, variants in forms.items():
@@ -262,6 +299,23 @@ def infer_mode(mode_raw, mtype_raw, campus, days, start):
     if not days and start is None:
         return "online-async"
     return "inperson"
+
+
+TERM_SUFFIX_POT = {"": "15W", "11": "11W", "7A": "7A", "7B": "7B"}
+
+
+def pot_from_term(value, base):
+    """'26FA' -> 15W, '26FA11' -> 11W, '26FA7A' -> 7A. None when it does not match."""
+    if blank(value):
+        return None
+    v = str(value).strip().upper()
+    b = (base or "").strip().upper()
+    if b and v.startswith(b):
+        return TERM_SUFFIX_POT.get(v[len(b):].strip())
+    # No base given: take the first four characters as the term code.
+    if len(v) >= 4:
+        return TERM_SUFFIX_POT.get(v[4:].strip())
+    return None
 
 
 def dept_of(course, section):
@@ -346,6 +400,15 @@ def row_meetings(row, mapping):
     dparts = split_parts(get(row, mapping, "days"))
     sparts = split_parts(get(row, mapping, "start"))
     eparts = split_parts(get(row, mapping, "end"))
+    # Some exports carry one "Section Times" column holding "9:00 AM-11:45 AM"
+    # per pattern instead of separate start and end columns.
+    if not sparts and mapping.get("times"):
+        combined = split_parts(get(row, mapping, "times"))
+        sparts, eparts = [], []
+        for chunk in combined:
+            a, b = split_time_range(chunk)
+            sparts.append(a or "")
+            eparts.append(b or "")
     bparts = split_parts(get(row, mapping, "building"))
     rparts = split_parts(get(row, mapping, "room"))
 
@@ -364,6 +427,13 @@ def row_meetings(row, mapping):
             continue                                   # async or padding
         bld = bparts[i] if i < len(bparts) else None
         rm = rparts[i] if i < len(rparts) else None
+        # Where Location holds the room ("ATC 104") rather than a campus code,
+        # use it; a bare campus code is left to the campus field.
+        if rm is None and not bld and mapping.get("campus"):
+            cand = split_parts(get(row, mapping, "campus"))
+            pick = cand[i] if i < len(cand) else (cand[0] if len(cand) == 1 else None)
+            if pick and re.search(r"[A-Za-z]{2,}\s+\w", str(pick)):
+                rm = pick
         label = " ".join(str(x).strip() for x in (bld, rm) if not blank(x)) or None
         if label is None:
             label = CAMPUS_ROOM_LABEL.get(str(get(row, mapping, "campus") or "").strip().upper())
@@ -397,10 +467,17 @@ def build(rows, mapping, args, warn):
         course = str(course).strip() if not blank(course) else re.sub(r"-[^-]+$", "", code)
         title = get(first, mapping, "title")
         title = str(title).strip() if not blank(title) else course
-        campus = get(first, mapping, "campus")
-        campus = str(campus).strip() if not blank(campus) else None
+        campus = campus_code(get(first, mapping, "campus"))
+        # Where that column held rooms rather than a campus code, the rooms are
+        # already on the meetings; leave campus empty rather than repeat them.
+        if campus and re.search(r"[A-Za-z]{2,}\s+\w", campus):
+            campus = None
         pot = get(first, mapping, "pot")
-        pot = str(pot).strip() if not blank(pot) else (args.default_pot or "15W")
+        pot = str(pot).strip() if not blank(pot) else None
+        if pot is None and getattr(args, "pot_from_term", False):
+            pot = pot_from_term(get(first, mapping, "term"), args.term)
+        if pot is None:
+            pot = args.default_pot or "15W"
         if args.pot and pot != args.pot:
             continue
 
@@ -495,6 +572,9 @@ def main():
                     help="one or more schedule files (.xlsx, .xlsm, .csv, .tsv)")
     ap.add_argument("--pot-labels", default=None,
                     help="comma-separated part-of-term label per input file, e.g. 15W,11W,7A,7B")
+    ap.add_argument("--pot-from-term", action="store_true",
+                    help="derive the part of term from the Term column (26FA -> 15W, 26FA11 -> 11W, "
+                         "26FA7A -> 7A). Use when one export carries every session.")
     ap.add_argument("--out", default="sections.json")
     ap.add_argument("--term", default=None, help="e.g. 26FA")
     ap.add_argument("--term-label", default=None, help='e.g. "Fall 2026"')
@@ -502,6 +582,17 @@ def main():
     ap.add_argument("--default-pot", default="15W", help="used when the sheet has no part-of-term column")
     ap.add_argument("--names", default="auto", choices=["auto", "first-last", "as-is"],
                     help="auto/first-last flip 'Doe, Jane' to 'Jane Doe'; as-is leaves names alone")
+    ap.add_argument("--fill-missing", action="store_true",
+                    help="keep sections that are in --previous but absent from this export, for "
+                         "exports that are filtered to currently-active sections")
+    ap.add_argument("--names-from", default=None,
+                    help="a sections.json whose full instructor names are used to expand an export "
+                         "that only gives 'Surname, F'")
+    ap.add_argument("--credits-from-course", default=None,
+                    help="a sections.json to take Course Credit from, matched on course code rather "
+                         "than section — for a new term whose export omits credits")
+    ap.add_argument("--carry-credits", action="store_true",
+                    help="take Course Credit from the --previous feed for exports that omit it")
     ap.add_argument("--previous", default=None,
                     help="the sections.json this build replaces; its differences are recorded in the feed")
     ap.add_argument("--calendar", default=None,
@@ -521,6 +612,13 @@ def main():
     for i, path in enumerate(args.spreadsheet):
         headers, rows = read_rows(path)
         mapping, unmatched = map_columns(headers)
+        if "section" not in mapping and "course" in mapping:
+            # Some exports put the full section code in the course column.
+            sample = [r.get(mapping["course"]) for r in rows[:40]]
+            filled = [v for v in sample if v]
+            if filled and sum(1 for v in filled if str(v).count("-") >= 2) > len(filled) / 2:
+                mapping["section"] = mapping["course"]
+                del mapping["course"]
         if "section" not in mapping:
             print(f"{path} columns: " + ", ".join(str(h) for h in headers if h))
             sys.exit("\nNo section-code column matched. Add its header to ALIASES['section'] and rerun.")
@@ -533,6 +631,12 @@ def main():
                 continue
             seen.add(sec["id"])
             all_sections.append(sec)
+        if args.pot_from_term:
+            seen_pots = {}
+            for sec in all_sections:
+                seen_pots[sec["pot"]] = seen_pots.get(sec["pot"], 0) + 1
+            print("  sessions from the Term column: " +
+                  ", ".join(f"{k} {v}" for k, v in sorted(seen_pots.items())))
         if len(args.spreadsheet) > 1:
             print(f"  {os.path.basename(path)}: {len(rows)} rows"
                   + (f" tagged {labels[i]}" if labels else ""))
@@ -569,22 +673,94 @@ def main():
         return
 
     sections = all_sections
-    merged = canonicalize_names(sections, warn)
+    merged = 0
     if not sections:
         sys.exit("No sections built. Run with --inspect to see how the columns mapped.")
 
-    faculty = sorted({n for s in sections for n in s["i"]},
-                     key=lambda n: (n.split()[-1].lower(), n.lower()))
+
     est = sum(1 for s in sections for m in s["m"] if m["est"])
     no_room = sum(1 for s in sections for m in s["m"] if m["s"] and not m["rm"])
     no_instr = sum(1 for s in sections if not s["i"])
     multi = sum(1 for s in sections if len(s["m"]) > 1)
+
+    if args.fill_missing and args.previous:
+        try:
+            with open(args.previous) as pf:
+                prev = json.load(pf).get("sections", [])
+            have = {x["id"] for x in sections}
+            carried = [x for x in prev if x["id"] not in have]
+            for x in carried:
+                x = dict(x)
+                x["carried"] = True          # came from the previous feed, not this export
+                sections.append(x)
+            sections.sort(key=lambda x: x["id"])
+            by_pot = {}
+            for x in carried:
+                by_pot[x.get("pot", "15W")] = by_pot.get(x.get("pot", "15W"), 0) + 1
+            print(f"  {len(carried)} sections carried from the previous feed: " +
+                  ", ".join(f"{k} {v}" for k, v in sorted(by_pot.items())))
+        except (IOError, ValueError):
+            print("  ! could not read --previous to fill gaps")
+
+    # Names are canonicalised after any carried sections are in, or the two
+    # halves of the feed keep their own spelling of the same person.
+    reference_names = []
+    for src in (args.names_from, args.previous):
+        if not src:
+            continue
+        try:
+            with open(src) as rf:
+                reference_names += json.load(rf).get("faculty", [])
+        except (IOError, ValueError):
+            pass
+    merged = canonicalize_names(sections, warn, reference_names)
+
+    if args.credits_from_course:
+        try:
+            with open(args.credits_from_course) as cf:
+                by_course = {}
+                for x in json.load(cf).get("sections", []):
+                    if x.get("cr"):
+                        by_course.setdefault(x.get("c"), x["cr"])
+            filled, unmatched = 0, set()
+            for sec in sections:
+                if not sec["cr"]:
+                    if by_course.get(sec["c"]):
+                        sec["cr"] = by_course[sec["c"]]
+                        filled += 1
+                    else:
+                        unmatched.add(sec["c"])
+            print(f"  credits taken from another term by course code for {filled} sections"
+                  + (f"; {len(unmatched)} courses had no match" if unmatched else ""))
+            if unmatched:
+                warn("no credit value for: " + ", ".join(sorted(unmatched)[:10]) +
+                     (" …" if len(unmatched) > 10 else ""))
+        except (IOError, ValueError):
+            print("  ! could not read --credits-from-course")
+
+    if args.carry_credits and args.previous:
+        try:
+            with open(args.previous) as cf:
+                old_cr = {x["id"]: x.get("cr") for x in json.load(cf).get("sections", [])}
+            filled = 0
+            for sec in sections:
+                if not sec["cr"] and old_cr.get(sec["id"]):
+                    sec["cr"] = old_cr[sec["id"]]
+                    filled += 1
+            print(f"  credits carried over for {filled} sections")
+        except (IOError, ValueError):
+            print("  ! could not read --previous for credits")
 
     changes = diff_feeds(args.previous, sections) if args.previous else None
     calendar = None
     if args.calendar:
         with open(args.calendar) as cf:
             calendar = json.load(cf)
+    # Built here, not earlier: carried sections and name canonicalisation both
+    # change who is in it.
+    faculty = sorted({n for s in sections for n in s["i"]},
+                     key=lambda n: (n.split()[-1].lower(), n.lower()))
+
     out = {
         "term": args.term,
         "termLabel": args.term_label or args.term,

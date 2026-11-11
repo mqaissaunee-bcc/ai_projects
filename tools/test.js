@@ -112,6 +112,12 @@ setTimeout(() => {
   $('addCustom').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   ok('office-hours block added', $('customList').querySelectorAll('.custom-item').length === 1);
   ok('office hours on grid', doc.querySelectorAll('.blk.oh').length === 2);
+  // the location has to share the time line: a third line is clipped away in print
+  const ohBlock = doc.querySelector('.blk.oh');
+  ok('office-hours block is two lines, not three',   // .blk-grip is the drag handle, not text
+     ohBlock.querySelectorAll('span.l2, span.l3').length === 1);
+  ok('location sits on the time line', /MAS 212/.test(ohBlock.querySelector('.l2').textContent));
+  ok('short blocks keep a minimum print height', /\.blk\{min-height:24px/.test(html));
 
   // 5. inline section edit (end time + room)
   const firstSec = $('sectionList').querySelector('.sec');
@@ -222,7 +228,7 @@ setTimeout(() => {
 
   // ---- PT section list and signature line ----
   ptOf(0).dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
-  ok('PT sections listed by name', /Part-time \/ overload sections: \S+/.test(doc.querySelector('.load-line').textContent));
+  ok('PT sections listed by name', /List of Part Time Sections: \S+/.test(doc.querySelector('.load-line').textContent));
   ok('no signature line by default', !doc.querySelector('.sig-row'));
   $('optSign').checked = true;
   $('optSign').dispatchEvent(new window.Event('change', { bubbles: true }));
@@ -231,6 +237,112 @@ setTimeout(() => {
   $('optSign').dispatchEvent(new window.Event('change', { bubbles: true }));
   ptOf(0).dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   ok('PT list disappears when nothing is flagged', !doc.querySelector('.pt-list'));
+
+  // ---- trimming empty days and hours ----
+  const dayCols = () => doc.querySelectorAll('.sheet .daycol:not(.onlinecol)').length;
+  const beforeDays = dayCols();
+  $('optTrimDays').checked = true;
+  $('optTrimDays').dispatchEvent(new window.Event('change', { bubbles: true }));
+  ok('empty days are dropped', dayCols() < beforeDays);
+  $('optTrimHours').checked = true;
+  $('optTrimHours').dispatchEvent(new window.Event('change', { bubbles: true }));
+  ok('empty hours are folded', doc.querySelectorAll('.sheet .gap-slot').length > 0);
+  ok('the fold is labelled with its range',
+     /\d.*(am|pm)–\d.*(am|pm)/.test(doc.querySelector('.sheet .gap-slot').textContent));
+  ok('blocks still positioned in row units',
+     [...doc.querySelectorAll('.sheet .blk')].every(b => /^calc\(var\(--rowh\)/.test(b.style.top)));
+  $('optTrimDays').checked = false;
+  $('optTrimDays').dispatchEvent(new window.Event('change', { bubbles: true }));
+  $('optTrimHours').checked = false;
+  $('optTrimHours').dispatchEvent(new window.Event('change', { bubbles: true }));
+  ok('days come back when untrimmed', dayCols() === beforeDays);
+
+  // ---- memorandum of agreement ----
+  ok('agreements panel hidden with no overload', $('moaBox').hidden === true);
+  const anyPt = [...$('sectionList').querySelectorAll('.pt-toggle')][0];
+  anyPt.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  ok('agreements panel appears once something is flagged', $('moaBox').hidden === false);
+  ok('panel says how many are needed', /agreement/.test($('moaSummary').textContent));
+  $('btnMoa').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  const moa = doc.querySelector('.moa-doc');
+  ok('an agreement is rendered', !!moa);
+  ok('it names the person', moa.textContent.indexOf($('fName').value) > -1 || /NAME:/.test(moa.textContent));
+  ok('it lists the flagged section', /-\d{3}[A-Z]{2}|DE0/.test(moa.querySelector('.moa-table').textContent));
+  ok('session dates filled from the calendar', /began on \w+ \d+, 20\d\d/.test(moa.textContent));
+  ok('amount blank until a rate is set', !/\$/.test(moa.querySelector('.moa-table').textContent));
+  // institute details are entered once and kept
+  $('moaInstitute').value = 'STEAM Institute';
+  $('moaInstitute').dispatchEvent(new window.Event('input', { bubbles: true }));
+  $('moaDean').value = 'Dr. James Crowder';
+  $('moaDean').dispatchEvent(new window.Event('input', { bubbles: true }));
+  $('moaContacts').value = 'April Brinson x2430';
+  $('moaContacts').dispatchEvent(new window.Event('input', { bubbles: true }));
+  $('moaRate').value = '1050';
+  $('moaRate').dispatchEvent(new window.Event('input', { bubbles: true }));
+  const moa2 = doc.querySelector('.moa-doc');
+  ok('a rate fills the amount column', /\$[\d,]+\.\d\d/.test(moa2.querySelector('.moa-table').textContent));
+  ok('the arithmetic is shown', /per credit/.test(moa2.textContent));
+  ok('the dean line is left unsigned',
+     moa2.querySelector('.moa-sig .sig-rule').textContent.trim() === '');
+  ok('marked as a draft for the office', /Draft produced/.test(moa2.textContent));
+  ok('institute name reaches the document', /STEAM Institute/.test(moa2.textContent));
+  ok('dean named on the signature line', /Dr\. James Crowder/.test(moa2.textContent));
+  ok('office staff named in the notify box', /April Brinson/.test(moa2.textContent));
+  ok('institute details persisted',
+     JSON.parse(window.localStorage.getItem('bcc-faculty-schedule-v1')).institutes[0].dean === 'Dr. James Crowder');
+
+  // per-session payment dates
+  const payField = [...doc.querySelectorAll('#moaSessionFields input[type=text]')][0];
+  ok('a payment-dates field per session', !!payField);
+  payField.value = 'Oct 30, Nov 30, Dec 31';
+  payField.dispatchEvent(new window.Event('input', { bubbles: true }));
+  ok('payment dates reach the document',
+     /Oct 30, Nov 30, Dec 31/.test(doc.querySelector('.moa-doc').textContent));
+
+  // the rate is not a constant across terms, so each session can carry its own
+  const potKey = [...doc.querySelectorAll('#moaSessionFields .pay-group')][0]
+    .querySelector('input[type=number]');
+  potKey.value = '985';
+  potKey.dispatchEvent(new window.Event('input', { bubbles: true }));
+  ok('a session rate overrides the default',
+     /985\.00 per credit/.test(doc.querySelector('.moa-doc').textContent));
+  potKey.value = '';
+  potKey.dispatchEvent(new window.Event('input', { bubbles: true }));
+  ok('clearing it falls back to the default',
+     /1,050\.00 per credit/.test(doc.querySelector('.moa-doc').textContent));
+
+  // session wording is free text — summer sessions are worded differently
+  const labelField = [...doc.querySelectorAll('#moaSessionFields .pay-group')][0]
+    .querySelector('input[type=text]');
+  labelField.value = 'SUMMER II 2025 10 WEEK SEMESTER';
+  labelField.dispatchEvent(new window.Event('input', { bubbles: true }));
+  ok('custom session wording is used',
+     /SUMMER II 2025 10 WEEK SEMESTER/.test(doc.querySelector('.moa-doc').textContent));
+  labelField.value = '';
+  labelField.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+  ok('no total row, matching the official form',
+     !doc.querySelector('.moa-table .total-row'));
+
+  // several institutes, each remembered
+  $('moaInstNew').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  ok('a second institute can be added', $('moaInstSelect').options.length === 2);
+  $('moaInstitute').value = 'Business Institute';
+  $('moaInstitute').dispatchEvent(new window.Event('input', { bubbles: true }));
+  ok('the new one is blank, not a copy', $('moaDean').value === '');
+  ok('switching back restores the first', (() => {
+    const first = $('moaInstSelect').options[0].value;
+    $('moaInstSelect').value = first;
+    $('moaInstSelect').dispatchEvent(new window.Event('change', { bubbles: true }));
+    return $('moaDean').value === 'Dr. James Crowder';
+  })());
+
+  // settings file carries no personal data
+  $('moaSaveCfg').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  ok('settings file offered', downloads.some(d => typeof d === 'string' && /settings\.json$/.test(d)));
+  $('btnBackToSchedule').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  ok('back returns to the schedule', !doc.querySelector('.moa-doc') && !!doc.querySelector('.sheet'));
+  anyPt.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
 
   // ---- fit to one page ----
   ok('fit is on by default', $('optFit').checked);
@@ -270,7 +382,7 @@ setTimeout(() => {
   ok('split sends part of a section to overload', afterSplit.pt === 1);
   ok('split leaves the rest on load', afterSplit.load === beforeSplit.load + 4 - beforeSplit.secHours - 1
      || afterSplit.load > 0);
-  ok('PT list shows the partial split', /1 hr of 4/.test(doc.querySelector('.pt-list').textContent));
+  ok('PT list shows the partial split', /1 Cr of 4/.test(doc.querySelector('.pt-list').textContent));
   ok('table shows the load/PT split', /load \+ 1 PT/.test(coursesTable().textContent));
   ok('grid block labels partial PT', /1 hr PT/.test(doc.querySelector('.sheet').textContent));
   ok('sidebar toggle shows the partial amount',
@@ -540,17 +652,96 @@ setTimeout(() => {
      /Office hours: [\d.]+ of 40/.test(facultySheets()[0].querySelector('.load-line span').textContent));
   $('fOhRequired').value = '0';
   $('fOhRequired').dispatchEvent(new window.Event('input', { bubbles: true }));
-  ok('requirement of zero stops the warning', !/below the/.test(bannerText()));
+  ok('requirement of zero stops the office-hours warning',
+     !/Office hours total .* below the/.test(bannerText()));
+  $('fOhRequired').value = '';
+  $('fOhRequired').dispatchEvent(new window.Event('input', { bubbles: true }));
+
+  // office hours required follows the contact hours owed: one per three
+  const reqOf = () => parseFloat(
+    facultySheets()[0].querySelector('.load-line span').textContent.match(/Office hours: [\d.]+ of ([\d.]+)/)[1]);
+  $('fLoadBase').value = '15';
+  $('fLoadBase').dispatchEvent(new window.Event('input', { bubbles: true }));
+  const owedOf = () => parseFloat(
+    facultySheets()[0].querySelector('.load-line span').textContent.match(/Contact hours: [\d.]+ of ([\d.]+)/)[1]);
+  ok('office hours asked for is one per three contact hours',
+     Math.abs(reqOf() - owedOf() / 3) < 0.02);
+  const owedBefore = owedOf();
+  $('rCredits').value = '6'; $('rReason').value = 'Chair';
+  $('addRelease').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  ok('release lowers the contact hours owed', owedOf() === owedBefore - 6);
+  ok('and the office-hour requirement with it',
+     Math.abs(reqOf() - owedOf() / 3) < 0.02 && reqOf() < owedBefore / 3);
+  [...$('releaseList').querySelectorAll('button')].pop()
+    .dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+
+  // extra compensation is paid on top rather than reducing the load
+  const contactOf = () => parseFloat(
+    facultySheets()[0].querySelector('.load-line span').textContent.match(/of ([\d.]+)/)[1]);
+  const contactBeforeExtra = contactOf();
+  $('rCredits').value = '1.5'; $('rReason').value = 'Accreditation';
+  $('rKind').value = 'extra';
+  $('addRelease').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  ok('extra compensation does not reduce the load owed', contactOf() === contactBeforeExtra);
+  ok('extra compensation is stated on the sheet',
+     /Extra compensation: 1.5 for Accreditation/.test(facultySheets()[0].textContent));
+  [...$('releaseList').querySelectorAll('button')].pop()
+    .dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  $('rKind').value = 'release';
+
+  // College Hour, which appears on nearly every official form
+  const chBlocksBefore = $('customList').querySelectorAll('.custom-item').length;
+  $('addCollegeHour').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  ok('College Hour adds two blocks', $('customList').querySelectorAll('.custom-item').length === chBlocksBefore + 2);
+  ok('College Hour lands on Tuesday and Thursday',
+     /College Hour/.test($('customList').textContent) &&
+     /Tue|Thu/.test($('customList').textContent));
+  ok('College Hour is not counted as office hours',
+     !/Office hours: \d+(\.\d+)? of/.test('') &&
+     JSON.parse(window.localStorage.getItem('bcc-faculty-schedule-v1')).custom
+       .filter(c => c.label === 'College Hour').every(c => c.type !== 'oh'));
+
+  // release-time activities are their own kind of block
+  $('cLabel').value = 'Department Chair';
+  $('cType').value = 'release';
+  $('cDays').querySelector('input[value=W]').checked = true;
+  $('cStart').value = '09:00'; $('cEnd').value = '11:00';
+  $('addCustom').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  ok('release-time block renders distinctly', !!doc.querySelector('.blk.release'));
+
+  // hours expected for a release: two per credit plus one
+  $('rCredits').value = '3'; $('rReason').value = 'TLC Fellow'; $('rKind').value = 'release';
+  $('addRelease').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  ok('a three-credit release expects seven hours',
+     /7 hrs expected/.test($('releaseList').textContent));
+  ok('the sheet reports hours against that',
+     /Release time: [\d.]+ of [\d.]+ hrs/.test(facultySheets()[0].textContent));
+  ok('short release hours are flagged', /below the .* expected/.test(bannerText()));
+  $('rCredits').value = '6'; $('rReason').value = 'Co-Chair'; $('rHours').value = '6';
+  $('addRelease').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  ok('the expectation can be overridden per line', /6 hrs expected/.test($('releaseList').textContent));
+  $('rHours').value = '';
+  [...$('releaseList').querySelectorAll('button')].slice(-2)
+    .forEach(b => b.dispatchEvent(new window.MouseEvent('click', { bubbles: true })));
+  const ohNow = parseFloat(facultySheets()[0].querySelector('.load-line span')
+    .textContent.match(/Office hours: ([\d.]+)/)[1]);
+  $('cType').value = 'oh';
 
   // ---- what's new ----
   ok('news tab exists', !!$('tabNews'));
   $('btnNews').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   ok('news button opens the news tab', $('paneNews').hidden === false && $('helpModal').hidden === false);
   ok('news lists several versions', $('paneNews').querySelectorAll('.rel').length >= 5);
-  ok('news names the current version', /1\.7/.test($('paneNews').textContent));
+  ok('schedule data changes summarised', !!$('dataChanges').querySelector('.data-rel'));
+  const dataText = $('dataChanges').textContent;
+  ok('summary reports section count', /\d+ sections in the schedule/.test(dataText));
+  ok('summary reports instructor changes', /changed instructor/.test(dataText));
+  ok('summary reports room changes', /changed room or meeting time/.test(dataText));
+  ok('summary reports unstaffed count', /no instructor: \d+/.test(dataText));
+  ok('news names the current version', /1\.14/.test($('paneNews').textContent));
   ok('opening news clears the dot', $('newsDot').hidden === true);
   ok('hidden always wins over a class display rule', /\[hidden\]\{display:none!important\}/.test(html));
-  ok('version recorded', window.localStorage.getItem('bcc-faculty-schedule-seen') === '1.7');
+  ok('version recorded', window.localStorage.getItem('bcc-faculty-schedule-seen') === '1.14');
   $('tabWalk').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   ok('other tabs still work', $('paneWalk').hidden === false && $('paneNews').hidden === true);
   $('helpClose').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));

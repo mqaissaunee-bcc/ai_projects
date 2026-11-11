@@ -1,4 +1,4 @@
-# The schedule feed: source format and known quirks
+# What the scraper needs to capture
 
 The scrape is now the only source. `build_schedule_data.py` reads the spreadsheet it produces and writes `sections.json`. Nothing else feeds the tool.
 
@@ -14,50 +14,6 @@ The scrape is now the only source. `build_schedule_data.py` reads the spreadshee
 The generator groups rows by section code and turns each row into one block on the weekly grid. This is the single thing the old enrollment report got wrong, and the only design decision that's painful to fix after the fact.
 
 Everything else in this file is a preference. Get this part right.
-
-## What the 8/27 export actually looks like
-
-The report has two sheets. The generator always takes the section-level one (`Individual Sects All`), never the consolidated summary that comes first.
-
-Multiple meeting patterns are packed into a single row as parallel comma-separated lists, not as separate rows:
-
-```
-Meeting Days        'M T W TH, M T W TH'
-Section Start Time  ' 9:00 AM,  10:15 AM'
-Section End Time    ' 10:15 AM,  1:45 PM'
-Room                'MAS 101, HOSP CLIN'
-```
-
-Commas separate patterns; spaces separate days within a pattern. The generator zips the lists positionally. 162 of 1,401 sections use this, up to three patterns each. Where a row lists fewer rooms than patterns (48 sections), the extras print blank rather than guessing, and the build warns.
-
-If a future export switches to one row per meeting pattern instead, that also works — rows are grouped by section code and each row contributes its patterns.
-
-### The instructor column mixes four conventions
-
-```
-Michael Qaissaunee                  First Last
-Qaissaunee, M                       Last, Initial
-Hansen, P; Healy, J; Cole, C        three people, semicolons
-Cheryl Fencik, Gregory Augustino    two people, comma
-```
-
-The comma is doing two different jobs. The rule: a comma between two multi-token names separates people; a comma between two single tokens is Last-comma-First. Without this, `Cheryl Fencik, Gregory Augustino` collapses into one nonexistent person.
-
-The same person also appears under two spellings — `Michael Qaissaunee` on five sections and `Qaissaunee, M` on a sixth. `canonicalize_names()` merges an initial form into a full form when exactly one full form shares the surname and initial, and leaves it alone plus warns when two people could match. On the 8/27 file this merged 80 variants, taking 589 raw names down to 479 real instructors. 186 instructors appear only in initial form and stay that way, which is correct — there is nothing to merge them with.
-
-### No part-of-term column
-
-This export is one part of term per file and carries no session column, so `--default-pot` supplies the label. Pass all four files at once:
-
-```bash
-python3 tools/build_schedule_data.py \
-  data/raw/26FA_15W.xlsx data/raw/26FA_11W.xlsx data/raw/26FA_7A.xlsx data/raw/26FA_7B.xlsx \
-  --pot-labels 15W,11W,7A,7B \
-  --term 26FA --term-label "Fall 2026" \
-  --out faculty-schedule/data/26FA/sections.json
-```
-
-Duplicate section codes across files are kept once, from the first file, with a warning.
 
 ## Columns
 

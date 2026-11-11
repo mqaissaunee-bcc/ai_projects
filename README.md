@@ -35,6 +35,44 @@ Each office-hours or commitment block gets an owner: a named person, or "Everyon
 - **Office-hours floor.** "Office hours required" under Your information (default 5, matching the paper form) drives a warning when the total falls short, and the summary reads `Office hours: 3 of 5`.
 - **Department summary.** With several people selected, a summary sheet leads the printout: sections, contact hours against the required load, overload, office hours, release, and column totals. Numbers off the expected load or below the office-hours floor are highlighted — underlined in print, where color may not survive. Toggle under Display options.
 
+### Overload agreements
+
+Every overload section needs a memorandum of agreement, one per part of term, so a person with overload in both 15W and 11W gets two. `moaGroups()` groups the PT-flagged sections by person and session; `buildMoaDoc()` renders each as a document modelled on the Institute Office's Word form.
+
+Filled from what the tool knows: name, term and session wording, one row per section with its credits, and the session start and end dates from `calendar-26FA.json`. A rate per credit is optional — set it and amounts are computed with the rate stated underneath; leave it blank and the column prints empty for the office.
+
+**The rate per credit belongs to the session, not the tool.** Three sample agreements came out at $1,050 (Fall 2026 15-week), $1,020 (Fall 2025 11-week) and $985 (Summer II 2025) per credit, so a single global rate would have printed wrong figures on a payment document. Each part of term carries its own rate, with the global one used only as a fallback.
+
+**The session wording is free text.** The office writes "FALL 2025 11-week semester" and "SUMMER II 2025 10 WEEK SEMESTER"; the tool's own wording is only a placeholder, and a session the feed does not name — a summer ten-week, say — can be typed in.
+
+**No total row.** The issued form lists sections and amounts with no total, so the generated one does the same.
+
+**Institutes are a saved list**, not single fields: each college institute has its own dean, phone, and office staff, so `state.institutes` holds a record per institute and the agreement reads from whichever is selected. **Payment dates and the respond-by date are per part of term**, since an 11-week overload is paid over fewer months than a 15-week one; the panel shows one pay group per session that actually needs an agreement.
+
+"Save settings file" writes institutes, rate, and payment dates only — deliberately no schedule and no personal details — so one office can hand its setup to another.
+
+Credits follow the section's published credit value when the whole section is overload, and the overload portion when it is a split, marked `(partial)`.
+
+**The dean's signature line is always left blank.** The sample form arrives with it pre-filled because the office issues it; a faculty-side tool producing a document with the dean's name already on it is a different object. Each document also carries a line saying it is a draft for the Institute Office.
+
+Printing uses a named page — `@page moa { size: letter portrait }` with `.moa-doc { page: moa }` — so agreements print portrait while the schedule stays landscape. The Word export writes an HTML document with the Office namespace, which Word opens and can edit without needing a zip library in the browser.
+
+### Reporting what changed in the data
+
+Pass `--previous` pointing at the `sections.json` being replaced and the build records its own differences into the new feed under `changes`: sections added and removed, which changed instructor, which changed room or meeting pattern, and the unstaffed count before and after.
+
+```bash
+python3 tools/build_schedule_data.py <the four exports> \
+  --pot-labels 15W,11W,7A,7B --term 26FA --term-label "Fall 2026" \
+  --calendar tools/calendar-26FA.json \
+  --previous faculty-schedule/data/26FA/sections.json \
+  --out faculty-schedule/data/26FA/sections.json
+```
+
+Read `--previous` before writing `--out`; the build loads the old file first, so pointing both at the same path is fine.
+
+The app uses it twice. College-wide figures head the **What's new** page, regenerated from the feed rather than written by hand — no changelog editing per data refresh. And anything touching a section the current person has appears as a notice at the top of their page: *ELEC-101-001RL moved to GMH 106 (was MAS 108)*. A cancelled section can only be named if that person had previously touched it, since it is no longer in the feed to match against.
+
 ### What's new
 
 A **What's new** button opens the changelog, also available as a third tab in Help. `APP_VERSION` at the top of the script drives it: a returning visitor whose stored version differs sees a dot on the button until they read it, and a first-time visitor sees no dot, having nothing to catch up on. When you ship a change, bump `APP_VERSION` and add a section at the top of `#paneNews`.
@@ -51,6 +89,10 @@ When adding features, add the matching FAQ entry. The entries exist because some
 
 Modeled on the college's Faculty Teaching/Office Hours Schedule form, which counts **contact hours**, not credits:
 
+- **Office hours required are derived, not fixed.** Seven official forms all show contact hours plus released credits summing to 15, with office hours at one per three contact hours — a sheet with 12 credits released shows 3 contact hours and 1 office hour. A flat requirement of 5 was wrong for everyone with release time. `officeRequired()` computes it from the load owed; a typed value overrides it.
+- **Release time expects hours on the grid**, by a different rule from teaching: two hours per credit plus one, so a three-credit release expects seven. That holds exactly on three sample forms — TLC Fellow, Program Review, and Poverty Informed Fellow each show 7 hours for 3 credits. Six- and twelve-credit releases on those forms show fewer hours than the formula gives, so the figure is overridable per line.
+- **Release-time activity is a third block type**, beside office hours and other commitments, for the chair hours, fellow hours, site visits, and coordinator time that fill those forms. It renders distinctly and is excluded from the office-hour total.
+- **Extra compensation is recorded apart from release**, because it is paid on top rather than reducing the load owed; only release credits reduce the contact hours required.
 - **The required load is a 15-week figure**, so a section in any other session defaults to overload and is excluded from the contact-hour total. `defaultPtHours()` decides this from the section's session; the faculty member overrides it with the PT button or by entering 0 in the editor. An explicit 0 is stored rather than the key being cleared — clearing would fall back to the session default, which is the opposite of what "count this toward load" means.
 - Overload is tracked in hours, not as a yes/no flag, because a section can be split. The **PT** button flags a whole section; the section editor takes a number for a partial split, so a 4-hour course whose online lab is paid as overload contributes 3 to load and 1 to PT. PT hours are clamped to the section's contact hours.
 - PT sections leave the load total, are marked on the grid and in the course table (`3 load + 1 PT`), and are listed by name under the summary — the form's "List Part-time Sections" field.
@@ -61,6 +103,23 @@ Modeled on the college's Faculty Teaching/Office Hours Schedule form, which coun
 - An optional signature line (Display options) prints rules for faculty, chair, dean, and date. The faculty line can be signed in the tool — typed in a script face, or drawn on a canvas pad with mouse, trackpad, or finger — with an auto-filled date and a "Signed electronically" note beneath. The chair and dean lines always stay blank; they belong to other people.
 
   This is an attestation, not an authenticated signature: nothing verifies who typed or drew it, and a drawn one is stored in `localStorage` and travels inside a saved draft file. The FAQ says so plainly, and it's worth confirming the Institute Office accepts one before faculty rely on it.
+
+### Why the office-hours location shares the time line
+
+A block carried three lines: title, time, location. Print shrinks rows from 58px to 32px, so an hour-long block became 30px tall with 39px of content, and `overflow:hidden` silently cut the last line — the location — off the printed page while it stayed visible on screen. Course blocks were unaffected because their room is already part of the one-line `sub`.
+
+Non-course blocks now render as `10 am–11 am · GMH 104` on a single line, and `.blk` has a 24px minimum height in print so a half-hour block still shows both lines.
+
+Worth remembering when testing print output: the first check for this passed because the string being searched for also appeared in the page header. Use a value that can only come from the element under test.
+
+### Tightening the grid
+
+Two opt-in Display options, both off by default because a full weekday grid is what people expect:
+
+- **Hide days with nothing on them** filters `daysShown()`, with a guard so an empty schedule never produces a grid with no columns.
+- **Collapse long empty stretches** folds runs of empty hours into a single short row labelled with the range. `buildSegments()` turns the hour range into a row list, and `unitsBefore()` maps a time to a position in row units, so blocks stay expressed as `calc(var(--rowh) * n)` and print rescaling still works. No block can span a fold, since a folded hour is by definition empty.
+
+The segment list is stored on the grid element, and `minutesAt()` walks the same rows, so dragging still lands where the cursor is when stretches are folded away.
 
 ### One-page printing
 
@@ -147,9 +206,64 @@ Term dates prefill the export fields, so the `.ics` works without anyone typing 
 
 Update this file each term. It is the one piece of information the enrollment export does not carry.
 
+### More than one term
+
+`faculty-schedule/data/terms.json` lists the terms on offer, newest first:
+
+```json
+{"terms": [
+  {"code": "27SP", "label": "Spring 2027", "path": "data/27SP/sections.json"},
+  {"code": "26FA", "label": "Fall 2026",   "path": "data/26FA/sections.json"}
+]}
+```
+
+The app reads it, shows a term menu when there is more than one, and remembers the choice. Without the file it loads a single feed exactly as before.
+
+**Saved work is per term**, because a section code like `NETW-107-001RL` exists in both Fall 2026 and Spring 2027 and the two must not share flags. `localStorage` is keyed `bcc-faculty-schedule-v1:<term>`; profile, options, release lines, signature, institutes, and the selected faculty member carry forward on first visit to a new term, while sections, overload flags, overrides, and office-hours blocks do not.
+
+Building a term whose export omits credits and gives only `Surname, F`:
+
+```bash
+python3 tools/build_schedule_data.py data/raw/27SPR_Course_Enrollment_Report_111126.xlsx \
+  --pot-from-term --term 27SP --term-label "Spring 2027" \
+  --calendar tools/calendar-27SP.json \
+  --credits-from-course faculty-schedule/data/26FA/sections.json \
+  --names-from faculty-schedule/data/26FA/sections.json \
+  --out faculty-schedule/data/27SP/sections.json
+```
+
+`--credits-from-course` matches on course code rather than section, since credits belong to the course. `--names-from` uses another term's full names to expand `Qaissaunee, M` into `Michael Qaissaunee`, which also keeps the same person selectable across terms.
+
 ### Sessions
 
-The feed carries all four parts of term, built from one export per session:
+Where one export carries every session in a `Term` column (`26FA`, `26FA11`, `26FA7A`, `26FA7B`), use `--pot-from-term` instead of `--pot-labels`:
+
+```bash
+python3 tools/build_schedule_data.py data/raw/<one export>.xlsx \
+  --pot-from-term --term 26FA --term-label "Fall 2026" \
+  --calendar tools/calendar-26FA.json \
+  --previous faculty-schedule/data/26FA/sections.json \
+  --out faculty-schedule/data/26FA/sections.json
+```
+
+An export filtered to currently-active sections (the 10/27 one omits all of 7A, which ended 10/26, plus 248 others) can be completed from the feed it replaces:
+
+```bash
+python3 tools/build_schedule_data.py data/raw/26FAR_Course_Enrollment_Report_102726.xlsx \
+  --pot-from-term --term 26FA --term-label "Fall 2026" \
+  --calendar tools/calendar-26FA.json \
+  --fill-missing --carry-credits \
+  --previous faculty-schedule/data/26FA/sections.json \
+  --out faculty-schedule/data/26FA/sections.json
+```
+
+`--fill-missing` keeps sections the export dropped, marked `carried: true`. `--carry-credits` supplies the credit values this export omits. Both read `--previous`, which is also used as a dictionary of full instructor names — an export giving `Dornemann, S` is shown as the full name already known.
+
+**Order matters inside the build.** Names are canonicalised after the carried sections are merged in, or each half keeps its own spelling of the same person; and the faculty list is assembled last, or it freezes before either step. Both were bugs: the first split people in two, the second published a list of initials while the sections held full names.
+
+**Check the output before committing.** An 18-column variant of this report exists that omits `Section End Time` and `Room`; see `tools/scrape_schema.md`. The build reports estimated end times and missing rooms — if those numbers jump, the export is the wrong variant and the previous feed is better.
+
+The feed can also be built from one export per session:
 
 ```bash
 python3 tools/build_schedule_data.py \
