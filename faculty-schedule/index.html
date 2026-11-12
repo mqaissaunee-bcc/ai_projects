@@ -814,6 +814,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         <p>No. Course data is public and comes from the college's published schedule. Everything you type — office, phone, email, office hours — stays in your own browser and is never sent anywhere. Use "Save draft file" to move it to another computer, or "Reset everything" to clear it.</p></details>
       <details><summary>Do I have to redo this every semester?</summary>
         <p>No. Your contact block, office hours, and release time stay put. When the new term's data loads you pick your sections again and the rest is already filled in.</p></details>
+      <details><summary>I loaded a colleague and my own details disappeared</summary>
+        <p>That is deliberate. Title, department, office, phone, email, notes, release time, office hours and signature belong to one person, so they are cleared when a different faculty member is loaded — otherwise the next schedule would carry the previous person's details, and their signature. What stays is anything that belongs to the institution: rates, payment dates, institute contacts, and your display preferences. Your own details come back the same way you entered them.</p></details>
       <details><summary>Why can I not see all the steps?</summary>
         <p>The tool shows the parts that match what you said you came to do. Change that with the menu at the top of the page — "Everything" turns all of it on. Nothing is locked; this only decides what is on screen.</p></details>
       <details><summary>How do I switch between Fall and Spring?</summary>
@@ -835,9 +837,12 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
           <li>Spring data corrected: all four sessions are now present, including 7A.</li>
           <li>Schedule data rebuilds itself. Drop a report into the repository and the feed is built
             and published automatically.</li>
-          <li>The term wording, the signature date, and the name as signed now fill themselves in
-            from the term you are viewing, today's date, and your printed name — and stop doing so
-            the moment you type your own.</li>
+          <li>The term wording and dates, the signature date, and the name as signed now fill
+            themselves in from the term you are viewing, today's date, and your printed name — and
+            stop doing so the moment you type your own.</li>
+          <li>Loading a different faculty member clears the previous person's title, department,
+            office, contact details, release time, office hours and signature, so nothing of theirs
+            can end up on somebody else's form. Institute settings, rates and payment dates stay.</li>
         </ul></div>
 
       <div class="rel"><h3>Version 1.14</h3>
@@ -1050,6 +1055,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     role: "",                                          // faculty | chair | dean | admin | all
     institutes: [],                                 // [{id,name,dean,phone,contacts}]
     moa: {instituteId:"", rate:"", sessions:{}},    // sessions: {15W:{payDates,respondBy}, …}
+    profileFor: "",   // whose personal details are currently loaded
     profile: {name:"",title:"",dept:"",office:"",phone:"",email:"",zoom:"",termLabel:"",termStart:"",termEnd:"",notes:"",loadBase:"15",ohRequired:"",released:"",releasedFor:""},
     pot: "15W",                 // legacy; migrated into sessions on load
     sessions: null,             // {15W:true, 11W:false, …} — null until the feed is known
@@ -1104,7 +1110,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       }
       if(!raw) return;
       var s=JSON.parse(raw); if(!s||typeof s!=="object") return;
-      ["faculty","include","pt","hrs","overrides","custom","profile","opts","pot","sessions","nameAuto","termLabelAuto","release","sig","moa","institutes","role"].forEach(function(k){
+      ["faculty","include","pt","hrs","overrides","custom","profile","opts","pot","sessions","nameAuto","termLabelAuto","termDatesAuto","profileFor","release","sig","moa","institutes","role"].forEach(function(k){
         if(s[k]!=null){ if(k==="profile"||k==="opts"){ Object.assign(state[k], s[k]); } else { state[k]=s[k]; } }
       });
     }catch(e){}
@@ -1350,9 +1356,38 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       box.appendChild(b);
     });
   }
+  // Title, department, office, contact details, release time, office hours and a
+  // signature all belong to one person. Load somebody else and they must go, or
+  // the next sheet carries the last person's details — and their signature.
+  var PERSON_FIELDS = ["title","dept","office","phone","email","zoom","notes"];
+  function clearPersonalDetails(){
+    PERSON_FIELDS.forEach(function(k){ state.profile[k] = ""; });
+    state.profile.ohRequired = "";
+    // A name typed by hand belonged to the previous person as well.
+    state.profile.name = "";
+    state.nameAuto = true;
+    state.release = [];
+    state.sig = {mode:"blank", typed:"", drawn:"", date:"", dateAuto:true, typedAuto:true};
+    state.custom = [];
+    bindProfile();
+    if($("sigPad")) { clearSigPad(); }
+    syncSigControls();
+  }
+  function personChanged(){
+    // Only meaningful while one person is on screen; in chair mode the sheets
+    // carry no personal details anyway.
+    if(state.faculty.length !== 1) return;
+    var who = state.faculty[0];
+    if(state.profileFor && state.profileFor !== who){
+      clearPersonalDetails();
+      toast("Loaded " + who + ". The previous person's details were cleared.");
+    }
+    state.profileFor = who;
+  }
   function addFaculty(n){
     if(state.faculty.indexOf(n)>-1) return;
     state.faculty.push(n);
+    personChanged();
     // Fill the printed name from the picker until the user types their own.
     if(state.faculty.length===1 && (!state.profile.name || state.nameAuto)){
       state.profile.name = n; state.nameAuto = true; $("fName").value = n;
@@ -1363,6 +1398,12 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
   }
   function removeFaculty(n){
     state.faculty=state.faculty.filter(function(x){ return x!==n; });
+    // profileFor is deliberately kept when the list empties: it is how the next
+    // person added is recognised as somebody different.
+    if(state.faculty.length) personChanged();
+    if(state.faculty.length===1 && state.nameAuto){
+      state.profile.name = state.faculty[0]; $("fName").value = state.faculty[0];
+    }
     renderAll(); save();
   }
   function renderChips(){
@@ -2618,20 +2659,30 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     if(mode === "drawn") restoreSigPad();
   }
   function sigCtx(){
-    var cv = $("sigPad"), g = cv.getContext("2d");
+    var cv = $("sigPad"), g = canvasCtx(cv);
+    if(!g) return null;
     g.lineWidth = 3; g.lineCap = "round"; g.lineJoin = "round";
     g.strokeStyle = "#111827";
     return g;
   }
+  function canvasCtx(cv){
+    // A canvas context can be unavailable; letting that throw used to abort
+    // whatever was calling it halfway through.
+    if(!cv || typeof cv.getContext !== "function") return null;
+    try{ return cv.getContext("2d"); }catch(e){ return null; }
+  }
   function clearSigPad(){
-    var cv = $("sigPad");
-    cv.getContext("2d").clearRect(0, 0, cv.width, cv.height);
+    var cv = $("sigPad"), g = canvasCtx(cv);
+    if(g) g.clearRect(0, 0, cv.width, cv.height);
   }
   function restoreSigPad(){
     clearSigPad();
     if(!state.sig.drawn) return;
     var img = new Image();
-    img.onload = function(){ $("sigPad").getContext("2d").drawImage(img, 0, 0, $("sigPad").width, $("sigPad").height); };
+    img.onload = function(){
+      var g = canvasCtx($("sigPad"));
+      if(g) g.drawImage(img, 0, 0, $("sigPad").width, $("sigPad").height);
+    };
     img.src = state.sig.drawn;
   }
   function padPoint(e){
@@ -2642,7 +2693,9 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
   function initSigPad(){
     var cv = $("sigPad"), drawing = false, g = null;
     cv.addEventListener("pointerdown", function(e){
-      drawing = true; g = sigCtx();
+      g = sigCtx();
+      if(!g) return;
+      drawing = true;
       var p0 = padPoint(e);
       g.beginPath(); g.moveTo(p0.x, p0.y);
       try{ cv.setPointerCapture(e.pointerId); }catch(err){}
@@ -3268,11 +3321,15 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     // Nobody knows the term dates off the top of their head, so the calendar
     // export used to be dead on arrival. Fill them from the feed.
     if(d.calendar){
-      if(!state.profile.termStart && d.calendar.start){
-        state.profile.termStart = d.calendar.start; $("fTermStart").value = d.calendar.start;
+      // Follow the term on screen until someone sets dates of their own.
+      if(d.calendar.start && (state.termDatesAuto !== false || !state.profile.termStart)){
+        state.profile.termStart = d.calendar.start;
+        state.termDatesAuto = true;
+        $("fTermStart").value = d.calendar.start;
       }
-      if(!state.profile.termEnd && d.calendar.end){
-        state.profile.termEnd = d.calendar.end; $("fTermEnd").value = d.calendar.end;
+      if(d.calendar.end && (state.termDatesAuto !== false || !state.profile.termEnd)){
+        state.profile.termEnd = d.calendar.end;
+        $("fTermEnd").value = d.calendar.end;
       }
     }
     renderAll();
@@ -3316,7 +3373,10 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     try{ localStorage.setItem("bcc-faculty-schedule-term", code); }catch(e){}
     // Section flags belong to a term; settings and the person carry over.
     state.include = {}; state.pt = {}; state.hrs = {};
-    state.overrides = {}; state.custom = []; state.sessions = null; state.view = "schedule";
+    state.overrides = {}; state.sessions = null; state.view = "schedule";
+    // Office hours are tied to a term's timetable, so they do not follow; the
+    // person's own details do, because it is still the same person.
+    state.custom = [];
     load(code);
     bindProfile(); bindOptions(); syncSigControls();
     renderTermPicker();
@@ -3354,6 +3414,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         state.profile[map[id]]=node.value;
         if(id==="fName") state.nameAuto = false;
         if(id==="fTermLabel") state.termLabelAuto = false;
+        if(id==="fTermStart" || id==="fTermEnd") state.termDatesAuto = false;
         save();
         if(["fName","fTitle","fDept","fOffice","fPhone","fEmail","fZoom","fTermLabel","fNotes","fLoadBase","fOhRequired"].indexOf(id)>-1) renderAll();
       });

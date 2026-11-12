@@ -813,6 +813,41 @@ setTimeout(() => {
     f$('sigMode').dispatchEvent(new fw.Event('change', { bubbles: true }));
     ok('a hand-typed signature is left alone', f$('sigTyped').value === 'M. Q.');
 
+    // ---- personal details belong to the person on screen ----
+    f$('fTitle').value = 'Professor';
+    f$('fTitle').dispatchEvent(new fw.Event('input', { bubbles: true }));
+    f$('fDept').value = 'Engineering & Technology';
+    f$('fDept').dispatchEvent(new fw.Event('input', { bubbles: true }));
+    f$('fOffice').value = 'MAS 212';
+    f$('fOffice').dispatchEvent(new fw.Event('input', { bubbles: true }));
+    f$('rCredits').value = '3'; f$('rReason').value = 'Chair';
+    f$('addRelease').dispatchEvent(new fw.MouseEvent('click', { bubbles: true }));
+    f$('cLabel').value = 'Office Hours';
+    f$('cDays').querySelector('input[value=M]').checked = true;
+    f$('cStart').value = '10:00'; f$('cEnd').value = '11:00';
+    f$('addCustom').dispatchEvent(new fw.MouseEvent('click', { bubbles: true }));
+    ok('details are set for the first person',
+       f$('fTitle').value === 'Professor' && f$('releaseList').querySelectorAll('.custom-item').length === 1);
+
+    // swap to a different faculty member
+    f$('facChips').querySelector('.chip button').dispatchEvent(new fw.MouseEvent('click', { bubbles: true }));
+    f$('facSearch').value = 'gant';
+    f$('facSearch').dispatchEvent(new fw.Event('input', { bubbles: true }));
+    const other = fd.querySelector('#facResults button');
+    if (other) {
+      other.dispatchEvent(new fw.MouseEvent('click', { bubbles: true }));
+      ok('title does not follow to the next person', f$('fTitle').value === '');
+      ok('department does not follow', f$('fDept').value === '');
+      ok('office does not follow', f$('fOffice').value === '');
+      ok('release time does not follow',
+         f$('releaseList').querySelectorAll('.custom-item').length === 0);
+      ok('office hours do not follow',
+         f$('customList').querySelectorAll('.custom-item').length === 0);
+      ok('the signature does not follow', f$('sigTyped').value === '' || f$('sigMode').value === 'blank');
+      ok('the printed name does follow', f$('fName').value.length > 0 && f$('fName').value !== 'Third Name');
+      ok('term dates are still there', /20\d\d-\d\d-\d\d/.test(f$('fTermStart').value));
+    }
+
     console.log(fails ? '\n' + fails + ' FAILURES' : '\nAll checks passed');
     process.exit(fails ? 1 : 0);
   }, 400);

@@ -214,6 +214,22 @@ It refuses to publish a bad export: if the build reports any estimated end times
 
 `build_all.py` skips a term whose feed was already built from that same file. This matters more than it looks: the fall feed fills its gaps from its own previous version, so re-running on unchanged input drifted it a little each time — carried sections fell from 258 to 246 and 79 phantom "changed since" entries appeared. Pass `--force` to rebuild deliberately. The newest report is chosen by the `MMDDYY` in its filename rather than file timestamps, which cloning and copying rewrite.
 
+### What belongs to whom
+
+Stored state falls into three kinds, and mixing them was a bug:
+
+| Belongs to | Fields | Behaviour |
+|---|---|---|
+| A person | name, title, dept, office, phone, email, virtual office, notes, release lines, office-hours blocks, signature, office-hours requirement | cleared when a different faculty member is loaded |
+| A term | term wording, term start and end, section flags, overrides, part-of-term choices | follow the term on screen; section state is keyed per term in `localStorage` |
+| The institution or the tool | institutes, dean, phone, office staff, rates, payment dates, display options, role | kept throughout |
+
+`profileFor` records whose personal details are loaded. When the single selected faculty member changes, `clearPersonalDetails()` wipes the person-scoped fields — including a drawn signature, which is the one that matters most: without this, a chair generating several schedules would put their own signature on a colleague's form.
+
+`profileFor` is deliberately **not** cleared when the faculty list empties, because that is how the next person added is recognised as somebody different.
+
+Fields that fill themselves in stop once typed over. Each has its own flag: `nameAuto`, `termLabelAuto`, `termDatesAuto`, `sig.dateAuto`, `sig.typedAuto`. The signature date refreshes to today on every load, so a form signed today is never dated from a previous session.
+
 ### Roles
 
 A first visit asks what the person came to do, and the answer decides which panels are on screen. `ROLES` in the script holds the mapping; the menu beside the term picker changes it, and "Everything" turns all of it on. This is progressive disclosure, not permission — nothing is protected, it is only hidden to keep a dean from scrolling past four panels they will never use.
