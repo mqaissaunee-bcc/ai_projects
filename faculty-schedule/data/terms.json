@@ -1,6 +1,27 @@
 {
   "terms": [
-    {"code": "27SP", "label": "Spring 2027", "path": "data/27SP/sections.json"},
-    {"code": "26FA", "label": "Fall 2026",   "path": "data/26FA/sections.json"}
+    {
+      "code": "27SP",
+      "label": "Spring 2027",
+      "path": "data/27SP/sections.json",
+      "build": {
+        "rawPrefix": "27SP",
+        "calendar": "tools/calendar-27SP.json",
+        "creditsFrom": "faculty-schedule/data/26FA/sections.json",
+        "namesFrom": "faculty-schedule/data/26FA/sections.json",
+        "fillMissing": false
+      }
+    },
+    {
+      "code": "26FA",
+      "label": "Fall 2026",
+      "path": "data/26FA/sections.json",
+      "build": {
+        "rawPrefix": "26FA",
+        "calendar": "tools/calendar-26FA.json",
+        "carryCredits": true,
+        "fillMissing": true
+      }
+    }
   ]
 }

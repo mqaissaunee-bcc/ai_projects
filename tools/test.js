@@ -7,6 +7,8 @@ const { window } = dom;
 const doc = window.document;
 const $ = id => doc.getElementById(id);
 let fails = 0;
+const state_opts = (w) => JSON.parse(w.localStorage.getItem('bcc-faculty-schedule-v1:26FA') ||
+  w.localStorage.getItem('bcc-faculty-schedule-v1') || '{}').opts || {};
 const state_customCount = (w) => JSON.parse(w.localStorage.getItem('bcc-faculty-schedule-v1')).custom.length;
 const ok = (label, cond) => { console.log((cond ? '  PASS  ' : '! FAIL  ') + label); if (!cond) fails++; };
 
@@ -22,6 +24,14 @@ window.confirm = () => false;
 
 setTimeout(() => {
   const facultySheets = () => [...doc.querySelectorAll('.sheet[data-owner]')];
+  // a first visit asks which role before anything else
+  ok('role chooser shown on a first visit', $('rolePick').hidden === false);
+  ok('four roles offered plus everything',
+     $('rolePick').querySelectorAll('.role-card').length === 4 && !!$('roleSkip'));
+  $('roleSkip').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  ok('choosing a role dismisses it', $('rolePick').hidden === true);
+  ok('all panels visible on Everything',
+     ['p1','p2','p3','p4','p5','p6'].every(id => $(id).hidden === false));
   ok('data status populated', $('dataStatus').textContent.length > 0);
   // the dropdown is now a checkbox per session
   const sessBoxes = () => [...$('potBoxes').querySelectorAll('input[type=checkbox]')];
@@ -738,13 +748,34 @@ setTimeout(() => {
   ok('summary reports instructor changes', /changed instructor/.test(dataText));
   ok('summary reports room changes', /changed room or meeting time/.test(dataText));
   ok('summary reports unstaffed count', /no instructor: \d+/.test(dataText));
-  ok('news names the current version', /1\.14/.test($('paneNews').textContent));
+  ok('news names the current version', /1\.15/.test($('paneNews').textContent));
   ok('opening news clears the dot', $('newsDot').hidden === true);
   ok('hidden always wins over a class display rule', /\[hidden\]\{display:none!important\}/.test(html));
-  ok('version recorded', window.localStorage.getItem('bcc-faculty-schedule-seen') === '1.14');
+  ok('version recorded', window.localStorage.getItem('bcc-faculty-schedule-seen') === '1.15');
   $('tabWalk').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   ok('other tabs still work', $('paneWalk').hidden === false && $('paneNews').hidden === true);
   $('helpClose').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+
+  // ---- roles hide what a role does not need ----
+  const panelShown = id => $(id).hidden === false;
+  $('rolePickTop').value = 'dean';
+  $('rolePickTop').dispatchEvent(new window.Event('change', { bubbles: true }));
+  ok('dean does not get the office-hours panel', !panelShown('p3'));
+  ok('dean does not get the personal details panel', !panelShown('p4'));
+  ok('dean still gets sections and export', panelShown('p1') && panelShown('p2') && panelShown('p6'));
+  ok('dean gets the department summary on', state_opts(window).dept === true);
+  $('rolePickTop').value = 'admin';
+  $('rolePickTop').dispatchEvent(new window.Event('change', { bubbles: true }));
+  ok('administrator sees only what agreements need',
+     panelShown('p1') && panelShown('p2') && panelShown('p6') &&
+     !panelShown('p3') && !panelShown('p4') && !panelShown('p5'));
+  $('rolePickTop').value = 'faculty';
+  $('rolePickTop').dispatchEvent(new window.Event('change', { bubbles: true }));
+  ok('faculty gets every step back', ['p1','p2','p3','p4','p5','p6'].every(panelShown));
+  ok('the role is remembered',
+     JSON.parse(window.localStorage.getItem('bcc-faculty-schedule-v1:26FA') ||
+                window.localStorage.getItem('bcc-faculty-schedule-v1') || '{}').role === 'faculty');
+  ok('a guiding line is shown for the role', $('roleNote').hidden === false);
 
   console.log(fails ? '\n' + fails + ' FAILURES' : '\nAll checks passed');
   process.exit(fails ? 1 : 0);

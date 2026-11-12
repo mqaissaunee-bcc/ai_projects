@@ -251,6 +251,20 @@ table.tbl tr.total-row td{border-top:2px solid var(--line-2);font-weight:700}
 .print-measure table.tbl{font-size:8.5pt}
 .print-measure .pt-list,.print-measure .load-warn{font-size:8.5pt}
 .print-measure .sig-row{margin-top:22pt}
+.role-pick{border:1px solid var(--line-2);border-radius:12px;padding:16px;margin-bottom:12px;
+  background:var(--surface);box-shadow:var(--shadow)}
+.role-pick h2{margin-bottom:4px}
+.role-pick > p{font-size:.85rem;color:var(--ink-2);margin:0 0 12px}
+.role-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:9px;margin-bottom:10px}
+.role-card{text-align:left;border:1px solid var(--line-2);border-radius:10px;background:var(--surface-2);
+  padding:11px 12px;min-height:76px;display:flex;flex-direction:column;gap:3px;cursor:pointer}
+.role-card:hover,.role-card:focus-visible{border-color:var(--accent);background:var(--accent-soft)}
+.role-card b{font-size:.92rem}
+.role-card span{font-size:.78rem;color:var(--ink-2);line-height:1.35}
+.role-note{font-size:.82rem;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);
+  border-radius:8px;padding:7px 10px;margin:0 0 12px}
+#rolePickTop{min-height:34px;padding:4px 8px;border:1px solid var(--line-2);border-radius:7px;
+  background:var(--surface);font-size:.82rem;font-weight:600;max-width:190px}
 .topbar-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:70}
 .modal{position:fixed;z-index:71;left:50%;top:50%;transform:translate(-50%,-50%);
@@ -382,6 +396,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
   <div class="topbar-right">
     <label class="sr-only" for="termPick">Term</label>
     <select id="termPick" class="no-print" hidden></select>
+    <label class="sr-only" for="rolePickTop">Role</label>
+    <select id="rolePickTop" class="no-print" hidden></select>
     <button class="btn sm ghost no-print" id="btnNews" type="button">What's new<span class="newpill" id="newsDot" hidden>New</span></button>
     <button class="btn sm ghost no-print" id="btnHelp" type="button">? Help</button>
     <div class="status" id="dataStatus" aria-live="polite"></div>
@@ -662,6 +678,27 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       <button class="btn sm" id="btnBackToSchedule" type="button" hidden>← Back to the schedule</button>
       <button class="btn ghost sm" id="btnLoadData" type="button">Load a different data file</button>
     </div>
+    <div class="role-pick no-print" id="rolePick" hidden>
+      <h2>What brings you here?</h2>
+      <p>This sets which parts of the tool you see. You can change it at any time, or turn
+        everything on.</p>
+      <div class="role-grid">
+        <button class="role-card" type="button" data-role="faculty">
+          <b>My own schedule</b>
+          <span>Find my sections, add office hours, print the form.</span></button>
+        <button class="role-card" type="button" data-role="chair">
+          <b>My department</b>
+          <span>Several faculty at once, with a load summary and conflicts.</span></button>
+        <button class="role-card" type="button" data-role="dean">
+          <b>Reviewing schedules</b>
+          <span>Check load, release time, and office hours across an institute.</span></button>
+        <button class="role-card" type="button" data-role="admin">
+          <b>Agreements and payment</b>
+          <span>Overload agreements, rates, and payment dates.</span></button>
+      </div>
+      <button class="btn ghost sm" id="roleSkip" type="button">Show me everything</button>
+    </div>
+    <p class="role-note no-print" id="roleNote" hidden></p>
     <div class="banner no-print" id="potNotice" hidden>
       This tool currently covers <b>15-week sections only</b>. If you teach a 7-week, 11-week, or
       other short-session course, it will not appear here and you will need to add it to your
@@ -777,6 +814,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         <p>No. Course data is public and comes from the college's published schedule. Everything you type — office, phone, email, office hours — stays in your own browser and is never sent anywhere. Use "Save draft file" to move it to another computer, or "Reset everything" to clear it.</p></details>
       <details><summary>Do I have to redo this every semester?</summary>
         <p>No. Your contact block, office hours, and release time stay put. When the new term's data loads you pick your sections again and the rest is already filled in.</p></details>
+      <details><summary>Why can I not see all the steps?</summary>
+        <p>The tool shows the parts that match what you said you came to do. Change that with the menu at the top of the page — "Everything" turns all of it on. Nothing is locked; this only decides what is on screen.</p></details>
       <details><summary>How do I switch between Fall and Spring?</summary>
         <p>Use the term menu at the top of the page. Each term keeps its own sections, overload flags, and office hours, so marking something part-time in one does not affect the other. Your name, contact details, release time, and agreement settings follow you across both.</p></details>
       <details><summary>Has anything changed since the last update?</summary>
@@ -787,6 +826,16 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     <section id="paneNews" role="tabpanel" aria-labelledby="tabNews" hidden>
       <p>Changes to this tool, newest first.</p>
       <div id="dataChanges"></div>
+
+      <div class="rel"><h3>Version 1.15</h3>
+        <ul>
+          <li>The tool now asks what you came to do and shows only the parts you need. Change it at
+            any time from the menu at the top, or turn everything on.</li>
+          <li>Reviewing schedules and working on agreements each get a shorter version of the page.</li>
+          <li>Spring data corrected: all four sessions are now present, including 7A.</li>
+          <li>Schedule data rebuilds itself. Drop a report into the repository and the feed is built
+            and published automatically.</li>
+        </ul></div>
 
       <div class="rel"><h3>Version 1.14</h3>
         <ul>
@@ -969,7 +1018,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     return "bcc-faculty-schedule-v1" + (term ? ":" + term : "");
   }
   var STORAGE_KEY = storageKey("");
-  var APP_VERSION = "1.14";
+  var APP_VERSION = "1.15";
   var DAYS = [
     {k:"M", short:"Mon", long:"Monday", ics:"MO", dow:1},
     {k:"T", short:"Tue", long:"Tuesday", ics:"TU", dow:2},
@@ -995,6 +1044,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     release: [],      // {id, credits, reason} — release time / extra compensation
     sig: {mode:"blank", typed:"", drawn:"", date:""},   // faculty signature only
     view: "schedule",                                  // or "moa"
+    role: "",                                          // faculty | chair | dean | admin | all
     institutes: [],                                 // [{id,name,dean,phone,contacts}]
     moa: {instituteId:"", rate:"", sessions:{}},    // sessions: {15W:{payDates,respondBy}, …}
     profile: {name:"",title:"",dept:"",office:"",phone:"",email:"",zoom:"",termLabel:"",termStart:"",termEnd:"",notes:"",loadBase:"15",ohRequired:"",released:"",releasedFor:""},
@@ -1051,7 +1101,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       }
       if(!raw) return;
       var s=JSON.parse(raw); if(!s||typeof s!=="object") return;
-      ["faculty","include","pt","hrs","overrides","custom","profile","opts","pot","sessions","nameAuto","release","sig","moa","institutes"].forEach(function(k){
+      ["faculty","include","pt","hrs","overrides","custom","profile","opts","pot","sessions","nameAuto","release","sig","moa","institutes","role"].forEach(function(k){
         if(s[k]!=null){ if(k==="profile"||k==="opts"){ Object.assign(state[k], s[k]); } else { state[k]=s[k]; } }
       });
     }catch(e){}
@@ -2433,7 +2483,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     document.body.classList.toggle("color-print", !!state.opts.printColor);
     document.body.classList.toggle("moa-view", state.view === "moa");
     var groups = moaGroups();
-    $("moaBox").hidden = !groups.length;
+    $("moaBox").hidden = !groups.length || $("moaBox").dataset.roleHidden === "1";
     if(groups.length){
       $("moaSummary").textContent = groups.length + " agreement" + (groups.length===1?"":"s") +
         " needed: " + groups.map(function(g){
@@ -2761,6 +2811,60 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     }
     renderAll(); save();
     toast(c.label + " now " + dayLabel(c.days) + " " + fmtTime(toMin(c.start)) + "–" + fmtTime(toMin(c.end)));
+  }
+
+  /* ===== roles: which parts of the tool a person is shown ===== */
+  var ROLES = {
+    faculty: {label:"My own schedule",
+              panels:["p1","p2","p3","p4","p5","p6"], hideMoa:false, dept:false,
+              note:"Work through steps 1 to 4, then print from step 6."},
+    chair:   {label:"My department",
+              panels:["p1","p2","p3","p4","p5","p6"], hideMoa:false, dept:true,
+              note:"Add each person in step 1; the summary page leads the printout."},
+    dean:    {label:"Reviewing schedules",
+              panels:["p1","p2","p5","p6"], hideMoa:true, dept:true,
+              note:"Add the faculty you are reviewing; the summary shows load, release and office hours."},
+    admin:   {label:"Agreements and payment",
+              panels:["p1","p2","p6"], hideMoa:false, dept:false, openMoa:true,
+              note:"Pick a person, flag their overload sections, then open the agreements."},
+    all:     {label:"Everything",
+              panels:["p1","p2","p3","p4","p5","p6"], hideMoa:false, dept:null}
+  };
+  var ALL_PANELS = ["p1","p2","p3","p4","p5","p6"];
+
+  function applyRole(){
+    var r = ROLES[state.role] || ROLES.all;
+    ALL_PANELS.forEach(function(id){
+      var el2 = $(id); if(!el2) return;
+      el2.hidden = r.panels.indexOf(id) < 0;
+    });
+    // Agreements are the point of the administrator view and noise in the dean's.
+    var moaBox = $("moaBox");
+    if(moaBox) moaBox.dataset.roleHidden = r.hideMoa ? "1" : "";
+    if(r.dept !== null && r.dept !== undefined) state.opts.dept = r.dept;
+    $("roleNote").textContent = r.note || "";
+    $("roleNote").hidden = !r.note;
+    var sel = $("rolePickTop");
+    sel.hidden = !state.role;
+    if(state.role){
+      clear(sel);
+      Object.keys(ROLES).forEach(function(k){
+        var o = document.createElement("option");
+        o.value = k; o.textContent = ROLES[k].label;
+        sel.appendChild(o);
+      });
+      sel.value = state.role;
+    }
+  }
+  function chooseRole(role){
+    state.role = role;
+    $("rolePick").hidden = true;
+    save();
+    applyRole();
+    renderAll();
+    var r = ROLES[role];
+    if(r && r.openMoa){ $("p6").open = true; }
+    if(role === "faculty" || role === "chair"){ $("p1").open = true; }
   }
 
   /* ===== help, walkthrough, FAQ ===== */
@@ -3286,6 +3390,11 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     stage.addEventListener("pointercancel", function(){
       dropGhost(); drag = null; document.body.classList.remove("dragging");
     });
+    [].slice.call(document.querySelectorAll(".role-card")).forEach(function(b){
+      b.addEventListener("click", function(){ chooseRole(b.dataset.role); });
+    });
+    $("roleSkip").addEventListener("click", function(){ chooseRole("all"); });
+    $("rolePickTop").addEventListener("change", function(){ chooseRole($("rolePickTop").value); });
     $("btnHelp").addEventListener("click", function(){ openHelp("walk"); });
     $("helpClose").addEventListener("click", closeHelp);
     $("helpBackdrop").addEventListener("click", closeHelp);
@@ -3467,7 +3576,12 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     }catch(e){}
     var seen = true;
     try{ seen = !!localStorage.getItem("bcc-faculty-schedule-tour"); }catch(e){}
-    if(!seen && !state.faculty.length) $("firstRun").hidden = false;
+    applyRole();
+    if(!state.role){
+      $("rolePick").hidden = false;
+    } else if(!seen && !state.faculty.length){
+      $("firstRun").hidden = false;
+    }
     $("termPick").addEventListener("change", function(){ switchTerm($("termPick").value); });
     if(typeof fetch === "function"){ loadTerms(); }
     else { fetchFeed(DATA_CANDIDATES, 0); }

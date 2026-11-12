@@ -1,0 +1,74 @@
+name: Build schedule feeds
+
+# Drop a report into data/raw/ — through the GitHub web interface, a git push,
+# or the Add file button — and the feeds rebuild themselves and get committed.
+on:
+  push:
+    paths:
+      - 'data/raw/**'
+      - 'tools/calendar-*.json'
+      - 'faculty-schedule/data/terms.json'
+  workflow_dispatch:
+    inputs:
+      term:
+        description: 'One term code (blank builds every term)'
+        required: false
+        default: ''
+      force:
+        description: 'Rebuild even if the feed already came from that file'
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install openpyxl
+        run: pip install --quiet openpyxl
+
+      - name: Build the feeds
+        run: |
+          python3 tools/build_all.py \
+            ${{ github.event.inputs.term }} \
+            ${{ github.event.inputs.force == 'true' && '--force' || '' }} \
+            | tee build.log
+
+      - name: Fail on an export that lost its end times or rooms
+        run: |
+          # A report missing Section End Time or Room silently degrades the feed.
+          # Catching it here stops a bad export reaching the published site.
+          if grep -qE '^  [1-9][0-9]* meeting times with no end time' build.log; then
+            echo "::error::This export produced estimated end times — it is probably the wrong report. See tools/scrape_schema.md."
+            exit 1
+          fi
+
+      - name: Commit the rebuilt feeds
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add faculty-schedule/data
+          if git diff --cached --quiet; then
+            echo "Nothing changed."
+          else
+            git commit -m "Rebuild schedule feeds [skip ci]"
+            git push
+          fi
+
+      - name: Summary
+        run: |
+          {
+            echo '### Schedule build'
+            echo '```'
+            tail -40 build.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

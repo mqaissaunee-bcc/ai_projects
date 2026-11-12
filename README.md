@@ -206,6 +206,25 @@ Term dates prefill the export fields, so the `.ics` works without anyone typing 
 
 Update this file each term. It is the one piece of information the enrollment export does not carry.
 
+### Rebuilding itself
+
+`.github/workflows/build-schedule.yml` runs on any push under `data/raw/`, so dropping a report in through the GitHub web interface is enough — no token in a browser, no Python locally. It runs `tools/build_all.py`, which reads `terms.json` for each term's build settings, picks the newest report by the date in its filename, rebuilds, and commits the result.
+
+It refuses to publish a bad export: if the build reports any estimated end times, the job fails with a pointer to `tools/scrape_schema.md`, because that means the report is missing `Section End Time` and would quietly replace good data with guesses.
+
+`build_all.py` skips a term whose feed was already built from that same file. This matters more than it looks: the fall feed fills its gaps from its own previous version, so re-running on unchanged input drifted it a little each time — carried sections fell from 258 to 246 and 79 phantom "changed since" entries appeared. Pass `--force` to rebuild deliberately. The newest report is chosen by the `MMDDYY` in its filename rather than file timestamps, which cloning and copying rewrite.
+
+### Roles
+
+A first visit asks what the person came to do, and the answer decides which panels are on screen. `ROLES` in the script holds the mapping; the menu beside the term picker changes it, and "Everything" turns all of it on. This is progressive disclosure, not permission — nothing is protected, it is only hidden to keep a dean from scrolling past four panels they will never use.
+
+| Role | Panels | Also |
+|---|---|---|
+| My own schedule | all six | — |
+| My department | all six | department summary on |
+| Reviewing schedules | sections, export | summary on, agreements hidden |
+| Agreements and payment | sections, export | opens the export panel |
+
 ### More than one term
 
 `faculty-schedule/data/terms.json` lists the terms on offer, newest first:
