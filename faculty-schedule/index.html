@@ -676,7 +676,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       <button class="btn primary" id="btnPrint2" type="button">⎙ Print / Save as PDF</button>
       <span class="spacer"></span>
       <button class="btn sm" id="btnBackToSchedule" type="button" hidden>← Back to the schedule</button>
-      <button class="btn ghost sm" id="btnLoadData" type="button">Load a different data file</button>
+      <button class="btn ghost sm" id="btnLoadData" type="button" hidden
+        title="Opens a built sections.json so a new term can be checked before it is published. Not for spreadsheets — those go in data/raw/ in the repository.">Preview a feed file (.json)</button>
     </div>
     <div class="role-pick no-print" id="rolePick" hidden>
       <h2>What brings you here?</h2>
@@ -822,6 +823,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         <p>Use the term menu at the top of the page. Each term keeps its own sections, overload flags, and office hours, so marking something part-time in one does not affect the other. Your name, contact details, release time, and agreement settings follow you across both.</p></details>
       <details><summary>Has anything changed since the last update?</summary>
         <p>Open <b>What's new</b> for the college-wide summary: sections added or removed, how many changed instructor or room, and how many are still unstaffed. Anything affecting a section of yours is shown as a notice at the top of the page, naming the section and what changed.</p></details>
+      <details><summary>Can I upload the schedule spreadsheet here?</summary>
+        <p>No. The spreadsheet goes into the <b>data/raw/</b> folder of the repository, where it is turned into a schedule feed automatically and published. "Preview a feed file" in the export panel is a different thing: it opens an already-built feed so a new term can be checked before it goes live, and it only accepts the <b>sections.json</b> a build produces.</p></details>
       <details><summary>How current is the course data?</summary>
         <p>The header shows the date the schedule data was pulled. Rooms and times change during drop/add, so check the sheet against reality before you post it on a door.</p></details>
     </section>
@@ -2911,6 +2914,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     var moaBox = $("moaBox");
     if(moaBox) moaBox.dataset.roleHidden = r.hideMoa ? "1" : "";
     if(r.dept !== null && r.dept !== undefined) state.opts.dept = r.dept;
+    // Loading a feed by hand is a maintainer's job, not something to offer faculty.
+    $("btnLoadData").hidden = !!state.role && state.role !== "all";
     $("roleNote").textContent = r.note || "";
     $("roleNote").hidden = !r.note;
     var sel = $("rolePickTop");
@@ -3628,7 +3633,10 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
           var d=JSON.parse(r.result);
           if(!d.sections) throw new Error("no sections");
           applyData(d, f.name); toast("Loaded "+d.sections.length+" sections");
-        }catch(err){ toast("That does not look like a schedule feed."); }
+        }catch(err){
+          toast("That is not a schedule feed. Feeds are the sections.json a build produces, " +
+                "not the spreadsheet — spreadsheets go in data/raw/.");
+        }
       };
       r.readAsText(f); e.target.value="";
     });
