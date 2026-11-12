@@ -234,6 +234,10 @@ table.tbl tr.total-row td{border-top:2px solid var(--line-2);font-weight:700}
 .notes-line{font-size:.8rem;color:var(--ink-2);margin-top:10px;white-space:pre-wrap}
 
 .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.tidy{display:flex;align-items:center;gap:12px;border:1px solid var(--line-2);border-radius:8px;
+  padding:5px 10px;background:var(--surface-2)}
+.tidy .tidy-label{font-size:.78rem;font-weight:700;color:var(--ink-2)}
+.tidy .check{margin:0;font-size:.82rem;white-space:nowrap}
 .toolbar .spacer{flex:1}
 .banner{border:1px solid var(--warn);background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:9px 11px;font-size:.8rem;margin-bottom:12px}
 .banner.info{border-color:var(--line-2);background:var(--surface-2);color:var(--ink-2)}
@@ -536,8 +540,6 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         <label class="check"><input type="checkbox" id="optCode" checked> Show section codes</label>
         <label class="check"><input type="checkbox" id="optCredits" checked> Show credits in the course table</label>
         <label class="check"><input type="checkbox" id="optWeekend"> Always show Saturday and Sunday</label>
-        <label class="check"><input type="checkbox" id="optTrimDays"> Hide days with nothing on them</label>
-        <label class="check"><input type="checkbox" id="optTrimHours"> Collapse long empty stretches of the day</label>
         <label class="check"><input type="checkbox" id="optColor" checked> Color-code courses on screen</label>
         <label class="check"><input type="checkbox" id="optPrintColor"> Print the blocks in full color</label>
         <label class="check"><input type="checkbox" id="optTable" checked> Include the course detail table</label>
@@ -675,6 +677,11 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
   <main class="stage" id="main">
     <div class="toolbar no-print">
       <button class="btn primary" id="btnPrint2" type="button">⎙ Print / Save as PDF</button>
+      <div class="tidy" id="tidyBox">
+        <span class="tidy-label">Tidy up:</span>
+        <label class="check"><input type="checkbox" id="optTrimDays"> Hide empty days</label>
+        <label class="check"><input type="checkbox" id="optTrimHours"> Collapse empty hours</label>
+      </div>
       <span class="spacer"></span>
       <button class="btn sm" id="btnBackToSchedule" type="button" hidden>← Back to the schedule</button>
       <button class="btn ghost sm" id="btnLoadData" type="button" hidden
@@ -791,7 +798,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       <details><summary>Clicking Print does not produce a PDF</summary>
         <p>The button opens your browser's print dialog; the PDF comes from there. On Windows set the <b>destination</b> to "Save as PDF" or "Microsoft Print to PDF", then Save. If the destination is a physical printer, it prints on paper instead. Keep the orientation on landscape.</p></details>
       <details><summary>My schedule takes up more of the page than it needs to</summary>
-        <p>Two options under Display options help. <b>Hide days with nothing on them</b> drops empty weekday columns, so a Monday-and-Tuesday schedule prints as two columns rather than five. <b>Collapse long empty stretches</b> folds hours with nothing in them into a thin row labelled with the range it covers, so a gap between a morning and an evening class no longer takes up half the page. Both are off by default, since a full weekday grid is what most people expect to see.</p></details>
+        <p>The <b>Tidy up</b> switches beside the schedule shrink it. <b>Hide empty days</b> drops weekday columns with nothing in them, so a Monday-and-Tuesday schedule prints as two columns rather than five. <b>Collapse empty hours</b> folds stretches with nothing in them into a thin row labelled with the range it covers.</p>
+        <p>Add your classes and office hours first, with the full grid on screen. A hidden day or a folded hour cannot be dragged into, so these are best left until the end — which is why they sit next to the schedule rather than inside a panel.</p></details>
       <details><summary>The room or office is missing from my printed schedule</summary>
         <p>Those come from what you enter, not from the course data. Office, phone, and email print at the top only when filled in under Your information, and an office-hours block shows a location only when its Location field is set. Course rooms come from the published schedule and print automatically.</p></details>
       <details><summary>It printed on two pages</summary>
@@ -851,6 +859,9 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
           <li>The term wording and dates, the signature date, and the name as signed now fill
             themselves in from the term you are viewing, today's date, and your printed name — and
             stop doing so the moment you type your own.</li>
+          <li>"Hide empty days" and "Collapse empty hours" have moved out of Display options and sit
+            beside the schedule, as <b>Tidy up</b>. Build your week on the full grid, then tick them
+            to shrink it for printing.</li>
           <li><b>Load is now counted in contact hours, not credits.</b> A four-credit course that
             meets 165 minutes a week is three contact hours, which is what the official form asks
             for. Where the two differ the course table shows both, as "4 / 3 ch".</li>
@@ -3513,6 +3524,10 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         save(); renderAll();
       });
     });
+    // These compress the grid, which makes dragging office hours into a hidden
+    // hour impossible — so they sit beside the schedule, to be used at the end.
+    $("tidyBox").title = "Use these once your classes and office hours are in. " +
+      "While they are on, hidden days and folded hours cannot be dragged into.";
     var onl=$("optOnline"); onl.value=state.opts.online||"banner";
     onl.addEventListener("change", function(){ state.opts.online=onl.value; save(); renderSheets(); });
     var dens=$("optDensity"); dens.value=String(state.opts.density);

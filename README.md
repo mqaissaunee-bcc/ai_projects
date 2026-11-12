@@ -114,7 +114,7 @@ Worth remembering when testing print output: the first check for this passed bec
 
 ### Tightening the grid
 
-Two opt-in Display options, both off by default because a full weekday grid is what people expect:
+Two opt-in switches, in the toolbar beside the schedule rather than inside Display options, both off by default. They belong there because they are the last step: a hidden day or a folded hour cannot be dragged into, so compressing the grid before the office hours are in makes the office hours hard to add.
 
 - **Hide days with nothing on them** filters `daysShown()`, with a guard so an empty schedule never produces a grid with no columns.
 - **Collapse long empty stretches** folds runs of empty hours into a single short row labelled with the range. `buildSegments()` turns the hour range into a row list, and `unitsBefore()` maps a time to a position in row units, so blocks stay expressed as `calc(var(--rowh) * n)` and print rescaling still works. No block can span a fold, since a folded hour is by definition empty.

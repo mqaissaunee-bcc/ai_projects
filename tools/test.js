@@ -256,6 +256,10 @@ setTimeout(() => {
   // ---- trimming empty days and hours ----
   const dayCols = () => doc.querySelectorAll('.sheet .daycol:not(.onlinecol)').length;
   const beforeDays = dayCols();
+  ok('the tidy switches sit beside the schedule, not inside a panel',
+     $('optTrimDays').closest('#tidyBox') !== null && $('tidyBox').closest('.toolbar') !== null);
+  ok('they are reachable without opening Display options',
+     $('tidyBox').hidden === false);
   $('optTrimDays').checked = true;
   $('optTrimDays').dispatchEvent(new window.Event('change', { bubbles: true }));
   ok('empty days are dropped', dayCols() < beforeDays);
