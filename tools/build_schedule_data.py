@@ -24,7 +24,7 @@ should appear as TWO rows sharing a section code. Every row of a section
 contributes one meeting pattern.
 """
 
-import argparse, csv, json, os, re, sys
+import argparse, math, csv, json, os, re, sys
 from collections import OrderedDict, defaultdict
 from datetime import datetime, timezone
 
@@ -342,6 +342,30 @@ def credits_from_enrollment(row, mapping):
     return int(cr) if cr == int(cr) else cr
 
 
+CONTACT_PERIOD = 55       # minutes in one scheduled contact hour
+
+
+def contact_hours(meetings, credits, mode):
+    """Load is counted in contact hours, which is scheduled time, not credits.
+
+    A four-credit course meeting 165 minutes a week is three contact hours —
+    common for courses whose extra credit is lab or shop time taken elsewhere.
+    A course with no scheduled meeting falls back to its credit value, and a
+    hybrid does too, because its class time is only part of the course.
+    """
+    total = 0
+    for m in meetings:
+        if not m.get("s") or not m.get("e"):
+            continue
+        a, b = to_min(m["s"]), to_min(m["e"])
+        if a is None or b is None or b <= a:
+            continue
+        total += (b - a) * max(1, len(m.get("d") or []))
+    if not total or mode == "hybrid":
+        return credits or 0
+    return int(math.ceil(total / float(CONTACT_PERIOD)))
+
+
 def dept_of(course, section):
     m = re.match(r"^([A-Z]+)", (course or section or ""))
     return m.group(1) if m else "OTHER"
@@ -538,6 +562,7 @@ def build(rows, mapping, args, warn):
             "t": title,
             "cr": parse_credits(get(first, mapping, "credits")) or
                   credits_from_enrollment(first, mapping) or 0,
+            "ch": None,          # contact hours, filled once credits are settled
             "dept": dept_of(course, code),
             "campus": campus,
             "pot": pot,
@@ -726,6 +751,26 @@ def main():
                   ", ".join(f"{k} {v}" for k, v in sorted(by_pot.items())))
         except (IOError, ValueError):
             print("  ! could not read --previous to fill gaps")
+
+    scheduled_ch = {}
+    for sec in sections:
+        sec["ch"] = contact_hours(sec["m"], sec["cr"], sec.get("mode"))
+        if any(m.get("s") for m in sec["m"]) and sec.get("mode") != "hybrid":
+            scheduled_ch.setdefault(sec["c"], sec["ch"])
+    # An online section of a course that also meets in a room has the same
+    # contact hours as that section — the course does, not the room.
+    from_meeting = 0
+    for sec in sections:
+        if not any(m.get("s") for m in sec["m"]) and scheduled_ch.get(sec["c"]):
+            if sec["ch"] != scheduled_ch[sec["c"]]:
+                sec["ch"] = scheduled_ch[sec["c"]]
+                from_meeting += 1
+    if from_meeting:
+        print(f"  contact hours taken from a scheduled section of the same course "
+              f"for {from_meeting} online sections")
+    diff_ch = sum(1 for sec in sections if sec["cr"] and sec["ch"] != sec["cr"])
+    print(f"  contact hours differ from credits for {diff_ch} sections "
+          f"(load is counted in contact hours)")
 
     # Names are canonicalised after any carried sections are in, or the two
     # halves of the feed keep their own spelling of the same person.

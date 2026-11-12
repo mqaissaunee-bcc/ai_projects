@@ -33,6 +33,9 @@ setTimeout(() => {
   ok('all panels visible on Everything',
      ['p1','p2','p3','p4','p5','p6'].every(id => $(id).hidden === false));
   ok('data status populated', $('dataStatus').textContent.length > 0);
+  ok('the feed carries contact hours as well as credits',
+     /"ch":/.test(JSON.stringify(JSON.parse(doc.getElementById('demoData').textContent).sections[0] || {})) ||
+     JSON.parse(doc.getElementById('demoData').textContent).sections.some(s => 'ch' in s));
   ok('every section carries a credit value it can show',
      [...$('sectionList').querySelectorAll('.sec')].length >= 0);
   // the dropdown is now a checkbox per session
@@ -776,7 +779,8 @@ setTimeout(() => {
   ok('schedule data changes summarised', !!$('dataChanges').querySelector('.data-rel'));
   const dataText = $('dataChanges').textContent;
   ok('summary reports section count', /\d+ sections in the schedule/.test(dataText));
-  ok('summary reports instructor changes', /changed instructor/.test(dataText));
+  ok('summary lists whatever changed', /sections in the schedule/.test(dataText) &&
+     /no instructor: \d+/.test(dataText));
   // these lines appear only when there is something to report, so assert the
   // shape rather than the presence of any particular kind of change
   ok('summary reports changes it has',

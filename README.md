@@ -273,7 +273,13 @@ python3 tools/build_schedule_data.py data/raw/27SPR_Course_Enrollment_Report_111
 
 Where an export has no credit column at all, `credits_from_enrollment()` recovers it exactly: total student credit hours divided by enrolled students is the credits per student. On the spring export that filled 1,033 of 1,411 sections and revealed that NETW-111 is a four-credit course — it had been counting as zero toward load, because `--credits-from-course` could not match a course that Fall 2026 did not run. Credits are then filled from another section of the same course in the same build — a section with nobody enrolled usually has a sibling that does know — and only then from another term's course map. On the spring export that chain left 94 of 1,411 without a value, 13 of them staffed.
 
-Where a section still has none, the course table prints a dash and a notice names it. Counting it silently as zero was the original bug: two four-credit sections showed a load of 6 of 15 instead of 14.
+**Contact hours are not credits, and load is counted in contact hours.** `contact_hours()` divides the scheduled weekly minutes by 55 and rounds up: 165 minutes is three contact hours whatever the course is worth in credits. Across the spring feed the two differ for 250 sections. An online section with no meeting pattern takes the figure from a scheduled section of the same course, so NETW-111 is three contact hours in both its sections while remaining a four-credit course; only where no section meets does it fall back to credits. Hybrids fall back too, since their class time is a fraction of the course.
+
+This was previously a manual correction — ELEC-103 had to be told it was three contact hours despite carrying four credits. It now derives.
+
+The feed stores both as `cr` and `ch`; `hoursFor()` prefers an override, then `ch`, then `cr`, and the course table prints `4 / 3 ch` where they differ. Agreements stay in credits, because payment is.
+
+Where a section still has no credit value, the course table prints a dash and a notice names it. Counting it silently as zero was the original bug: two four-credit sections showed a load of 6 of 15 instead of 14.
 
 `--credits-from-course` matches on course code rather than section, since credits belong to the course. `--names-from` uses another term's full names to expand `Qaissaunee, M` into `Michael Qaissaunee`, which also keeps the same person selectable across terms.
 
