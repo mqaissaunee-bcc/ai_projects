@@ -38,6 +38,8 @@ ALIASES = OrderedDict([
     ("course",      ["course", "coursenumber", "coursecode", "subjectcourse", "catalog"]),
     ("title",       ["coursetitle", "sectiontitle", "title", "coursename", "longtitle"]),
     ("credits",     ["coursecredit", "credits", "credithours", "creditvalue", "cr", "units"]),
+    ("enrolled",    ["enrolledstudents", "enrolled", "enrollment", "actualenrollment"]),
+    ("tsch",        ["totalstudentcredithours", "studentcredithours", "totalsch", "sch"]),
     ("instructor",  ["instructor", "instructors", "primaryinstructor", "faculty", "teacher",
                      "instructorname", "assignedinstructor"]),
     ("days",        ["meetingdays", "days", "daysofweek", "meetingpattern", "daysmet", "day"]),
@@ -318,6 +320,28 @@ def pot_from_term(value, base):
     return None
 
 
+
+def credits_from_enrollment(row, mapping):
+    """Total student credit hours divided by heads gives the credits per student.
+
+    Several exports omit the credit column outright. This recovers it exactly
+    from two columns they do carry, for any section with someone enrolled.
+    """
+    if "enrolled" not in mapping or "tsch" not in mapping:
+        return None
+    try:
+        heads = float(str(get(row, mapping, "enrolled")).strip())
+        total = float(str(get(row, mapping, "tsch")).strip())
+    except (TypeError, ValueError):
+        return None
+    if heads <= 0 or total <= 0:
+        return None
+    cr = round((total / heads) * 2) / 2.0          # credits come in halves
+    if cr < 0.5 or cr > 12:
+        return None                                 # not a credit value
+    return int(cr) if cr == int(cr) else cr
+
+
 def dept_of(course, section):
     m = re.match(r"^([A-Z]+)", (course or section or ""))
     return m.group(1) if m else "OTHER"
@@ -512,7 +536,8 @@ def build(rows, mapping, args, warn):
             "id": code,
             "c": course,
             "t": title,
-            "cr": parse_credits(get(first, mapping, "credits")),
+            "cr": parse_credits(get(first, mapping, "credits")) or
+                  credits_from_enrollment(first, mapping) or 0,
             "dept": dept_of(course, code),
             "campus": campus,
             "pot": pot,
@@ -714,6 +739,25 @@ def main():
         except (IOError, ValueError):
             pass
     merged = canonicalize_names(sections, warn, reference_names)
+
+    # Another section of the same course in this very build usually knows the
+    # credit value — a section with nobody enrolled yet has a sibling that does.
+    within = {}
+    for sec in sections:
+        if sec["cr"]:
+            within.setdefault(sec["c"], sec["cr"])
+    from_sibling = 0
+    for sec in sections:
+        if not sec["cr"] and within.get(sec["c"]):
+            sec["cr"] = within[sec["c"]]
+            from_sibling += 1
+    if from_sibling:
+        print(f"  credits taken from another section of the same course for {from_sibling} sections")
+
+    derived = sum(1 for sec in sections if sec["cr"] and "credits" not in mapping)
+    if derived:
+        print(f"  credits worked out from enrolment for {derived} sections "
+              f"(this export has no credit column)")
 
     if args.credits_from_course:
         try:

@@ -121,6 +121,8 @@ Two opt-in Display options, both off by default because a full weekday grid is w
 
 The segment list is stored on the grid element, and `minutesAt()` walks the same rows, so dragging still lands where the cursor is when stretches are folded away.
 
+Everything that positions something on the grid has to use that mapping. `placeGhost()` did not: it kept plain hour arithmetic, so with stretches folded the drag preview floated 148px — about two and a half rows — below the cursor, even though its label and the eventual drop were both correct. `unitsFor()` now gives the preview the same mapping as the blocks. Anything added later that converts a time to a position must go through it too.
+
 ### One-page printing
 
 On by default. Two stages, in order:
@@ -226,6 +228,8 @@ Stored state falls into three kinds, and mixing them was a bug:
 
 `profileFor` records whose personal details are loaded. When the single selected faculty member changes, `clearPersonalDetails()` wipes the person-scoped fields — including a drawn signature, which is the one that matters most: without this, a chair generating several schedules would put their own signature on a colleague's form.
 
+A signature is scoped the same way at render time: `buildSheet` prints it only when the sheet's owner matches `profileFor`, so a chair printing a run of schedules signs their own and leaves a blank line on everyone else's. It used to stamp all of them.
+
 `profileFor` is deliberately **not** cleared when the faculty list empties, because that is how the next person added is recognised as somebody different.
 
 Fields that fill themselves in stop once typed over. Each has its own flag: `nameAuto`, `termLabelAuto`, `termDatesAuto`, `sig.dateAuto`, `sig.typedAuto`. The signature date refreshes to today on every load, so a form signed today is never dated from a previous session.
@@ -266,6 +270,10 @@ python3 tools/build_schedule_data.py data/raw/27SPR_Course_Enrollment_Report_111
   --names-from faculty-schedule/data/26FA/sections.json \
   --out faculty-schedule/data/27SP/sections.json
 ```
+
+Where an export has no credit column at all, `credits_from_enrollment()` recovers it exactly: total student credit hours divided by enrolled students is the credits per student. On the spring export that filled 1,033 of 1,411 sections and revealed that NETW-111 is a four-credit course — it had been counting as zero toward load, because `--credits-from-course` could not match a course that Fall 2026 did not run. Credits are then filled from another section of the same course in the same build — a section with nobody enrolled usually has a sibling that does know — and only then from another term's course map. On the spring export that chain left 94 of 1,411 without a value, 13 of them staffed.
+
+Where a section still has none, the course table prints a dash and a notice names it. Counting it silently as zero was the original bug: two four-credit sections showed a load of 6 of 15 instead of 14.
 
 `--credits-from-course` matches on course code rather than section, since credits belong to the course. `--names-from` uses another term's full names to expand `Qaissaunee, M` into `Michael Qaissaunee`, which also keeps the same person selectable across terms.
 

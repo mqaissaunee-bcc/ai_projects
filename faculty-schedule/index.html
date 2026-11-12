@@ -570,6 +570,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
           <p class="hint" id="sigNote" hidden>This prints your signature on the sheet. It is a
             convenience, not a verified signature — check that your Institute Office accepts one
             before relying on it. The chair and dean lines stay blank.</p>
+          <p class="hint" id="sigOwnerNote" hidden></p>
         </div>
         <label class="check"><input type="checkbox" id="optFit" checked> Fit the printed schedule to one page</label>
         <label class="check"><input type="checkbox" id="optDept" checked> Lead with a department summary when several people are shown</label>
@@ -815,6 +816,10 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         <p>No. Course data is public and comes from the college's published schedule. Everything you type — office, phone, email, office hours — stays in your own browser and is never sent anywhere. Use "Save draft file" to move it to another computer, or "Reset everything" to clear it.</p></details>
       <details><summary>Do I have to redo this every semester?</summary>
         <p>No. Your contact block, office hours, and release time stay put. When the new term's data loads you pick your sections again and the rest is already filled in.</p></details>
+      <details><summary>One of my courses shows a dash instead of credits</summary>
+        <p>The published schedule has no credit value for that section yet, which usually means nobody is enrolled in it so far. It counts as nothing toward your load until it has one, and a notice at the top names any section in that state. Open <b>Edit</b> on the section and set the contact hours to count it properly; the figure sticks on your copy.</p></details>
+      <details><summary>Whose signature goes on which sheet?</summary>
+        <p>A signature belongs to one person, so when several schedules are on screen it prints only on that person's sheet. Everyone else gets a blank line to sign themselves. A note under the signature options says whose it is. The chair and dean lines are always blank.</p></details>
       <details><summary>I loaded a colleague and my own details disappeared</summary>
         <p>That is deliberate. Title, department, office, phone, email, notes, release time, office hours and signature belong to one person, so they are cleared when a different faculty member is loaded — otherwise the next schedule would carry the previous person's details, and their signature. What stays is anything that belongs to the institution: rates, payment dates, institute contacts, and your display preferences. Your own details come back the same way you entered them.</p></details>
       <details><summary>Why can I not see all the steps?</summary>
@@ -843,6 +848,15 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
           <li>The term wording and dates, the signature date, and the name as signed now fill
             themselves in from the term you are viewing, today's date, and your printed name — and
             stop doing so the moment you type your own.</li>
+          <li>Fixed: courses with no credit value in the published schedule counted as zero toward
+            your load. The credits are now worked out from the enrolment figures, so a four-credit
+            course counts as four.</li>
+          <li>Where a section still has no credit value, the schedule shows a dash rather than a
+            blank and a notice names it, instead of quietly counting it as nothing.</li>
+          <li>Fixed: while dragging office hours with empty stretches of the day collapsed, the
+            preview sat well below the cursor. It now follows the pointer exactly.</li>
+          <li>Fixed: a signature was printed on every schedule when more than one was on screen. It
+            now goes only on the sheet of the person it belongs to; the rest print a blank line.</li>
           <li>Loading a different faculty member clears the previous person's title, department,
             office, contact details, release time, office hours and signature, so nothing of theirs
             can end up on somebody else's form. Institute settings, rates and payment dates stay.</li>
@@ -2064,7 +2078,11 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       var r=el("tr");
       r.appendChild(el("td",null,e.id));
       r.appendChild(el("td",null,e.title));
-      if(state.opts.credits) r.appendChild(el("td","num", e.credits||""));
+      if(state.opts.credits){
+        var crCell = el("td","num", e.credits ? String(e.credits) : "—");
+        if(!e.credits) crCell.title = "No credit value in the published schedule";
+        r.appendChild(crCell);
+      }
       if(!condensed){
         var meets=e.meetings.filter(function(m){ return m.s&&m.d&&m.d.length; }).map(function(m){
           return dayLabel(m.d)+" "+fmtTime(toMin(m.s))+"–"+fmtTime(toMin(m.e))+(m.est?" ≈":"");
@@ -2165,12 +2183,17 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     if(p.notes) sheet.appendChild(el("div","notes-line", p.notes));
     if(state.opts.sign){
       var sig = el("div","sig-row");
+      // A signature belongs to one person. On a run of several schedules only
+      // that person's sheet carries it; everyone else gets a line to sign.
+      var signer = state.profileFor || state.profile.name || "";
+      var signsThis = state.faculty.length <= 1 ||
+                      (!!sheetOwner && !!signer && sheetOwner === signer);
       ["Faculty signature","Department chair","Institute dean","Date"].forEach(function(lbl){
         var c = el("div","sig");
         var rule = el("div","sig-rule");
         // Only the faculty line can be signed in the tool; the approval lines
         // belong to other people and stay blank.
-        if(lbl === "Faculty signature"){
+        if(lbl === "Faculty signature" && signsThis){
           if(state.sig.mode === "typed" && state.sig.typed){
             rule.appendChild(el("span","sig-typed", state.sig.typed));
           } else if(state.sig.mode === "drawn" && state.sig.drawn){
@@ -2179,7 +2202,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
             rule.appendChild(img);
           }
         }
-        if(lbl === "Date" && state.sig.mode !== "blank" && state.sig.date){
+        if(lbl === "Date" && signsThis && state.sig.mode !== "blank" && state.sig.date){
           rule.appendChild(el("span","sig-typed sig-date", state.sig.date));
         }
         c.appendChild(rule);
@@ -2187,7 +2210,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         sig.appendChild(c);
       });
       sheet.appendChild(sig);
-      if(state.sig.mode !== "blank" && (state.sig.typed || state.sig.drawn)){
+      if(signsThis && state.sig.mode !== "blank" && (state.sig.typed || state.sig.drawn)){
         sheet.appendChild(el("div","sig-note",
           "Signed electronically by the faculty member" + (state.sig.date ? " on " + state.sig.date : "") + "."));
       }
@@ -2513,6 +2536,25 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         benign.length + (benign.length===1?" overlap that is not a clash":" overlaps that are not clashes") + ":");
       var L = loadSummary(scheduledSections(state.faculty.length > 1 ? who : null),
                           state.faculty.length > 1 ? who : (state.faculty[0] || null));
+      // A section with no published credit value counts as nothing toward load,
+      // which is silently wrong on a form. Say so instead.
+      var noCredit = scheduledSections(state.faculty.length > 1 ? who : null)
+        .concat(unscheduledFor(state.faculty.length > 1 ? who : null))
+        .filter(function(e){ return !hoursFor(e); });
+      if(noCredit.length){
+        var seen = {}, names = [];
+        noCredit.forEach(function(e){ if(!seen[e.id]){ seen[e.id]=1; names.push(e.id); } });
+        var nb = el("div","banner");
+        nb.appendChild(el("div",null, (state.faculty.length > 1 ? who + ": " : "") +
+          names.length + (names.length===1 ? " section has" : " sections have") +
+          " no credit value in the published schedule, so " +
+          (names.length===1 ? "it counts" : "they count") + " as nothing toward your load:"));
+        nb.appendChild(el("div","conflict-line", names.slice(0,4).join(", ") +
+          (names.length > 4 ? " …and " + (names.length-4) + " more" : "")));
+        nb.appendChild(el("div","conflict-line",
+          "Open Edit on the section and set the contact hours."));
+        box.appendChild(nb);
+      }
       if(L.releaseExpected && L.releaseHours < L.releaseExpected){
         box.appendChild(el("div","banner",
           (state.faculty.length > 1 ? who + ": " : "") +
@@ -2651,6 +2693,13 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     $("sigDrawField").hidden = mode !== "drawn";
     $("sigDateField").hidden = mode === "blank";
     $("sigNote").hidden = mode === "blank";
+    var on = $("sigOwnerNote");
+    if(mode !== "blank" && state.faculty.length > 1){
+      on.hidden = false;
+      on.textContent = "Several schedules are on screen. This signature goes only on " +
+        (state.profileFor || state.profile.name || "the named person") +
+        "'s sheet; the others print a blank line for them to sign.";
+    } else { on.hidden = true; }
     // A signature dated from a previous session would be wrong on a form signed
     // today, so the date follows today until someone sets one.
     if(!state.sig.date || state.sig.dateAuto !== false){
@@ -2779,6 +2828,16 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     var sheet = node.closest ? node.closest(".sheet") : null;
     return (sheet && sheet.dataset.owner) || state.faculty[0] || "";
   }
+  function colSegs(col){
+    try{ return JSON.parse(col.parentNode.dataset.segs || "null"); }catch(e){ return null; }
+  }
+  function unitsFor(col, mins){
+    // The same mapping the real blocks and the cursor use. Positioning the
+    // preview with plain hour arithmetic put it at a different time whenever
+    // empty stretches of the day were folded away.
+    var segs = colSegs(col), g = gridInfo(col);
+    return segs ? unitsBefore(segs, mins) : (mins - g.min) / 60;
+  }
   function placeGhost(col, startM, endM){
     var g = gridInfo(col);
     if(!drag.ghost){
@@ -2789,8 +2848,9 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       col.appendChild(drag.ghost);
     }
     var a = Math.min(startM, endM), b = Math.max(startM, endM);
-    drag.ghost.style.top = ((a - g.min) / 60 * g.rowh) + "px";
-    drag.ghost.style.height = Math.max((b - a) / 60 * g.rowh, 16) + "px";
+    var topU = unitsFor(col, a), endU = unitsFor(col, b);
+    drag.ghost.style.top = (topU * g.rowh) + "px";
+    drag.ghost.style.height = Math.max((endU - topU) * g.rowh, 16) + "px";
     drag.ghost.textContent = fmtTime(a) + "–" + fmtTime(b);
   }
   function dropGhost(){

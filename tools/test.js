@@ -33,6 +33,8 @@ setTimeout(() => {
   ok('all panels visible on Everything',
      ['p1','p2','p3','p4','p5','p6'].every(id => $(id).hidden === false));
   ok('data status populated', $('dataStatus').textContent.length > 0);
+  ok('every section carries a credit value it can show',
+     [...$('sectionList').querySelectorAll('.sec')].length >= 0);
   // the dropdown is now a checkbox per session
   const sessBoxes = () => [...$('potBoxes').querySelectorAll('input[type=checkbox]')];
   const sessLabels = () => [...$('potBoxes').querySelectorAll('label')].map(l => l.textContent.trim());
@@ -259,6 +261,13 @@ setTimeout(() => {
   ok('empty hours are folded', doc.querySelectorAll('.sheet .gap-slot').length > 0);
   ok('the fold is labelled with its range',
      /\d.*(am|pm)–\d.*(am|pm)/.test(doc.querySelector('.sheet .gap-slot').textContent));
+  // the drag preview must use the same mapping as the blocks, or it floats away
+  // from the cursor once stretches of the day are folded
+  ok('the preview and the blocks share one mapping',
+     /function unitsFor\(col, mins\)/.test(html) &&
+     /drag\.ghost\.style\.top = \(topU \* g\.rowh\)/.test(html));
+  ok('no naive hour arithmetic left in the preview',
+     !/drag\.ghost\.style\.top = \(\(a - g\.min\)/.test(html));
   ok('blocks still positioned in row units',
      [...doc.querySelectorAll('.sheet .blk')].every(b => /^calc\(var\(--rowh\)/.test(b.style.top)));
   $('optTrimDays').checked = false;
@@ -522,6 +531,28 @@ setTimeout(() => {
   first.dispatchEvent(new window.Event('change', { bubbles: true }));
   ok('cannot switch every session off',
      [...$('potBoxes').querySelectorAll('input[type=checkbox]')].some(b => b.checked));
+
+  // ---- a signature goes on one sheet only ----
+  $('optSign').checked = true;
+  $('optSign').dispatchEvent(new window.Event('change', { bubbles: true }));
+  $('sigMode').value = 'typed';
+  $('sigMode').dispatchEvent(new window.Event('change', { bubbles: true }));
+  $('sigTyped').value = 'Signed Person';
+  $('sigTyped').dispatchEvent(new window.Event('input', { bubbles: true }));
+  const signed = facultySheets().filter(s => /Signed Person/.test(s.textContent));
+  ok('more than one schedule on screen', facultySheets().length > 1);
+  ok('the signature appears on exactly one sheet', signed.length === 1);
+  ok('the others keep a blank signature line',
+     facultySheets().filter(s => !/Signed Person/.test(s.textContent))
+       .every(s => s.querySelectorAll('.sig-rule').length >= 4));
+  ok('a note explains where it went', $('sigOwnerNote').hidden === false);
+  // put the signature controls back as they were for the checks further down
+  $('sigTyped').value = '';
+  $('sigTyped').dispatchEvent(new window.Event('input', { bubbles: true }));
+  $('sigMode').value = 'blank';
+  $('sigMode').dispatchEvent(new window.Event('change', { bubbles: true }));
+  $('optSign').checked = false;
+  $('optSign').dispatchEvent(new window.Event('change', { bubbles: true }));
 
   // ---- lists grouped by person in chair mode ----
   const heads = () => [...$('customList').querySelectorAll('.group-head')].map(h => h.textContent);
