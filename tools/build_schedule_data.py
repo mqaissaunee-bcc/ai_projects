@@ -59,6 +59,10 @@ ALIASES = OrderedDict([
     ("status",      ["status", "sectionstatus", "cancelled", "canceled"]),
 ])
 
+# A component / schedule-type column, where the scrape can get one, says
+# outright what the room can only suggest.
+LAB_WORDS = re.compile(r"\b(lab|laboratory|lba|studio|clinical|clin|practicum)\b", re.I)
+
 DAY_TOKENS = {"M": "M", "MO": "M", "MON": "M", "MONDAY": "M",
               "T": "T", "TU": "T", "TUE": "T", "TUES": "T", "TUESDAY": "T",
               "W": "W", "WE": "W", "WED": "W", "WEDNESDAY": "W",
@@ -250,6 +254,11 @@ def canonicalize_names(sections, warn, reference=None):
     if rewrite:
         for s in sections:
             s["i"] = list(dict.fromkeys(rewrite.get(n, n) for n in s["i"]))
+            # Per-pattern names are matched against the faculty picker, so they
+            # have to be merged the same way the section list is.
+            for m in s.get("m", []):
+                if m.get("in"):
+                    m["in"] = rewrite.get(m["in"], m["in"])
         for sh, full in sorted(rewrite.items())[:8]:
             warn(f"merged '{sh}' into '{full}'")
         if len(rewrite) > 8:
@@ -536,14 +545,49 @@ def build(rows, mapping, args, warn):
                     seen.add(n)
                     instructors.append(n)
 
+        # Who covers which meeting pattern, read two ways.
+        #
+        # A scrape gives one row per pattern, so the row's own Instructor is
+        # that pattern's — exact, nothing inferred. A packed export gives one
+        # row per section with a positional Instructor cell, one name per
+        # pattern in the same order as the days, times and rooms:
+        #   'MAS 053, MAS 042' / 'Robert Gant, Blake Jambor'
+        # says Gant has the lecture and Jambor the lab. Where the counts do not
+        # line up — a clinical with a pool of supervisors — we claim nothing
+        # and the tool keeps every pattern.
         meetings, no_end, part_room = [], False, False
+        per_row = []
         for r in rs:
-            for m in row_meetings(r, mapping):
+            ms = row_meetings(r, mapping)
+            who = parse_instructors(get(r, mapping, "instructor"), args.names)
+            timed = [m for m in ms if m["s"]]
+            if len(who) > 1 and len(who) == len(timed):
+                for m, name in zip(timed, who):          # packed, positional
+                    m["in"] = name
+            # A component column — Banner's LEC/LAB, Colleague's schedule type —
+            # settles it outright, so it is recorded as a stated fact rather
+            # than the room-based guess made later.
+            kind = str(get(r, mapping, "mtype") or "")
+            if LAB_WORDS.search(kind):
+                for m in ms:
+                    m["kind"], m["lab"] = "lab", True
+            per_row.append((timed, who))
+            for m in ms:
                 if m["est"]:
                     no_end = True
                 if m.pop("_room_gap", False):
                     part_room = True
                 meetings.append(m)
+        # One row per pattern, one instructor on each: tag every pattern, not
+        # only the ones that disagree. Confirming a pattern IS this person's
+        # matters as much as showing it is not — it stops the tool offering to
+        # remove a lab its own teacher runs.
+        if len(per_row) > 1:
+            named = [(t, w[0]) for t, w in per_row if len(w) == 1 and t]
+            if len(named) == len(per_row):
+                for timed, name in named:
+                    for m in timed:
+                        m.setdefault("in", name)
         if no_end:
             warn(f"{code}: has a start time with no end time")
         if part_room:
@@ -575,6 +619,40 @@ def build(rows, mapping, args, warn):
         })
     return sections
 
+
+
+def mark_lab_patterns(sections):
+    """Flag the meeting patterns that look like the lab half of a course.
+
+    Nothing in the export says "lab", so this reads the rooms across all
+    sections of a course: a room that only ever turns up as a later pattern,
+    never as the one the course opens with, is a dedicated lab room. BIOL-111
+    lectures sit in ATC 103 and its labs in MAS 052, and that separation is
+    consistent enough to point at. It is a suggestion and nothing more — a
+    studio course that simply changes rooms looks the same from here — so the
+    flag only offers the pattern for removal; it never drops it.
+    """
+    first, later = defaultdict(set), defaultdict(set)
+    for sec in sections:
+        timed = [m for m in sec["m"] if m.get("s")]
+        for i, m in enumerate(timed):
+            if not m.get("rm"):
+                continue
+            (first if i == 0 else later)[sec["c"]].add(m["rm"])
+    flagged = 0
+    for sec in sections:
+        timed = [m for m in sec["m"] if m.get("s")]
+        if len(timed) < 2:
+            continue
+        if any(m.get("kind") for m in timed):
+            continue                                   # the scrape already said
+        for i, m in enumerate(timed):
+            if i == 0 or not m.get("rm"):
+                continue
+            if m["rm"] in later[sec["c"]] and m["rm"] not in first[sec["c"]]:
+                m["lab"] = True
+                flagged += 1
+    return flagged
 
 
 def diff_feeds(old_path, sections):
@@ -751,6 +829,11 @@ def main():
                   ", ".join(f"{k} {v}" for k, v in sorted(by_pot.items())))
         except (IOError, ValueError):
             print("  ! could not read --previous to fill gaps")
+
+    labs = mark_lab_patterns(sections)
+    if labs:
+        print(f"  {labs} meeting patterns sit in a room their course only uses for labs "
+              f"(offered for removal, never dropped automatically)")
 
     scheduled_ch, seen_ch = {}, defaultdict(list)
     for sec in sections:

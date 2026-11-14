@@ -71,3 +71,74 @@ Useful flags: `--pot 15W` keeps only 15-week sections, `--names as-is` disables 
 - **No instructor** was 89 in the enrollment report; a similar number is normal for unassigned sections.
 
 Then open the tool, search a name you know, and check it against reality.
+
+## Labs: two columns to add to the scrape
+
+A four-credit science course arrives as one section with a lecture pattern and
+a lab pattern. Counted whole, a lecturer with five of them shows **25 contact
+hours against a 15-hour load**. The lab is usually run by an instructional
+assistant, so it belongs on neither the lecturer's grid nor their load.
+
+Because the scrape is already **one row per meeting pattern**, it is in the
+best possible position to say so. Two columns settle it.
+
+### 1. Put each pattern's own instructor on its own row
+
+Not the section's primary instructor repeated down the rows — the person who
+actually teaches *that* pattern:
+
+| Section | Days | Start | End | Room | Instructor | Component |
+|---|---|---|---|---|---|---|
+| BIOL-111-004RL | MW | 12:30 PM | 1:45 PM | ATC 103 | Fencik, Cheryl | LEC |
+| BIOL-111-004RL | W | 2:00 PM | 3:45 PM | MAS 052 | Augustino, Gregory | LAB |
+
+The generator writes each row's instructor onto its pattern as `m.in`, and the
+tool leaves a pattern off the sheet, the grid and the contact-hour total when
+it names somebody other than the person whose schedule it is. Fencik's five
+sections go from 25 contact hours to 15.
+
+This cuts both ways, which is why it is worth tagging every row and not only
+the ones that disagree: a pattern named under the person whose sheet it is
+is *confirmed theirs*, and the tool then stops offering to remove it.
+
+Leave a row's Instructor blank rather than filling it with the lecturer's name
+when the real one is unknown — a wrong name is worse than none. Where a row is
+blank, nothing is tagged and every pattern is kept.
+
+### 2. Capture the component / schedule type
+
+`Component`, `Schedule Type` and `Meeting Type` all map to the same field. Any
+of `LEC`, `LAB`, `LBA`, `Studio`, `Clinical`, `Practicum` is understood;
+anything matching lab/laboratory/studio/clinical/practicum marks the pattern
+`kind: "lab"`. That is a stated fact, so the tool says "Listed as a lab"
+rather than "Looks like a lab", and the room guess below is skipped entirely
+for that section.
+
+### What happens without them
+
+Two fallbacks, in order.
+
+**A packed Instructor cell.** The 20-column `Individual Sects All` export puts
+one name per pattern in a single cell, in the same order as the days, times and
+rooms, with `;` between names written `Last, F` and `,` between names written
+`First Last`:
+
+```
+Room:       MAS 053, MAS 042
+Instructor: Robert Gant, Blake Jambor
+```
+
+Where the counts line up, the generator reads it positionally. In the
+September report that covered 67 of 161 multi-pattern sections; the 13- and
+14-column reports since then mostly list the lecturer alone — 8 of 160 in the
+spring file — which is why the scrape is the better source.
+
+**The rooms.** `mark_lab_patterns()` reads every section of a course together:
+a room that only ever turns up as a later pattern, never as the one the course
+opens with, is a dedicated lab room. BIOL-111 lectures sit in ATC 103 and its
+labs in MAS 052. The pattern is flagged `m.lab`, which the tool *offers* for
+removal and never acts on by itself — a studio course that simply changes
+rooms looks identical from here. The build prints how many were flagged.
+
+Neither fallback changes the published figures: `ch` on the section stays the
+whole-section total, and the subtraction happens in the tool, per sheet.

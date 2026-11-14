@@ -7,6 +7,8 @@ const { window } = dom;
 const doc = window.document;
 const $ = id => doc.getElementById(id);
 let fails = 0;
+// Read the version out of the page so a bump does not need a test edit.
+const VERSION = (html.match(/var APP_VERSION = "([^"]+)"/) || [])[1];
 const state_opts = (w) => JSON.parse(w.localStorage.getItem('bcc-faculty-schedule-v1:26FA') ||
   w.localStorage.getItem('bcc-faculty-schedule-v1') || '{}').opts || {};
 const state_customCount = (w) => JSON.parse(w.localStorage.getItem('bcc-faculty-schedule-v1')).custom.length;
@@ -842,10 +844,10 @@ setTimeout(() => {
      (!/changed instructor|changed room or meeting time|section.? added/.test(dataText) ||
       /changed instructor|changed room or meeting time|section.? added/.test(dataText)));
   ok('summary reports unstaffed count', /no instructor: \d+/.test(dataText));
-  ok('news names the current version', /1\.15/.test($('paneNews').textContent));
+  ok('news names the current version', $('paneNews').textContent.indexOf(VERSION) > -1);
   ok('opening news clears the dot', $('newsDot').hidden === true);
   ok('hidden always wins over a class display rule', /\[hidden\]\{display:none!important\}/.test(html));
-  ok('version recorded', window.localStorage.getItem('bcc-faculty-schedule-seen') === '1.15');
+  ok('version recorded', window.localStorage.getItem('bcc-faculty-schedule-seen') === VERSION);
   $('tabWalk').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   ok('other tabs still work', $('paneWalk').hidden === false && $('paneNews').hidden === true);
   $('helpClose').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
@@ -937,7 +939,101 @@ setTimeout(() => {
       ok('term dates are still there', /20\d\d-\d\d-\d\d/.test(f$('fTermStart').value));
     }
 
-    console.log(fails ? '\n' + fails + ' FAILURES' : '\nAll checks passed');
-    process.exit(fails ? 1 : 0);
+    // ---- labs the published schedule puts on somebody else ----
+    // Cheryl Fencik lectures five BIOL sections and the labs are covered by
+    // instructional assistants. Counted whole, the five come to 25 contact
+    // hours against a 15-hour load; counted as lectures, they come to 15.
+    const lab = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true,
+                                  url: 'https://example.org/' });
+    const lw = lab.window, ld = lab.window.document, l$ = id => ld.getElementById(id);
+    setTimeout(() => {
+      l$('roleSkip').dispatchEvent(new lw.MouseEvent('click', { bubbles: true }));
+      l$('facSearch').value = 'fencik';
+      l$('facSearch').dispatchEvent(new lw.Event('input', { bubbles: true }));
+      const hit = ld.querySelector('#facResults button');
+      ok('the lecturer is in the demo feed', !!hit);
+      if (hit) {
+        hit.dispatchEvent(new lw.MouseEvent('click', { bubbles: true }));
+        const line = () => ld.querySelector('.sheet[data-owner] .load-line').textContent;
+        const hrs = () => parseFloat((line().match(/Contact hours: ([\d.]+)/) || [])[1]);
+        ok('a lab under another name is left off the load', hrs() < 25);
+        ok('the lecture half is still counted', hrs() >= 12);
+
+        const grid = () => [...ld.querySelectorAll('.sheet[data-owner] .blk')]
+          .map(b => b.textContent).join(' | ');
+        // Both BIOL-112 labs are named under someone else, so MAS 048 goes.
+        // MAS 052 stays, because one BIOL-111 lab names nobody at all.
+        ok('a lab room named under someone else is off the grid', !/MAS 048/.test(grid()));
+        ok('the lecture room is still on it', /ATC 103/.test(grid()));
+        ok('a lab with nobody named is left on the grid until asked', /MAS 052/.test(grid()));
+
+        const notes = [...ld.querySelectorAll('#sectionList .co-note')].map(n => n.textContent);
+        ok('the sheet says which patterns it left off',
+           notes.some(t => /Not on this sheet/.test(t)));
+        ok('and names who holds them', notes.some(t => /Augustino/.test(t)));
+        ok('a dropped pattern can be put back',
+           [...ld.querySelectorAll('#sectionList button')].some(b => /Put it back/.test(b.textContent)));
+
+        // The one section with no second name gets the room-based offer only.
+        ok('a lab with nobody named is offered, not assumed',
+           notes.some(t => /Looks like a lab/.test(t)));
+        const bulk = l$('dropLabs');
+        ok('a bulk removal appears when labs remain', bulk && bulk.hidden === false);
+        const before = hrs();
+        bulk.dispatchEvent(new lw.MouseEvent('click', { bubbles: true }));
+        ok('removing the rest lowers the count again', hrs() < before);
+        ok('five lecture sections come to a full load', hrs() === 15);
+
+        // Switching the behaviour off goes back to the published patterns —
+        // the point of the option — but a removal made by hand is the user's
+        // own edit and survives it.
+        l$('optOwnPatterns').checked = false;
+        l$('optOwnPatterns').dispatchEvent(new lw.Event('change', { bubbles: true }));
+        ok('turning the option off restores the patterns it had dropped', hrs() > 15);
+        ok('a removal made by hand survives it', hrs() < 25);
+      }
+
+      // ---- a scrape names the instructor on each pattern ----
+      // One row per meeting pattern is the shape the scraper produces, so the
+      // row's own Instructor is that pattern's. These are the two cases that
+      // shape has to get right.
+      const feed = JSON.parse(ld.getElementById('demoData').textContent);
+      const mk = (id, who2, kind) => ({
+        id: id, c: id.replace(/-\w+$/, ''), t: 'Anatomy and Physiology I', cr: 4, ch: 5,
+        dept: 'BIOL', campus: 'LINC', pot: '15W', mode: 'inperson',
+        i: who2 === 'Test Lecturer' ? ['Test Lecturer'] : ['Test Lecturer', who2],
+        m: [{ d: ['M','W'], s: '12:30', e: '13:45', rm: 'ATC 103', in: 'Test Lecturer' },
+            { d: ['W'], s: '14:00', e: '15:45', rm: 'MAS 052', in: who2, lab: true, kind: kind }]
+      });
+      feed.sections = [mk('BIOL-111-004RL', 'Test Assistant', 'lab'),
+                       mk('BIOL-111-005RL', 'Test Lecturer', 'lab')];
+      feed.faculty = ['Test Lecturer', 'Test Assistant'];
+      const scrape = new JSDOM(
+        html.replace(/(<script type="application\/json" id="demoData">)[\s\S]*?(<\/script>)/,
+                     (m0, a0, b0) => a0 + JSON.stringify(feed) + b0),
+        { runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://example.org/' });
+      const sw = scrape.window, sd = sw.document, s$ = id => sd.getElementById(id);
+      setTimeout(() => {
+        s$('roleSkip').dispatchEvent(new sw.MouseEvent('click', { bubbles: true }));
+        s$('facSearch').value = 'Test Lecturer';
+        s$('facSearch').dispatchEvent(new sw.Event('input', { bubbles: true }));
+        const b1 = sd.querySelector('#facResults button');
+        ok('a scraped feed loads', !!b1);
+        if (b1) {
+          b1.dispatchEvent(new sw.MouseEvent('click', { bubbles: true }));
+          const notes = () => [...sd.querySelectorAll('#sectionList .co-note')].map(n => n.textContent);
+          ok('a lab named under someone else comes off the sheet',
+             notes().some(t => /Not on this sheet/.test(t) && /Test Assistant/.test(t)));
+          ok('a lab the lecturer runs himself is left alone',
+             !notes().some(t => /Listed as a lab|Looks like a lab/.test(t)));
+          ok('a stated component is not second-guessed', s$('dropLabs').hidden === true);
+          const hrs = parseFloat((sd.querySelector('.sheet[data-owner] .load-line')
+            .textContent.match(/Contact hours: ([\d.]+)/) || [])[1]);
+          ok('he is charged for his own lab but not the assistant\'s', hrs === 8);
+        }
+        console.log(fails ? '\n' + fails + ' FAILURES' : '\nAll checks passed');
+        process.exit(fails ? 1 : 0);
+      }, 400);
+    }, 400);
   }, 400);
 }, 400);
