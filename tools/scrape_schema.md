@@ -133,12 +133,27 @@ September report that covered 67 of 161 multi-pattern sections; the 13- and
 14-column reports since then mostly list the lecturer alone — 8 of 160 in the
 spring file — which is why the scrape is the better source.
 
-**The rooms.** `mark_lab_patterns()` reads every section of a course together:
-a room that only ever turns up as a later pattern, never as the one the course
-opens with, is a dedicated lab room. BIOL-111 lectures sit in ATC 103 and its
-labs in MAS 052. The pattern is flagged `m.lab`, which the tool *offers* for
-removal and never acts on by itself — a studio course that simply changes
-rooms looks identical from here. The build prints how many were flagged.
+**The rooms.** `mark_lab_patterns()` works in two steps.
+
+First, per course: a room that only ever turns up as a later pattern, never as
+the one the course opens with, is a lab room for that course. BIOL-111
+lectures sit in ATC 103 and its labs in MAS 052. The pattern is flagged
+`m.lab`.
+
+Then the room is checked against the whole term. If it **never opens a section
+anywhere** and several sections meet in it later in the week, it is a
+dedicated lab room and the pattern also gets `m.sure` — the tool leaves those
+off a sheet automatically, and names each one in a notice above the schedule.
+MAS 046 passes: nothing ever starts there.
+
+An ARCH studio fails it, which is the point. CVA 201 opens three sections of
+its own, so a course that merely changes rooms is never mistaken for one with
+a lab. Those stay `m.lab` without `m.sure` and are only offered for removal.
+Across both terms this leaves 5 of ~125 flagged patterns as offers.
+
+The build prints the split.
 
 Neither fallback changes the published figures: `ch` on the section stays the
-whole-section total, and the subtraction happens in the tool, per sheet.
+whole-section total, and the subtraction happens in the tool, per sheet — so a
+rebuild never rewrites history, and turning the option off in Display restores
+the published numbers exactly.

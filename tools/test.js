@@ -956,43 +956,88 @@ setTimeout(() => {
         hit.dispatchEvent(new lw.MouseEvent('click', { bubbles: true }));
         const line = () => ld.querySelector('.sheet[data-owner] .load-line').textContent;
         const hrs = () => parseFloat((line().match(/Contact hours: ([\d.]+)/) || [])[1]);
-        ok('a lab under another name is left off the load', hrs() < 25);
-        ok('the lecture half is still counted', hrs() >= 12);
+        // Nothing is clicked first: the default has to be right on its own,
+        // because a form gets signed whether or not anyone finds the button.
+        ok('five lecture sections come to a full load straight away', hrs() === 15);
 
         const grid = () => [...ld.querySelectorAll('.sheet[data-owner] .blk')]
           .map(b => b.textContent).join(' | ');
-        // Both BIOL-112 labs are named under someone else, so MAS 048 goes.
-        // MAS 052 stays, because one BIOL-111 lab names nobody at all.
-        ok('a lab room named under someone else is off the grid', !/MAS 048/.test(grid()));
+        ok('lab rooms are off the grid', !/MAS 048/.test(grid()) && !/MAS 052/.test(grid()));
         ok('the lecture room is still on it', /ATC 103/.test(grid()));
-        ok('a lab with nobody named is left on the grid until asked', /MAS 052/.test(grid()));
+        ok('the lecture and its lab no longer clash',
+           !ld.querySelector('.sheet[data-owner] .blk.clash'));
 
         const notes = [...ld.querySelectorAll('#sectionList .co-note')].map(n => n.textContent);
         ok('the sheet says which patterns it left off',
            notes.some(t => /Not on this sheet/.test(t)));
         ok('and names who holds them', notes.some(t => /Augustino/.test(t)));
+        // BIOL-111-009RL names nobody, so it is removed on the room alone and
+        // has to say so rather than implying a person.
+        ok('a lab removed on room evidence says why',
+           notes.some(t => /a room this course uses only for labs/.test(t)));
         ok('a dropped pattern can be put back',
            [...ld.querySelectorAll('#sectionList button')].some(b => /Put it back/.test(b.textContent)));
 
-        // The one section with no second name gets the room-based offer only.
-        ok('a lab with nobody named is offered, not assumed',
-           notes.some(t => /Looks like a lab/.test(t)));
-        const bulk = l$('dropLabs');
-        ok('a bulk removal appears when labs remain', bulk && bulk.hidden === false);
-        const before = hrs();
-        bulk.dispatchEvent(new lw.MouseEvent('click', { bubbles: true }));
-        ok('removing the rest lowers the count again', hrs() < before);
-        ok('five lecture sections come to a full load', hrs() === 15);
+        // Nothing is hidden: time taken off the sheet is named on the sheet.
+        const banners = [...ld.querySelectorAll('#banners .banner')].map(n => n.textContent);
+        ok('the sheet itself reports the removed lab meetings',
+           banners.some(t => /not on this schedule and not counted/.test(t)));
+        ok('and says how to get one back', banners.some(t => /Put it back/.test(t)));
 
-        // Switching the behaviour off goes back to the published patterns —
-        // the point of the option — but a removal made by hand is the user's
-        // own edit and survives it.
+        ok('nothing is left to offer once they are all off', l$('dropLabs').hidden === true);
+
+        // Switching the behaviour off goes back to the published figures.
         l$('optOwnPatterns').checked = false;
         l$('optOwnPatterns').dispatchEvent(new lw.Event('change', { bubbles: true }));
-        ok('turning the option off restores the patterns it had dropped', hrs() > 15);
-        ok('a removal made by hand survives it', hrs() < 25);
+        ok('turning the option off restores the published load', hrs() === 25);
+        l$('optOwnPatterns').checked = true;
+        l$('optOwnPatterns').dispatchEvent(new lw.Event('change', { bubbles: true }));
+        ok('and ticking it again takes them back off', hrs() === 15);
       }
 
+      // ---- weak room evidence is offered, never acted on ----
+      // An ARCH studio that simply changes rooms looks identical to a lab from
+      // the room alone. The difference is that its second room serves one
+      // section, not fifteen, so it arrives without the `sure` flag.
+      const wf = JSON.parse(ld.getElementById('demoData').textContent);
+      wf.sections = [{
+        id: 'ARCH-261-001RL', c: 'ARCH-261', t: 'Design Studio', cr: 4, ch: 5,
+        dept: 'ARCH', campus: 'LINC', pot: '15W', mode: 'inperson', i: ['Studio Lead'],
+        m: [{ d: ['M'], s: '09:00', e: '11:45', rm: 'CVA 208' },
+            { d: ['W'], s: '09:00', e: '10:45', rm: 'CVA 201', lab: true }]
+      }];
+      wf.faculty = ['Studio Lead'];
+      const weak = new JSDOM(
+        html.replace(/(<script type="application\/json" id="demoData">)[\s\S]*?(<\/script>)/,
+                     (m0, a0, b0) => a0 + JSON.stringify(wf) + b0),
+        { runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://example.org/' });
+      const ww = weak.window, wd = weak.window.document, w$ = id => wd.getElementById(id);
+      setTimeout(() => {
+        w$('roleSkip').dispatchEvent(new ww.MouseEvent('click', { bubbles: true }));
+        w$('facSearch').value = 'Studio Lead';
+        w$('facSearch').dispatchEvent(new ww.Event('input', { bubbles: true }));
+        const wb2 = wd.querySelector('#facResults button');
+        ok('the studio feed loads', !!wb2);
+        if (wb2) {
+          wb2.dispatchEvent(new ww.MouseEvent('click', { bubbles: true }));
+          const wgrid = [...wd.querySelectorAll('.sheet[data-owner] .blk')]
+            .map(b => b.textContent).join(' | ');
+          ok('a one-off room is left on the grid', /CVA 201/.test(wgrid));
+          const wh = parseFloat((wd.querySelector('.sheet[data-owner] .load-line')
+            .textContent.match(/Contact hours: ([\d.]+)/) || [])[1]);
+          ok('and still counted', wh === 5);
+          ok('but it is offered', [...wd.querySelectorAll('#sectionList .co-note')]
+            .some(n => /Looks like a lab/.test(n.textContent)));
+          ok('with a bulk button', w$('dropLabs').hidden === false);
+          w$('dropLabs').dispatchEvent(new ww.MouseEvent('click', { bubbles: true }));
+          const wh2 = parseFloat((wd.querySelector('.sheet[data-owner] .load-line')
+            .textContent.match(/Contact hours: ([\d.]+)/) || [])[1]);
+          ok('and taking the offer does remove it', wh2 === 3);
+        }
+        runScrapeChecks();
+      }, 400);
+
+      function runScrapeChecks(){
       // ---- a scrape names the instructor on each pattern ----
       // One row per meeting pattern is the shape the scraper produces, so the
       // row's own Instructor is that pattern's. These are the two cases that
@@ -1034,6 +1079,7 @@ setTimeout(() => {
         console.log(fails ? '\n' + fails + ' FAILURES' : '\nAll checks passed');
         process.exit(fails ? 1 : 0);
       }, 400);
+      }
     }, 400);
   }, 400);
 }, 400);

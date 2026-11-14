@@ -25,7 +25,7 @@ contributes one meeting pattern.
 """
 
 import argparse, math, csv, json, os, re, sys
-from collections import OrderedDict, defaultdict
+from collections import Counter, OrderedDict, defaultdict
 from datetime import datetime, timezone
 
 # ---------------------------------------------------------------- field aliases
@@ -633,13 +633,19 @@ def mark_lab_patterns(sections):
     flag only offers the pattern for removal; it never drops it.
     """
     first, later = defaultdict(set), defaultdict(set)
+    opens, follows = Counter(), Counter()
     for sec in sections:
         timed = [m for m in sec["m"] if m.get("s")]
         for i, m in enumerate(timed):
             if not m.get("rm"):
                 continue
-            (first if i == 0 else later)[sec["c"]].add(m["rm"])
-    flagged = 0
+            if i == 0:
+                first[sec["c"]].add(m["rm"])
+                opens[m["rm"]] += 1
+            else:
+                later[sec["c"]].add(m["rm"])
+                follows[m["rm"]] += 1
+    flagged = sure = 0
     for sec in sections:
         timed = [m for m in sec["m"] if m.get("s")]
         if len(timed) < 2:
@@ -651,8 +657,17 @@ def mark_lab_patterns(sections):
                 continue
             if m["rm"] in later[sec["c"]] and m["rm"] not in first[sec["c"]]:
                 m["lab"] = True
+                # Then check the room against the whole term. A room that never
+                # opens a section anywhere, and is met in later in the week by
+                # several, is a dedicated lab room: MAS 046 is only ever walked
+                # into after a lecture elsewhere. An ARCH studio fails this —
+                # CVA 201 opens three sections of its own — which is what
+                # separates a real lab from a course that merely changes rooms.
+                if opens[m["rm"]] == 0 and follows[m["rm"]] >= 2:
+                    m["sure"] = True
+                    sure += 1
                 flagged += 1
-    return flagged
+    return flagged, sure
 
 
 def diff_feeds(old_path, sections):
@@ -830,10 +845,11 @@ def main():
         except (IOError, ValueError):
             print("  ! could not read --previous to fill gaps")
 
-    labs = mark_lab_patterns(sections)
+    labs, sure = mark_lab_patterns(sections)
     if labs:
-        print(f"  {labs} meeting patterns sit in a room their course only uses for labs "
-              f"(offered for removal, never dropped automatically)")
+        print(f"  {labs} meeting patterns sit in a room their course only uses for labs: "
+              f"{sure} in a room that never opens a section anywhere in the term "
+              f"(left off a sheet automatically), {labs - sure} offered for removal")
 
     scheduled_ch, seen_ch = {}, defaultdict(list)
     for sec in sections:
