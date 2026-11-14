@@ -405,6 +405,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     <select id="rolePickTop" class="no-print" hidden></select>
     <button class="btn sm ghost no-print" id="btnNews" type="button">What's new<span class="newpill" id="newsDot" hidden>New</span></button>
     <button class="btn sm ghost no-print" id="btnHelp" type="button">? Help</button>
+    <button class="btn sm ghost no-print" id="btnStartOver" type="button" hidden>Start over</button>
     <div class="status" id="dataStatus" aria-live="polite"></div>
   </div>
 </header>
@@ -887,6 +888,13 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
             the load.</li>
           <li>Labs that are no longer on your sheet no longer clash with anything, so the false
             overlaps between a lecture and the lab running alongside it are gone.</li>
+          <li><b>Clear all</b> beside the names empties the list in one go, and a long list is now
+            capped at twelve chips with <b>Show all</b> rather than filling the panel. Adding the
+            whole college once no longer means picking two hundred names off one at a time.</li>
+          <li><b>Start over</b> at the top of the page wipes your selections, office hours and
+            contact details and starts fresh. Agreement settings are kept.</li>
+          <li>Fixed: Reset everything cleared the old single-term store, not the term you were
+            actually looking at, so your selections came back after the reload.</li>
           <li>Where the schedule data names an instructor on each meeting pattern, or says outright
             which pattern is the lab, the tool uses that instead of guessing — and a lab you are
             named on is left alone rather than offered for removal.</li>
@@ -1543,15 +1551,46 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     }
     renderAll(); save();
   }
+  var chipsOpen = false;
   function renderChips(){
     var box=$("facChips"); clear(box);
-    state.faculty.forEach(function(n){
+    // A chair who once added the whole college should not have to pick off two
+    // hundred chips one at a time, nor scroll past them to reach anything else.
+    var CAP = 12, list = state.faculty, hidden = 0;
+    if(list.length > CAP && !chipsOpen){ hidden = list.length - CAP; list = list.slice(0, CAP); }
+    list.forEach(function(n){
       var c=el("span","chip"); c.appendChild(document.createTextNode(n));
       var b=el("button",null,"×"); b.type="button"; b.setAttribute("aria-label","Remove "+n);
       b.addEventListener("click", function(){ removeFaculty(n); });
       c.appendChild(b); box.appendChild(c);
     });
+    if(hidden){
+      var more = el("button","btn xs ghost","Show all " + state.faculty.length);
+      more.type="button";
+      more.addEventListener("click", function(){ chipsOpen = true; renderChips(); });
+      box.appendChild(more);
+    } else if(chipsOpen && state.faculty.length > CAP){
+      var less = el("button","btn xs ghost","Show fewer"); less.type="button";
+      less.addEventListener("click", function(){ chipsOpen = false; renderChips(); });
+      box.appendChild(less);
+    }
+    if(state.faculty.length > 1){
+      var clr = el("button","btn xs","Clear all " + state.faculty.length); clr.type="button";
+      clr.title = "Remove every name from the list and start the sheet again.";
+      clr.addEventListener("click", clearFaculty);
+      box.appendChild(clr);
+    }
     $("chipFaculty").textContent = state.faculty.length ? state.faculty.length+" selected" : "";
+    var rb = $("btnStartOver"); if(rb) rb.hidden = !state.faculty.length;
+  }
+  function clearFaculty(){
+    chipsOpen = false;
+    state.faculty = [];
+    // profileFor is kept, as it is on a single removal: it is how the next
+    // person added is recognised as somebody different and the details cleared.
+    $("facSearch").value = "";
+    renderFacultyResults("");
+    renderAll(); save();
   }
   /* Lab patterns worth offering to remove. A lab the schedule names this
      person on is theirs, so offering to take it off second-guesses the data. */
@@ -4015,11 +4054,29 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       };
       r.readAsText(f); e.target.value="";
     });
-    $("btnReset").addEventListener("click", function(){
-      if(!window.confirm("Clear your selections, office hours, and contact information?")) return;
-      try{ localStorage.removeItem(STORAGE_KEY); }catch(err){}
+    function resetEverything(){
+      if(!window.confirm("Clear your selections, office hours and contact information, " +
+                         "for every term? Saved agreement settings are kept.")) return;
+      // The office's agreement settings are shared and tedious to retype, so
+      // they are carried across the reset rather than wiped with everything else.
+      var keep = {moa: state.moa, institutes: state.institutes};
+      try{
+        var drop = [];
+        for(var i = 0; i < localStorage.length; i++){
+          var k = localStorage.key(i);
+          // Every term writes its own key, so clearing one leaves the rest —
+          // which is what made Reset look as though it had done nothing.
+          if(k && k.indexOf("bcc-faculty-schedule-v1") === 0) drop.push(k);
+        }
+        drop.forEach(function(k){ localStorage.removeItem(k); });
+        if(keep.moa || keep.institutes){
+          localStorage.setItem(storageKey(activeTerm), JSON.stringify(keep));
+        }
+      }catch(err){}
       window.location.reload();
-    });
+    }
+    $("btnReset").addEventListener("click", resetEverything);
+    $("btnStartOver").addEventListener("click", resetEverything);
   }
 
   function init(){

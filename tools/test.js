@@ -995,6 +995,54 @@ setTimeout(() => {
         ok('and ticking it again takes them back off', hrs() === 15);
       }
 
+      // ---- a long faculty list can be cleared ----
+      // A chair who once added the whole college gets a panel of chips and, up
+      // to now, no way out but picking them off one at a time.
+      const many = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true,
+                                     url: 'https://example.org/' });
+      const mw = many.window, md = many.window.document, m$ = id => md.getElementById(id);
+      setTimeout(() => {
+        m$('roleSkip').dispatchEvent(new mw.MouseEvent('click', { bubbles: true }));
+        ok('no reset offered before anything is picked', m$('btnStartOver').hidden === true);
+        const pool = JSON.parse(md.getElementById('demoData').textContent).faculty.slice(0, 20);
+        pool.forEach(n => {
+          m$('facSearch').value = n;
+          m$('facSearch').dispatchEvent(new mw.Event('input', { bubbles: true }));
+          const b2 = [...md.querySelectorAll('#facResults button')]
+            .find(x => x.textContent.indexOf(n) === 0);
+          if (b2) b2.dispatchEvent(new mw.MouseEvent('click', { bubbles: true }));
+        });
+        const picked = m$('chipFaculty').textContent;
+        ok('twenty names are selected', /^20 selected/.test(picked));
+        ok('the chip list is capped rather than filling the panel',
+           m$('facChips').querySelectorAll('.chip').length === 12);
+        const btns = () => [...m$('facChips').querySelectorAll('button')].map(b => b.textContent);
+        ok('the rest are reachable', btns().some(t => /Show all 20/.test(t)));
+        ok('a reset appears once names are picked', m$('btnStartOver').hidden === false);
+
+        [...m$('facChips').querySelectorAll('button')]
+          .find(b => /Show all 20/.test(b.textContent))
+          .dispatchEvent(new mw.MouseEvent('click', { bubbles: true }));
+        ok('expanding shows them all', m$('facChips').querySelectorAll('.chip').length === 20);
+        ok('and can be collapsed again', btns().some(t => /Show fewer/.test(t)));
+
+        const clear = [...m$('facChips').querySelectorAll('button')]
+          .find(b => /Clear all 20/.test(b.textContent));
+        ok('one button clears the lot', !!clear);
+        if (clear) {
+          clear.dispatchEvent(new mw.MouseEvent('click', { bubbles: true }));
+          ok('every name is gone', m$('facChips').querySelectorAll('.chip').length === 0);
+          ok('the count empties', m$('chipFaculty').textContent === '');
+          ok('the reset button goes away with them', m$('btnStartOver').hidden === true);
+          ok('the search box is ready for the next name', m$('facSearch').value === '');
+          const saved = JSON.parse(mw.localStorage.getItem('bcc-faculty-schedule-v1:26FA') ||
+                                   mw.localStorage.getItem('bcc-faculty-schedule-v1') || '{}');
+          ok('and it is saved, not just on screen', (saved.faculty || []).length === 0);
+        }
+        runWeakChecks();
+      }, 400);
+
+      function runWeakChecks(){
       // ---- weak room evidence is offered, never acted on ----
       // An ARCH studio that simply changes rooms looks identical to a lab from
       // the room alone. The difference is that its second room serves one
@@ -1036,6 +1084,7 @@ setTimeout(() => {
         }
         runScrapeChecks();
       }, 400);
+      }
 
       function runScrapeChecks(){
       // ---- a scrape names the instructor on each pattern ----
