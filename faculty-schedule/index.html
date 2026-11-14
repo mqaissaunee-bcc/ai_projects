@@ -80,6 +80,14 @@ textarea{min-height:60px;resize:vertical}
 .btn.ghost{background:transparent}
 .btn.sm{min-height:32px;padding:4px 9px;font-size:.78rem}
 .btn.xs{min-height:24px;padding:1px 7px;font-size:.72rem;vertical-align:baseline}
+.help-find{padding:10px 16px 0}
+.help-find input{width:100%;padding:9px 11px;font:inherit;border:1px solid var(--line);border-radius:8px}
+.help-find .hint{margin:5px 0 0}
+#paneFaq details[hidden]{display:none}
+.go-row{margin-top:7px}
+@keyframes findflash{0%,100%{box-shadow:0 0 0 0 rgba(37,99,235,0)}15%,70%{box-shadow:0 0 0 4px rgba(37,99,235,.45)}}
+.findflash{animation:findflash 1.6s ease-out 1;border-radius:8px}
+
 .btn.danger{color:var(--danger);border-color:var(--line-2)}
 .btn-row{display:flex;flex-wrap:wrap;gap:8px}
 .check{display:flex;gap:8px;align-items:flex-start;font-size:.85rem;font-weight:400;color:var(--ink);margin:0 0 7px;cursor:pointer}
@@ -404,7 +412,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     <label class="sr-only" for="rolePickTop">Role</label>
     <select id="rolePickTop" class="no-print" hidden></select>
     <button class="btn sm ghost no-print" id="btnNews" type="button">What's new<span class="newpill" id="newsDot" hidden>New</span></button>
-    <button class="btn sm ghost no-print" id="btnHelp" type="button">? Help</button>
+    <button class="btn sm ghost no-print" id="btnHelp" type="button" title="Search the help (press ?)">? How do I…</button>
     <button class="btn sm ghost no-print" id="btnStartOver" type="button" hidden>Start over</button>
     <div class="status" id="dataStatus" aria-live="polite"></div>
   </div>
@@ -749,6 +757,12 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     <h2 id="helpTitle">Help</h2>
     <button class="btn sm ghost" id="helpClose" type="button" aria-label="Close help">✕</button>
   </div>
+  <div class="help-find">
+    <label class="sr-only" for="helpSearch">Search the help</label>
+    <input type="search" id="helpSearch" autocomplete="off"
+           placeholder="What do you want to do? Try release time, office hours, lab, PDF…">
+    <p class="hint" id="helpFindCount" aria-live="polite"></p>
+  </div>
   <div class="tabs" role="tablist">
     <button class="tab on" id="tabWalk" role="tab" aria-selected="true" aria-controls="paneWalk" type="button">Walkthrough</button>
     <button class="tab" id="tabFaq" role="tab" aria-selected="false" aria-controls="paneFaq" type="button">Questions</button>
@@ -769,94 +783,94 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       <button class="btn primary" id="startTour" type="button">Start the guided tour</button>
     </section>
     <section id="paneFaq" role="tabpanel" aria-labelledby="tabFaq" hidden>
-      <details><summary>My name is missing, or appears twice</summary>
+      <details data-go="#facSearch"><summary>My name is missing, or appears twice</summary>
         <p>The published schedule writes instructor names inconsistently — some sections say "Jane Smith" and others "Smith, J". The tool merges those automatically where the match is unambiguous. If your name is still split, or a section is under a colleague's name, that is how the college's data has it. Tell your department chair so the source can be corrected.</p></details>
-      <details><summary>A course has the wrong room, time, or title</summary>
+      <details data-go="#sectionList"><summary>A course has the wrong room, time, or title</summary>
         <p>Press <b>Edit</b> on that section. You can change days, start and end times, room, and the printed title, and add a second meeting pattern for a course that meets at two different times. Your corrections are saved and survive a page reload.</p></details>
-      <details><summary>Why is my 3-credit course counted as 4 hours?</summary>
+      <details data-go="#sectionList"><summary>Why is my 3-credit course counted as 4 hours?</summary>
         <p>Load is counted in contact hours, but the schedule report only publishes credits, and the two differ for lab courses. Open <b>Edit</b> on the section and set "Contact hours for load" to the right number. The published credit value still prints in the course table.</p></details>
-      <details><summary>How do I get the memorandum of agreement for my overload?</summary>
+      <details data-go="#btnMoa"><summary>How do I get the memorandum of agreement for my overload?</summary>
         <p>Flag each overload section with the <b>PT</b> button, then use <b>Open agreements</b> in the export panel. One agreement is produced for each part of term you have overload in, listing those sections with their credits, and with the session dates filled in from the college calendar. Print it to PDF, or download the Word version to edit.</p>
         <p>Under "Agreement details" the office enters the institute name, dean, phone, and staff to notify, plus a rate per credit and the payment dates for each part of term. All of it is remembered, so it only has to be done once. Several institutes can be saved and switched between. Left without a rate, the amount column prints empty for the Institute Office to complete. The dean's signature line is always left blank — that is for the dean to sign.</p>
         <p>Rates differ between terms and between fall and summer, so each part of term has its own rate field; the default is only used where a session has none. The wording describing the session can also be typed in, for a term your office words differently from the tool.</p>
         <p>Office staff can share their setup with another office using "Save settings file" — it holds institutes, rate, and payment dates only, with no schedules or personal details in it.</p>
         <p>What comes out is a draft built from the published schedule and your own flags. The Institute Office issues the real agreement.</p></details>
-      <details><summary>Do my 7-week and 11-week courses count toward my load?</summary>
+      <details data-go="#sectionList"><summary>Do my 7-week and 11-week courses count toward my load?</summary>
         <p>Not by default. The required load — 15 contact hours and 5 office hours — is a 15-week figure, so anything in a short session is treated as overload and listed under part-time sections. If one of yours does count toward load, press <b>PT</b> on that section to switch it off, or open Edit and enter 0 in the overload hours. Your choice is remembered.</p></details>
-      <details><summary>How do I mark an overload or part-time section?</summary>
+      <details data-go="#sectionList"><summary>How do I mark an overload or part-time section?</summary>
         <p>The <b>PT</b> button next to a section moves the whole thing out of your load. If only part of it is overload — a 4-hour course whose lab is paid separately — open <b>Edit</b> and put that number in "hours counted as PT / overload". The rest stays on load.</p></details>
-      <details><summary>How many office hours am I expected to hold?</summary>
+      <details data-go="#fOhRequired"><summary>How many office hours am I expected to hold?</summary>
         <p>One for every three contact hours you owe, which is where the figure on the official form comes from: a full fifteen-hour load asks for five, and nine contact hours with six credits released asks for three. The tool works it out from your load and release time. If your institute expects something different, type the number into "Office hours required" and it will use that instead.</p></details>
-      <details><summary>How do I show chair hours, fellow hours, or coordinator time?</summary>
+      <details data-go="#rKind"><summary>How do I show chair hours, fellow hours, or coordinator time?</summary>
         <p>Add them in step 3 with the type set to <b>Release-time activity</b>. They appear on the grid like office hours but in their own colour, and they are not counted toward your office hours. Use <b>+ College Hour</b> for the standing Tuesday and Thursday block, 11:30 to 1:30.</p></details>
-      <details><summary>How many hours of release-time activity should be on my schedule?</summary>
+      <details data-go="#rHours"><summary>How many hours of release-time activity should be on my schedule?</summary>
         <p>Two hours per credit plus one, so a three-credit release expects seven hours on the grid. Enter the release under Your information and the sheet shows how many hours you have placed against it — "Release time: 7 of 7 hrs" — with a notice while any are missing. If your institute figures it differently, type the number into "Hours expected on the schedule" when adding the release.</p></details>
-      <details><summary>Where do I enter release time?</summary>
+      <details data-go="#rCredits"><summary>Where do I enter release time?</summary>
         <p>Under <b>Your information</b>, in the Load and release time section. Add a line for each assignment with the credits and what they were released for. Each line lowers the contact hours you owe, and the reasons print on the schedule.</p></details>
-      <details><summary>Where are my 7-week and 11-week courses?</summary>
+      <details data-go="#potBoxes"><summary>Where are my 7-week and 11-week courses?</summary>
         <p>They are included, but switched off by default, because the official schedule is a 15-week form. In step 1, tick the sessions you want under "Sessions to include" and they appear alongside your 15-week courses, each marked with its session and a dashed edge so a reader can tell them apart. The date range prints underneath the grid.</p>
         <p>Bear in mind 7A and 7B run in different halves of the term, so seeing them on one week is a planning view, not a week you will ever actually teach. The tool knows the dates and separates a real clash from an apparent one.</p>
         <p>Fall 2026 sessions: 15-week 9/8 to 12/23 · 7A 9/8 to 10/26 · 11-week 10/1 to 12/18 · 7B 10/29 to 12/18.</p></details>
-      <details><summary>Where do my online courses appear?</summary>
+      <details data-go="#optOnline"><summary>Where do my online courses appear?</summary>
         <p>By default they sit in a band across the top of the weekly grid, which shows them as part of your schedule without claiming a meeting time they do not have. Under Display options you can move them to a column beside the weekdays instead, or list them under the grid. A course with no meeting time cannot become a calendar event, so the calendar export leaves those out and names them in a note.</p></details>
-      <details><summary>Can I show an online course on a particular day?</summary>
+      <details data-go="#sectionList"><summary>Can I show an online course on a particular day?</summary>
         <p>Yes. Open <b>Edit</b> on the section, tick the days you want it associated with — the day your work for it falls, or when assignments are due — and leave the start and end times blank. The course then appears in the band above those days instead of spanning the whole week, still with no time attached. Untick the days to put it back across the week.</p></details>
-      <details><summary>Does the calendar export know about holidays?</summary>
+      <details data-go="#btnIcs"><summary>Does the calendar export know about holidays?</summary>
         <p>Yes. It leaves out the Thanksgiving recess, and it handles the December schedule changes: because 22 December runs a Thursday schedule and 23 December a Friday one, your Tuesday and Wednesday classes are skipped on those dates and your Thursday and Friday classes are added to them. The dates print at the bottom of the schedule as well.</p></details>
-      <details><summary>Clicking Print does not produce a PDF</summary>
+      <details data-go="#btnPrint"><summary>Clicking Print does not produce a PDF</summary>
         <p>The button opens your browser's print dialog; the PDF comes from there. On Windows set the <b>destination</b> to "Save as PDF" or "Microsoft Print to PDF", then Save. If the destination is a physical printer, it prints on paper instead. Keep the orientation on landscape.</p></details>
-      <details><summary>My schedule takes up more of the page than it needs to</summary>
+      <details data-go="#tidyBox"><summary>My schedule takes up more of the page than it needs to</summary>
         <p>The <b>Tidy up</b> switches beside the schedule shrink it. <b>Hide empty days</b> drops weekday columns with nothing in them, so a Monday-and-Tuesday schedule prints as two columns rather than five. <b>Collapse empty hours</b> folds stretches with nothing in them into a thin row labelled with the range it covers.</p>
         <p>Add your classes and office hours first, with the full grid on screen. A hidden day or a folded hour cannot be dragged into, so these are best left until the end — which is why they sit next to the schedule rather than inside a panel.</p></details>
-      <details><summary>The room or office is missing from my printed schedule</summary>
+      <details data-go="#fOffice"><summary>The room or office is missing from my printed schedule</summary>
         <p>Those come from what you enter, not from the course data. Office, phone, and email print at the top only when filled in under Your information, and an office-hours block shows a location only when its Location field is set. Course rooms come from the published schedule and print automatically.</p></details>
-      <details><summary>It printed on two pages</summary>
+      <details data-go="#optFit"><summary>It printed on two pages</summary>
         <p>"Fit the printed schedule to one page" is on by default under Display options. It condenses the course table and, if that is not enough, shrinks the sheet. A very full schedule with office hours, a signature line, and a long course list can still exceed one page, in which case the tool tells you rather than printing something unreadable.</p></details>
-      <details><summary>Can I draw office hours straight onto the grid?</summary>
+      <details data-go="#cDays"><summary>Can I draw office hours straight onto the grid?</summary>
         <p>Yes, with a mouse or trackpad. Drag across an empty part of a day column and a block is created, snapped to the nearest quarter hour. Drag an existing block to move it — including sideways into a different day — or its bottom edge to change the end time. A block set on several days shifts in time only, since moving one of its days elsewhere would be ambiguous; edit it in step 3 to change which days it falls on. On a touch screen use the form in step 3 instead, so dragging does not fight with scrolling. When several people are shown, a block you draw belongs to whichever person's schedule you drew it on.</p></details>
-      <details><summary>Can I put office hours on one person's sheet only?</summary>
+      <details data-go="#cWho"><summary>Can I put office hours on one person's sheet only?</summary>
         <p>Yes, when more than one person is selected. A "Whose schedule" picker appears in the office hours panel: choose a person, or "Everyone shown" for something like a department meeting. The list of saved blocks is grouped under each person's name, and the sections list is grouped the same way, so it stays clear whose is whose.</p>
         <p>If you later remove someone from the selection, any block that belonged to them is kept and listed under "owner not selected" rather than disappearing. Edit it to reassign it, or remove it.</p></details>
-      <details><summary>The calendar export asks for term dates</summary>
+      <details data-go="#fTermStart"><summary>The calendar export asks for term dates</summary>
         <p>A calendar file needs to know when the term starts and ends to repeat your classes weekly. Fill in Term start and Term end under Your information, then export again.</p></details>
-      <details><summary>The image download has no course table</summary>
+      <details data-go="#btnPng"><summary>The image download has no course table</summary>
         <p>That is deliberate. The image is meant as a door sign — the weekly grid and nothing else. Use Print for the full sheet.</p></details>
-      <details><summary>Can I sign it electronically?</summary>
+      <details data-go="#optSign"><summary>Can I sign it electronically?</summary>
         <p>Turn on the signature line under Display options and choose "Type my name" or "Draw my signature". A typed name prints in a script face; a drawn one is captured with your mouse, trackpad, or finger. The date fills in automatically and can be changed. Only your own line can be signed here — the chair and dean lines stay blank for them to sign.</p>
         <p>This is a convenience, not a verified signature. Nothing authenticates who typed or drew it, so check that your Institute Office accepts one before relying on it. A drawn signature is saved in this browser and is included if you save a draft file, so clear it before handing your laptop to someone else.</p></details>
-      <details><summary>How do I send this to my chair or dean?</summary>
+      <details data-go="#btnPrint"><summary>How do I send this to my chair or dean?</summary>
         <p>Use Print / Save as PDF, save the file, then attach it to an email you write yourself. "Copy summary as text" puts a plain-text version on the clipboard if you want the details in the body of the message as well as attached.</p></details>
-      <details><summary>Can I print it in color?</summary>
+      <details data-go="#optPrintColor"><summary>Can I print it in color?</summary>
         <p>Yes — "Print the blocks in full color" under Display options. Colors need <b>background graphics</b> switched on in the print dialog; without that the blocks print empty, which is why the plain version uses dark text with a colored edge instead.</p></details>
-      <details><summary>Is my contact information stored anywhere?</summary>
+      <details data-go="#btnReset"><summary>Is my contact information stored anywhere?</summary>
         <p>No. Course data is public and comes from the college's published schedule. Everything you type — office, phone, email, office hours — stays in your own browser and is never sent anywhere. Use "Save draft file" to move it to another computer, or "Reset everything" to clear it.</p></details>
-      <details><summary>Do I have to redo this every semester?</summary>
+      <details data-go="#termPick"><summary>Do I have to redo this every semester?</summary>
         <p>No. Your contact block, office hours, and release time stay put. When the new term's data loads you pick your sections again and the rest is already filled in.</p></details>
-      <details><summary>A lab I do not teach is on my schedule</summary>
+      <details data-go="#sectionList"><summary>A lab I do not teach is on my schedule</summary>
         <p>The published schedule lists the lecturer on the whole section, including the lab an instructional assistant covers — and hourly staff teaching labs are often not named in it at all. The section row says who else is listed. Two ways to take it off your sheet: untick the section in step 2 to remove it entirely, or open <b>Edit</b> and use <b>Remove this pattern</b> on the lab meeting to keep the lecture and drop the lab. Either way the hours stop counting toward your load, which is usually why the total looked too high.</p></details>
-      <details><summary>I am a lab assistant or adjunct — I do not have a load</summary>
+      <details data-go="#optNoLoad"><summary>I am a lab assistant or adjunct — I do not have a load</summary>
         <p>Tick <b>No load requirement</b> under Your information. The sheet then shows the hours you teach on their own, with no "of 15" beside them, no office-hours requirement, and no warning about being over a full load. Hours marked PT are listed as paid separately.</p></details>
-      <details><summary>I teach the lab but not the lecture — how do I drop the lecture?</summary>
+      <details data-go="#sectionList"><summary>I teach the lab but not the lecture — how do I drop the lecture?</summary>
         <p>Open <b>Edit</b> on the section. A course with a separate lecture and lab shows two meeting patterns, and each has its own <b>Remove this pattern</b> button. Remove the one you do not cover and press Apply; the blocks for it come off the grid and its hours stop counting toward your load. The pattern left behind is renumbered, and the last one keeps no Remove button, since a section needs at least one.</p>
         <p>If your contact hours should differ from what is left, set them in the same editor.</p></details>
-      <details><summary>Why does a course show "4 / 3 ch"?</summary>
+      <details data-go="#optCredits"><summary>Why does a course show "4 / 3 ch"?</summary>
         <p>Four credits, three contact hours. The official form counts contact hours — the time a course actually meets — and for some courses that is less than the credit value, usually where the extra credit is lab or shop time scheduled elsewhere. The tool works contact hours out from the meeting pattern, so a class meeting 165 minutes a week counts as three. An online section takes the same figure as the scheduled section of that course. Open <b>Edit</b> to set a different number for a section.</p>
         <p>The memorandum of agreement still uses credits, because that is what payment is based on.</p></details>
-      <details><summary>One of my courses shows a dash instead of credits</summary>
+      <details data-go="#sectionList"><summary>One of my courses shows a dash instead of credits</summary>
         <p>The published schedule has no credit value for that section yet, which usually means nobody is enrolled in it so far. It counts as nothing toward your load until it has one, and a notice at the top names any section in that state. Open <b>Edit</b> on the section and set the contact hours to count it properly; the figure sticks on your copy.</p></details>
-      <details><summary>Whose signature goes on which sheet?</summary>
+      <details data-go="#sigMode"><summary>Whose signature goes on which sheet?</summary>
         <p>A signature belongs to one person, so when several schedules are on screen it prints only on that person's sheet. Everyone else gets a blank line to sign themselves. A note under the signature options says whose it is. The chair and dean lines are always blank.</p></details>
-      <details><summary>I loaded a colleague and my own details disappeared</summary>
+      <details data-go="#facChips"><summary>I loaded a colleague and my own details disappeared</summary>
         <p>That is deliberate. Title, department, office, phone, email, notes, release time, office hours and signature belong to one person, so they are cleared when a different faculty member is loaded — otherwise the next schedule would carry the previous person's details, and their signature. What stays is anything that belongs to the institution: rates, payment dates, institute contacts, and your display preferences. Your own details come back the same way you entered them.</p></details>
-      <details><summary>Why can I not see all the steps?</summary>
+      <details data-go="#rolePickTop"><summary>Why can I not see all the steps?</summary>
         <p>The tool shows the parts that match what you said you came to do. Change that with the menu at the top of the page — "Everything" turns all of it on. Nothing is locked; this only decides what is on screen.</p></details>
-      <details><summary>How do I switch between Fall and Spring?</summary>
+      <details data-go="#termPick"><summary>How do I switch between Fall and Spring?</summary>
         <p>Use the term menu at the top of the page. Each term keeps its own sections, overload flags, and office hours, so marking something part-time in one does not affect the other. Your name, contact details, release time, and agreement settings follow you across both.</p></details>
-      <details><summary>Has anything changed since the last update?</summary>
+      <details data-go="#tabNews"><summary>Has anything changed since the last update?</summary>
         <p>Open <b>What's new</b> for the college-wide summary: sections added or removed, how many changed instructor or room, and how many are still unstaffed. Anything affecting a section of yours is shown as a notice at the top of the page, naming the section and what changed.</p></details>
-      <details><summary>Can I upload the schedule spreadsheet here?</summary>
+      <details data-go="#btnLoadData"><summary>Can I upload the schedule spreadsheet here?</summary>
         <p>No. The spreadsheet goes into the <b>data/raw/</b> folder of the repository, where it is turned into a schedule feed automatically and published. "Preview a feed file" in the export panel is a different thing: it opens an already-built feed so a new term can be checked before it goes live, and it only accepts the <b>sections.json</b> a build produces.</p></details>
-      <details><summary>How current is the course data?</summary>
+      <details data-go="#dataStatus"><summary>How current is the course data?</summary>
         <p>The header shows the date the schedule data was pulled. Rooms and times change during drop/add, so check the sheet against reality before you post it on a door.</p></details>
     </section>
     <section id="paneNews" role="tabpanel" aria-labelledby="tabNews" hidden>
@@ -888,6 +902,12 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
             the load.</li>
           <li>Labs that are no longer on your sheet no longer clash with anything, so the false
             overlaps between a lecture and the lab running alongside it are gone.</li>
+          <li><b>Search the help.</b> The button at the top now reads <b>? How do I…</b> and opens a
+            search box over all thirty-nine questions — or press <b>?</b> from anywhere on the page.
+            Type "release time", "lab", "two pages", "send to my dean"; whole questions work too.</li>
+          <li>Every answer carries a <b>Take me there</b> button that closes the help, opens the
+            step the control lives in, and puts the cursor in the field it was talking about. Press
+            Enter in the search box to follow the top answer straight away.</li>
           <li><b>Clear all</b> beside the names empties the list in one go, and a long list is now
             capped at twelve chips with <b>Show all</b> rather than filling the panel. Adding the
             whole college once no longer means picking two hundred names off one at a time.</li>
@@ -3347,7 +3367,106 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     $("helpBackdrop").hidden = false;
     $("helpModal").hidden = false;
     showHelpTab(tab || "walk");
-    $("helpClose").focus();
+    $("helpSearch").focus();
+  }
+
+  /* ===== finding an answer, and then the control it talks about =====
+     The forty questions below have been here all along; what was missing was
+     any way to reach one without opening Help, picking a tab and reading down
+     a list of folded summaries. Typing filters them, and each answer carries a
+     button that closes Help and puts the control itself in front of the user,
+     which is the part a page of prose cannot do. */
+  function faqEntries(){
+    return [].slice.call($("paneFaq").querySelectorAll("details"));
+  }
+  function goToControl(sel){
+    var target = document.querySelector(sel);
+    if(!target) return;
+    closeHelp();
+    // Open whatever is folded around it: the step panel, and the agreement or
+    // signature group inside it.
+    var node = target;
+    while(node && node !== document.body){
+      if(node.tagName === "DETAILS") node.open = true;
+      node = node.parentNode;
+    }
+    if(target.hidden && target.parentNode) target = target.parentNode;
+    setTimeout(function(){
+      try{ target.scrollIntoView({behavior:"smooth", block:"center"}); }
+      catch(e){ target.scrollIntoView(); }
+      target.classList.remove("findflash");
+      void target.offsetWidth;                      // restart the animation
+      target.classList.add("findflash");
+      setTimeout(function(){ target.classList.remove("findflash"); }, 2000);
+      var focusable = target.matches("input,select,textarea,button") ? target
+        : target.querySelector("input,select,textarea,button");
+      if(focusable){ try{ focusable.focus({preventScroll:true}); }catch(e){} }
+    }, 60);
+  }
+  function addGoButtons(){
+    faqEntries().forEach(function(d){
+      var sel = d.getAttribute("data-go");
+      if(!sel || d.querySelector(".go-row")) return;
+      var row = el("div","go-row");
+      var b2 = el("button","btn sm","Take me there"); b2.type="button";
+      b2.addEventListener("click", function(){ goToControl(sel); });
+      row.appendChild(b2);
+      d.appendChild(row);
+    });
+  }
+  function filterHelp(q){
+    var phrase = String(q||"").toLowerCase().trim();
+    var terms = phrase.split(/\s+/).filter(Boolean);
+    // People type whole questions — "how do I print" — and every answer has to
+    // contain every word for a match, so the filler words throw it away. They
+    // are dropped from what must match, as long as something real is left.
+    var FILLER = /^(a|an|and|are|be|can|do|does|for|from|how|i|in|is|it|me|my|of|on|or|the|then|this|to|what|when|where|why|with|you|your)$/;
+    var core = terms.filter(function(t){ return !FILLER.test(t); });
+    if(core.length) terms = core;
+    var all = faqEntries(), hits = 0;
+    // Matching on the body alone is too loose — half the answers mention the
+    // word "time" somewhere — so a word in the question itself counts for far
+    // more than the same word buried in the answer, and the list is reordered
+    // best-first rather than left in the order it happens to be written in.
+    var scored = all.map(function(d){
+      var head = d.querySelector("summary").textContent.toLowerCase();
+      var body = d.textContent.toLowerCase();
+      var score = 0, match = true;
+      terms.forEach(function(t){
+        if(head.indexOf(t) > -1) score += 10;
+        else if(body.indexOf(t) > -1) score += 1;
+        else match = false;
+      });
+      if(phrase && head.indexOf(phrase) > -1) score += 25;
+      return {d:d, score:score, match:!terms.length || match};
+    });
+    // Where nothing contains every word, fall back to anything containing one
+    // of them. "My hours are wrong" matches no question as written, and a list
+    // of the answers about hours beats a blank panel.
+    var loose = false;
+    if(terms.length && !scored.some(function(s){ return s.match; })){
+      loose = true;
+      scored.forEach(function(s){ s.match = s.score > 0; });
+    }
+    var box = $("paneFaq");
+    scored.slice().sort(function(a2,b2){ return b2.score - a2.score; })
+      .forEach(function(s){ box.appendChild(s.d); });
+    var best = Math.max.apply(null, scored.map(function(s){ return s.match ? s.score : 0; }));
+    scored.forEach(function(s){
+      s.d.hidden = !s.match;
+      // Open the answers that matched on their own question, not every answer
+      // that happens to use the word somewhere.
+      s.d.open = !!terms.length && s.match && s.score >= Math.max(10, best);
+      if(s.match) hits++;
+    });
+    var note = $("helpFindCount");
+    if(!terms.length) note.textContent = all.length + " questions. Type to narrow them down.";
+    else if(!hits) note.textContent = "Nothing matches that. Try a word from the form — load, lab, " +
+      "release, signature, overload, calendar.";
+    else if(loose) note.textContent = "Nothing matches all of that. " + hits +
+      (hits === 1 ? " answer mentions" : " answers mention") + " part of it.";
+    else note.textContent = hits + (hits === 1 ? " answer" : " answers") + " for \u201c" + q.trim() + "\u201d.";
+    if(terms.length) showHelpTab("faq");
   }
   function closeHelp(){
     $("helpBackdrop").hidden = true;
@@ -3897,7 +4016,26 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     });
     $("roleSkip").addEventListener("click", function(){ chooseRole("all"); });
     $("rolePickTop").addEventListener("change", function(){ chooseRole($("rolePickTop").value); });
-    $("btnHelp").addEventListener("click", function(){ openHelp("walk"); });
+    $("btnHelp").addEventListener("click", function(){ openHelp("faq"); });
+    addGoButtons();
+    filterHelp("");
+    $("helpSearch").addEventListener("input", function(e){ filterHelp(e.target.value); });
+    // "?" from anywhere but a field opens the help with the box focused.
+    document.addEventListener("keydown", function(e){
+      if(e.key !== "?" || e.ctrlKey || e.metaKey || e.altKey) return;
+      var t = e.target;
+      if(t && (t.matches("input,select,textarea") || t.isContentEditable)) return;
+      if(!$("helpModal").hidden) return;
+      e.preventDefault();
+      openHelp("faq");
+    });
+    $("helpSearch").addEventListener("keydown", function(e){
+      if(e.key !== "Enter") return;
+      // Enter follows the best answer, which is the one now at the top.
+      var top = faqEntries().filter(function(d){ return !d.hidden; })[0];
+      var b3 = top && top.querySelector(".go-row button");
+      if(b3) b3.click();
+    });
     $("helpClose").addEventListener("click", closeHelp);
     $("helpBackdrop").addEventListener("click", closeHelp);
     $("tabWalk").addEventListener("click", function(){ showHelpTab("walk"); });

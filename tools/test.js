@@ -648,10 +648,14 @@ setTimeout(() => {
   ok('help is closed at start', $('helpModal').hidden === true);
   $('btnHelp').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   ok('help opens', $('helpModal').hidden === false && $('helpBackdrop').hidden === false);
-  ok('walkthrough shown first', $('paneWalk').hidden === false && $('paneFaq').hidden === true);
+  // The button asks "How do I…", so it opens on the questions rather than the
+  // walkthrough — which is one tab away and tested next.
+  ok('questions shown first', $('paneFaq').hidden === false && $('paneWalk').hidden === true);
+  $('tabWalk').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  ok('walkthrough tab switches', $('paneWalk').hidden === false && $('paneFaq').hidden === true);
   ok('walkthrough covers all six panels', $('paneWalk').querySelectorAll('ol.walk li').length === 6);
   $('tabFaq').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
-  ok('FAQ tab switches', $('paneFaq').hidden === false && $('paneWalk').hidden === true);
+  ok('FAQ tab switches back', $('paneFaq').hidden === false && $('paneWalk').hidden === true);
   ok('FAQ has entries', $('paneFaq').querySelectorAll('details').length >= 10);
   ok('FAQ tab marked selected', $('tabFaq').getAttribute('aria-selected') === 'true');
   doc.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
@@ -995,6 +999,72 @@ setTimeout(() => {
         ok('and ticking it again takes them back off', hrs() === 15);
       }
 
+      // ---- finding an answer, and the control it talks about ----
+      // The questions were always in the page; what was missing was any way to
+      // reach one without opening Help, picking a tab and reading down a list.
+      const fnd = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true,
+                                    url: 'https://example.org/' });
+      const nw = fnd.window, nd = fnd.window.document, n$ = id => nd.getElementById(id);
+      setTimeout(() => {
+        n$('roleSkip').dispatchEvent(new nw.MouseEvent('click', { bubbles: true }));
+        const qs = () => [...nd.querySelectorAll('#paneFaq details')];
+        const shown = () => qs().filter(d => !d.hidden);
+        ok('the help carries a pile of questions', qs().length > 30);
+        ok('every question can point at a control',
+           qs().every(d => d.getAttribute('data-go')));
+        ok('and every one offers to take you there',
+           qs().every(d => !!d.querySelector('.go-row button')));
+
+        n$('btnHelp').dispatchEvent(new nw.MouseEvent('click', { bubbles: true }));
+        ok('the help opens on the questions', n$('paneFaq').hidden === false);
+        ok('with the search box focused', nd.activeElement === n$('helpSearch'));
+        ok('and nothing filtered yet', shown().length === qs().length);
+
+        const type = v => {
+          n$('helpSearch').value = v;
+          n$('helpSearch').dispatchEvent(new nw.Event('input', { bubbles: true }));
+        };
+        type('release time');
+        ok('searching narrows the list', shown().length > 0 && shown().length < qs().length);
+        ok('and finds the release-time answer',
+           shown().some(d => /release time/i.test(d.querySelector('summary').textContent)));
+        ok('the best answers come first',
+           /release time/i.test(shown()[0].querySelector('summary').textContent));
+        ok('a top match is opened rather than left folded', shown()[0].open === true);
+        ok('a loose match is listed but not opened',
+           shown().filter(d => d.open).length < shown().length);
+        ok('the count is reported', /answer/.test(n$('helpFindCount').textContent));
+
+        type('qqqzzz');
+        ok('a miss says so instead of showing nothing', /Nothing matches/.test(n$('helpFindCount').textContent));
+        ok('and hides every question', shown().length === 0);
+
+        // The part prose cannot do: put the control itself in front of them.
+        // A whole question, filler words and all, still ranks the right answer
+        // first — "how do I" must not be required to appear in every match.
+        type('Where do I enter release time');
+        const one = shown();
+        ok('a typed-out question still ranks the right answer first',
+           one.length && /Where do I enter release time/.test(one[0].querySelector('summary').textContent));
+        if (one.length) {
+          n$('p4').open = false;
+          one[0].querySelector('.go-row button')
+                .dispatchEvent(new nw.MouseEvent('click', { bubbles: true }));
+          ok('taking the offer closes the help', n$('helpModal').hidden === true);
+          ok('and opens the step the control lives in', n$('p4').open === true);
+        }
+        // Enter follows the top answer without reaching for the mouse.
+        n$('btnHelp').dispatchEvent(new nw.MouseEvent('click', { bubbles: true }));
+        n$('p6').open = false;
+        type('how do I print');
+        const first = shown()[0];
+        ok('filler words do not throw the match away', !!first);
+        n$('helpSearch').dispatchEvent(new nw.KeyboardEvent('keydown', { key:'Enter', bubbles:true }));
+        ok('Enter follows the top answer', n$('helpModal').hidden === true);
+        runManyChecks();
+      }, 400);
+
+      function runManyChecks(){
       // ---- a long faculty list can be cleared ----
       // A chair who once added the whole college gets a panel of chips and, up
       // to now, no way out but picking them off one at a time.
@@ -1041,6 +1111,7 @@ setTimeout(() => {
         }
         runWeakChecks();
       }, 400);
+      }
 
       function runWeakChecks(){
       // ---- weak room evidence is offered, never acted on ----
