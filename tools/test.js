@@ -146,10 +146,14 @@ setTimeout(() => {
     .dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   ok('room override reaches the sheet', /MAS 214/.test(doc.querySelector('.sheet').textContent));
   const before = doc.querySelectorAll('.blk').length;
-  [...edit.querySelectorAll('.btn')].find(b => /Add a second/.test(b.textContent))
+  [...edit.querySelectorAll('.btn')].find(b => /Add another meeting pattern/.test(b.textContent))
     .dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   const rows2 = edit.querySelectorAll('.pattern');
   ok('second pattern row added', rows2.length === 2);
+  ok('every pattern can be removed once there are two',
+     [...rows2].every(r => [...r.querySelectorAll('.btn')]
+       .some(b => /Remove this pattern/.test(b.textContent) && b.hidden === false)));
+
   rows2[1].querySelector('input[value=F]').checked = true;
   rows2[1].querySelectorAll('input[type=time]')[0].value = '09:00';
   rows2[1].querySelectorAll('input[type=time]')[1].value = '10:50';
@@ -158,6 +162,29 @@ setTimeout(() => {
     .dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   ok('second pattern draws a new block', doc.querySelectorAll('.blk').length === before + 1);
   ok('second pattern room on sheet', /MAS 118/.test(doc.querySelector('.sheet').textContent));
+
+  // teaching the lab but not the lecture: drop the FIRST pattern
+  const edit2 = doc.querySelector('.sec-edit:not([hidden])') || edit;
+  const two = edit2.querySelectorAll('.pattern');
+  if (two.length === 2) {
+    const firstTimes = [...two[0].querySelectorAll('input[type=time]')].map(i => i.value).join();
+    [...two[0].querySelectorAll('.btn')].find(b => /Remove this pattern/.test(b.textContent))
+      .dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+    const left = edit2.querySelectorAll('.pattern');
+    ok('the first pattern can be removed', left.length === 1);
+    ok('the one left is the second, not the first',
+       [...left[0].querySelectorAll('input[type=time]')].map(i => i.value).join() !== firstTimes);
+    ok('the last pattern hides its Remove button',
+       [...left[0].querySelectorAll('.btn')]
+         .filter(b => /Remove this pattern/.test(b.textContent))
+         .every(b => b.hidden === true));
+    ok('and it is relabelled, not left as pattern 2',
+       !/pattern 2/.test(left[0].querySelector('label').textContent));
+    [...edit2.querySelectorAll('.btn')].find(b => b.textContent === 'Apply')
+      .dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+    ok('removing a pattern takes its block off the grid',
+       doc.querySelectorAll('.blk').length === before);
+  }
 
   // 6. options
   ok('no enrollment column', !/Enrolled/.test(doc.querySelector('.sheet').textContent));

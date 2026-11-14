@@ -112,6 +112,10 @@ Non-course blocks now render as `10 am–11 am · GMH 104` on a single line, and
 
 Worth remembering when testing print output: the first check for this passed because the string being searched for also appeared in the page header. Use a value that can only come from the element under test.
 
+### Meeting patterns
+
+A section can carry several patterns — a lecture and a lab, say — and every one of them has a Remove button, not just the ones after the first. Someone assigned only the lab of a course needs to drop the lecture, which is pattern 1. `renumber()` relabels what is left after a removal and hides the Remove button on the last remaining pattern, since a section cannot have none.
+
 ### Tightening the grid
 
 Two opt-in switches, in the toolbar beside the schedule rather than inside Display options, both off by default. They belong there because they are the last step: a hidden day or a folded hour cannot be dragged into, so compressing the grid before the office hours are in makes the office hours hard to add.

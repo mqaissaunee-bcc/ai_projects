@@ -824,6 +824,9 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         <p>No. Course data is public and comes from the college's published schedule. Everything you type — office, phone, email, office hours — stays in your own browser and is never sent anywhere. Use "Save draft file" to move it to another computer, or "Reset everything" to clear it.</p></details>
       <details><summary>Do I have to redo this every semester?</summary>
         <p>No. Your contact block, office hours, and release time stay put. When the new term's data loads you pick your sections again and the rest is already filled in.</p></details>
+      <details><summary>I teach the lab but not the lecture — how do I drop the lecture?</summary>
+        <p>Open <b>Edit</b> on the section. A course with a separate lecture and lab shows two meeting patterns, and each has its own <b>Remove this pattern</b> button. Remove the one you do not cover and press Apply; the blocks for it come off the grid and its hours stop counting toward your load. The pattern left behind is renumbered, and the last one keeps no Remove button, since a section needs at least one.</p>
+        <p>If your contact hours should differ from what is left, set them in the same editor.</p></details>
       <details><summary>Why does a course show "4 / 3 ch"?</summary>
         <p>Four credits, three contact hours. The official form counts contact hours — the time a course actually meets — and for some courses that is less than the credit value, usually where the extra credit is lab or shop time scheduled elsewhere. The tool works contact hours out from the meeting pattern, so a class meeting 165 minutes a week counts as three. An online section takes the same figure as the scheduled section of that course. Open <b>Edit</b> to set a different number for a section.</p>
         <p>The memorandum of agreement still uses credits, because that is what payment is based on.</p></details>
@@ -859,6 +862,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
           <li>The term wording and dates, the signature date, and the name as signed now fill
             themselves in from the term you are viewing, today's date, and your printed name — and
             stop doing so the moment you type your own.</li>
+          <li>Any meeting pattern can now be removed, not just the later ones — so someone covering
+            the lab of a course but not its lecture can drop the lecture.</li>
           <li>"Hide empty days" and "Collapse empty hours" have moved out of Display options and sit
             beside the schedule, as <b>Tidy up</b>. Build your week on the full grid, then tick them
             to shrink it for printing.</li>
@@ -1518,10 +1523,21 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     var rows=el("div"); box.appendChild(rows);
     var patterns = e.meetings.length ? e.meetings : [{d:[],s:"",e:"",rm:""}];
 
+    function renumber(){
+      // Patterns are numbered by position, so removing one has to relabel the
+      // rest, and the last remaining pattern loses its Remove button.
+      var list = [].slice.call(rows.children);
+      list.forEach(function(r, i){
+        if(r._label) r._label.textContent = "Meeting days" + (list.length > 1 ? " — pattern " + (i+1) : "");
+        if(r._remove) r._remove.hidden = list.length < 2;
+      });
+    }
     function addRow(m, n){
       var row=el("div","pattern");
       var f1=el("div","field");
-      f1.appendChild(el("label",null, "Meeting days"+(n>0?" — pattern "+(n+1):"")));
+      var dayLab = el("label",null,"Meeting days");
+      row._label = dayLab;
+      f1.appendChild(dayLab);
       var db=el("div","daybox");
       DAYS.forEach(function(d){
         var lb=el("label"); var inp=document.createElement("input"); inp.type="checkbox"; inp.value=d.k;
@@ -1541,22 +1557,28 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       var ir=document.createElement("input"); ir.type="text"; ir.value=m.rm||""; ir.placeholder="MAS 212";
       ir.setAttribute("aria-label","Room for "+s.id); fr.appendChild(ir);
       g.appendChild(fs); g.appendChild(fe); g.appendChild(fr); row.appendChild(g);
-      if(n>0){
-        var rm=el("button","btn sm ghost danger","Remove this pattern"); rm.type="button";
-        rm.addEventListener("click", function(){ rows.removeChild(row); });
-        row.appendChild(rm);
-      }
+      // Any pattern can go, not just the later ones: someone may teach the lab
+      // of a course and not its lecture, which is the first pattern.
+      var rm=el("button","btn sm ghost danger","Remove this pattern"); rm.type="button";
+      rm.addEventListener("click", function(){
+        rows.removeChild(row);
+        renumber();
+      });
+      row._remove = rm;
+      row.appendChild(rm);
       row._read=function(){
         return {d:[].slice.call(db.querySelectorAll("input:checked")).map(function(x){ return x.value; }),
                 s:is.value||null, e:ie.value||null, rm:ir.value.trim()||null, est:false};
       };
       rows.appendChild(row);
+      renumber();
     }
     patterns.forEach(addRow);
 
-    box.appendChild(el("p","hint","For an online course with no set time, tick the days you want it "
-      + "shown on and leave start and end blank. Tick nothing to keep it off the day columns."));
-    var addBtn=el("button","btn sm ghost","+ Add a second meeting pattern"); addBtn.type="button";
+    box.appendChild(el("p","hint","Teaching only part of a section — the lab but not the lecture, say? "
+      + "Remove the pattern you do not cover. For an online course with no set time, tick the days you "
+      + "want it shown on and leave start and end blank. Tick nothing to keep it off the day columns."));
+    var addBtn=el("button","btn sm ghost","+ Add another meeting pattern"); addBtn.type="button";
     addBtn.addEventListener("click", function(){
       addRow({d:[],s:"",e:"",rm:""}, rows.children.length);
     });
