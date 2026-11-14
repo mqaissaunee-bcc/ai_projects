@@ -566,6 +566,29 @@ setTimeout(() => {
   ok('cannot switch every session off',
      [...$('potBoxes').querySelectorAll('input[type=checkbox]')].some(b => b.checked));
 
+  // ---- the whole section code heads each block ----
+  ok('block titles carry the full section code',
+     [...doc.querySelectorAll('.blk.course b, .blk b')]
+       .filter(b => /^[A-Z]{3,4}-\d{3}/.test(b.textContent))
+       .every(b => /^[A-Z]{3,4}-\d{3}-\w+$/.test(b.textContent.trim())));
+  ok('the room is no longer crowded in beside the section number',
+     ![...doc.querySelectorAll('.blk .l3')].some(n => /^\d{3}[A-Z]{2} · /.test(n.textContent)));
+
+  // ---- someone with no load requirement is reported, not measured ----
+  const lineText = () => facultySheets()[0].querySelector('.load-line').textContent;
+  ok('a load is normally stated as a target', /Contact hours: [\d.]+ of [\d.]+/.test(lineText()));
+  $('optNoLoad').checked = true;
+  $('optNoLoad').dispatchEvent(new window.Event('change', { bubbles: true }));
+  ok('no load requirement drops the "of 15"',
+     /Contact hours: [\d.]+(\s|$|·)/.test(lineText()) && !/Contact hours: [\d.]+ of/.test(lineText()));
+  ok('and asks for no office hours', !/Office hours: [\d.]+ of/.test(lineText()));
+  ok('and stops warning about being over a full load',
+     !facultySheets()[0].querySelector('.load-warn'));
+  ok('the full-load field is disabled while it is on', $('fLoadBase').disabled === true);
+  $('optNoLoad').checked = false;
+  $('optNoLoad').dispatchEvent(new window.Event('change', { bubbles: true }));
+  ok('unticking restores the load target', /Contact hours: [\d.]+ of [\d.]+/.test(lineText()));
+
   // ---- a signature goes on one sheet only ----
   $('optSign').checked = true;
   $('optSign').dispatchEvent(new window.Event('change', { bubbles: true }));

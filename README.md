@@ -112,6 +112,16 @@ Non-course blocks now render as `10 am–11 am · GMH 104` on a single line, and
 
 Worth remembering when testing print output: the first check for this passed because the string being searched for also appeared in the page header. Use a value that can only come from the element under test.
 
+### Hybrid sections
+
+A section meeting less than the other sections of the same course is a hybrid: the rest of its hours are online. `build_schedule_data.py` takes the most common contact-hour figure among a course's scheduled sections and raises any section below it to that figure, never lowering one that meets more. On the fall feed this corrected 46 sections — MATH-145's `ML` sections meet 105 minutes against their siblings' 210, and were counting 2 contact hours against a 4-credit course.
+
+The same most-common figure is used for a course's online sections, which previously took whichever scheduled section happened to come first — that gave MATH-145-DE01A 2 hours because an `ML` section was first in the file.
+
+### People who carry no load
+
+The load model assumes a full-time faculty member who owes 15 contact hours and office hours in proportion. A lab assistant or adjunct owes neither, and telling them they are 15 hours short is worse than saying nothing. `profile.noLoad` turns the comparison off: the sheet reports contact hours on their own, `officeRequired` returns 0, the over-a-full-load warning is suppressed, and PT hours are labelled "paid separately" rather than "overload". It is a person-scoped field, so it clears when a different faculty member is loaded.
+
 ### Meeting patterns
 
 A section can carry several patterns — a lecture and a lab, say — and every one of them has a Remove button, not just the ones after the first. Someone assigned only the lab of a course needs to drop the lecture, which is pattern 1. `renumber()` relabels what is left after a removal and hides the Remove button on the last remaining pattern, since a section cannot have none.

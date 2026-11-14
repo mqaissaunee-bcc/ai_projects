@@ -752,11 +752,30 @@ def main():
         except (IOError, ValueError):
             print("  ! could not read --previous to fill gaps")
 
-    scheduled_ch = {}
+    scheduled_ch, seen_ch = {}, defaultdict(list)
     for sec in sections:
         sec["ch"] = contact_hours(sec["m"], sec["cr"], sec.get("mode"))
         if any(m.get("s") for m in sec["m"]) and sec.get("mode") != "hybrid":
-            scheduled_ch.setdefault(sec["c"], sec["ch"])
+            seen_ch[sec["c"]].append(sec["ch"])
+    # Sections of one course are the same course. The usual figure among them is
+    # the course's contact hours; a section meeting less than that is a hybrid
+    # whose remaining hours are online, so it is raised to the course figure.
+    # A section meeting MORE keeps its own, since that time is really scheduled.
+    for course, vals in seen_ch.items():
+        counts = {}
+        for v in vals:
+            counts[v] = counts.get(v, 0) + 1
+        top = max(counts.values())
+        scheduled_ch[course] = max(v for v, n in counts.items() if n == top)
+    raised = 0
+    for sec in sections:
+        usual = scheduled_ch.get(sec["c"])
+        if usual and any(m.get("s") for m in sec["m"]) and sec["ch"] < usual:
+            sec["ch"] = usual
+            raised += 1
+    if raised:
+        print(f"  {raised} sections meeting less than others of the same course raised to the "
+              f"course's usual contact hours (hybrids)")
     # An online section of a course that also meets in a room has the same
     # contact hours as that section — the course does, not the room.
     from_meeting = 0
