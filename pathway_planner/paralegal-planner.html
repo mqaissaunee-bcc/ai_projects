@@ -1,0 +1,1734 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Brookdale Pathway Planner: Paralegal Studies Program, A.A.S.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F5F8FC;--surface:#FFFFFF;--surface-2:#EAF0F8;--ink:#14213D;--ink-2:#4A5873;--line:#D3DCE8;
+  --navy:#0047AB;--green:#00875A;--green-b:#00A86B;--amber:#A86200;--violet:#6B3FC0;--red:#C62B3A;--teal:#127A86;
+  --term-bg:#0F1B2E;--term-2:#17263F;--term-ink:#DCE6F5;
+  --shadow:0 1px 2px rgba(20,33,61,.06),0 8px 24px -12px rgba(20,33,61,.18);
+  --display:"Bricolage Grotesque","Avenir Next","Segoe UI",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible","Segoe UI",system-ui,-apple-system,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0D1524;--surface:#142036;--surface-2:#1B2A45;--ink:#E5ECF6;--ink-2:#9EAECA;--line:#2A3A58;
+  --navy:#7FA8F7;--green:#2ED39B;--green-b:#2ED39B;--amber:#F0B04A;--violet:#B9A2FF;--red:#FF7A86;--teal:#5FD0DC;
+  --term-bg:#0A111F;--term-2:#111C30;--shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px -14px rgba(0,0,0,.6);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0D1524;--surface:#142036;--surface-2:#1B2A45;--ink:#E5ECF6;--ink-2:#9EAECA;--line:#2A3A58;
+  --navy:#7FA8F7;--green:#2ED39B;--green-b:#2ED39B;--amber:#F0B04A;--violet:#B9A2FF;--red:#FF7A86;--teal:#5FD0DC;
+  --term-bg:#0A111F;--term-2:#111C30;--shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px -14px rgba(0,0,0,.6);color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 76px);scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--surface)}
+h1,h2,h3,h4{font-family:var(--display);line-height:1.1;margin:0;letter-spacing:-.01em}
+p{margin:0 0 1em}
+a{color:var(--navy)}
+code{font-family:var(--mono);font-size:.88em;background:var(--surface-2);padding:.1em .35em;border-radius:4px}
+:focus-visible{outline:3px solid var(--navy);outline-offset:2px;border-radius:4px}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:var(--surface);border-bottom:1px solid var(--line)}
+.top-in{max-width:1240px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:18px}
+.brand{white-space:nowrap;font-family:var(--display);font-weight:800;font-size:19px;display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
+.brand-mark{display:flex;align-items:center;gap:0}
+.brand-mark i{width:9px;height:9px;border-radius:50%;display:block;border:2px solid var(--surface)}
+.brand-mark i+i{margin-left:-2px}
+.brand-mark i:nth-child(1){background:var(--navy)}.brand-mark i:nth-child(2){background:var(--green-b)}.brand-mark i:nth-child(3){background:var(--violet)}.brand-mark i:nth-child(4){background:var(--amber)}
+.meter{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:14px;color:var(--ink-2)}
+.meter-bar{width:150px;height:8px;border-radius:8px;background:var(--surface-2);overflow:hidden}
+.meter-bar span{display:block;height:100%;width:0;background:var(--green-b);transition:width .5s ease}
+.theme-btn{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:6px 14px 6px 8px;font-size:14px}
+.theme-btn .knob{width:30px;height:18px;border-radius:9px;background:var(--surface-2);position:relative;border:1px solid var(--line)}
+.theme-btn .knob::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--amber);transition:transform .25s}
+[data-theme="dark"] .theme-btn .knob::after{transform:translateX(12px);background:var(--navy)}
+
+/* buttons */
+.btn{border:1px solid transparent;border-radius:10px;padding:10px 18px;font-weight:700;font-size:15px;background:var(--navy);color:#fff;text-decoration:none;display:inline-flex;align-items:center;gap:8px}
+[data-theme="dark"] .btn{color:#0D1524}
+.btn.ghost{background:transparent;border-color:var(--line);color:var(--ink)}
+.btn.go{background:var(--green-b);color:#04261A}
+.btn.small{padding:6px 12px;font-size:13.5px;border-radius:8px}
+.btn:hover{filter:brightness(1.07)}
+.btn:disabled{opacity:.45;cursor:default;filter:none}
+
+/* hero */
+.hero{max-width:1240px;margin:0 auto;padding:52px 20px 40px;display:grid;grid-template-columns:1.1fr 1fr;gap:48px;align-items:start}
+.hero h1{font-size:clamp(38px,5vw,62px);font-weight:800;letter-spacing:-.03em}
+.hero-sub{font-size:19px;color:var(--ink-2);max-width:34em;margin:20px 0 26px}
+.who{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 20px;box-shadow:var(--shadow);display:grid;grid-template-columns:1fr 1fr;gap:14px 16px;max-width:560px}
+.who h2{grid-column:1/-1;font-size:18px}
+.fld label,.fld .lbl{display:block;font-size:13.5px;font-weight:700;margin-bottom:4px}
+.fld input,.fld select,.fld textarea{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:9px 11px;font-size:15.5px}
+.fld textarea{min-height:84px;resize:vertical}
+.fld.full{grid-column:1/-1}
+.who .hint{grid-column:1/-1;font-size:13.5px;color:var(--ink-2);margin:0}
+.cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}
+
+/* pathway rail (the signature element) */
+.rail{background:var(--term-bg);color:var(--term-ink);border-radius:20px;padding:22px 24px 18px;box-shadow:var(--shadow);position:relative}
+.rail h2{font-size:20px;color:#fff;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.rail h2 span{font:600 13px var(--body);color:#8193B2}
+.rail ol{list-style:none;margin:18px 0 6px;padding:0;position:relative}
+.rail ol::before{content:"";position:absolute;left:15px;top:14px;bottom:30px;width:4px;border-radius:2px;background:#24365A}
+.stop{display:grid;grid-template-columns:34px 1fr;gap:14px;padding:0 0 16px;position:relative}
+.stop a{grid-column:2;color:inherit;text-decoration:none;display:block;border-radius:10px;padding:4px 10px 6px;margin:-4px -10px 0}
+.stop a:hover{background:#17263F}
+.node{width:34px;height:34px;border-radius:50%;background:var(--term-bg);border:4px solid #3A4B69;display:grid;place-items:center;font:700 13px var(--mono);color:#8193B2;position:relative;z-index:1;transition:.35s}
+.stop.ok .node{border-color:var(--sc);background:var(--sc);color:#04121F}
+.stop.ok + .stop::before{content:"";position:absolute;left:15px;top:-16px;height:18px;width:4px;background:var(--sc-prev,#3A4B69)}
+.stop b{display:block;font:700 16px var(--display);color:#fff}
+.stop .sv{display:block;font-size:14px;color:#9FB0CC;line-height:1.45}
+.stop .sv em{font-style:normal;color:#DCE6F5}
+.stop.ok .sv{color:#C9D6EA}
+.stop.goal .node{border-radius:9px}
+.rail-foot{border-top:1px dashed #2A3A58;padding-top:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13.5px;color:#8193B2;flex-wrap:wrap}
+.rail-foot .btn.ghost{color:#DCE6F5;border-color:#2E4063}
+
+/* layout */
+.wrap{max-width:1240px;margin:0 auto;padding:0 20px 80px;display:grid;grid-template-columns:230px minmax(0,1fr);gap:44px}
+.side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 80px);align-self:start}
+.side nav ol{list-style:none;margin:0;padding:0}
+.side a{display:grid;grid-template-columns:26px 1fr auto;align-items:center;gap:8px;padding:8px 10px;border-radius:9px;text-decoration:none;color:var(--ink-2);font-size:15px}
+.side a .n{font:600 12px var(--mono);color:var(--sk)}
+.side a .c{font-size:12px;font-family:var(--mono)}
+.side a.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.side a.done .c{color:var(--green)}
+.side-note{margin-top:20px;font-size:13.5px;color:var(--ink-2);padding:12px;border-left:3px solid var(--line)}
+main{min-width:0}
+section.mod{padding:56px 0 8px;border-top:1px solid var(--line)}
+section.mod:first-child{border-top:0;padding-top:12px}
+.mod-head{display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:start;margin-bottom:22px}
+.mod-num{font:800 64px/0.9 var(--display);color:var(--k);letter-spacing:-.04em}
+.mod-head h2{font-size:clamp(30px,3.6vw,42px);font-weight:800}
+.mod-head p{color:var(--ink-2);margin:10px 0 0;max-width:42em}
+#roles{--k:var(--navy)}#credentials{--k:var(--green)}#certs{--k:var(--violet)}#industry{--k:var(--amber)}#transfer{--k:var(--teal)}#internship{--k:var(--red)}#review{--k:var(--ink)}
+.status{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--k);border-radius:4px 12px 12px 4px;padding:12px 18px;margin:0 0 20px;font-size:15.5px}
+.status b{font-family:var(--display);font-size:20px;color:var(--k)}
+.status .pill{margin-left:auto}
+.pill{font:700 12.5px var(--body);padding:3px 10px;border-radius:999px;white-space:nowrap;background:var(--surface-2);color:var(--ink-2);border:1px solid var(--line)}
+.pill.ok{background:var(--green-b);border-color:var(--green-b);color:#04261A}
+.pill.warn{background:rgba(198,43,58,.1);border-color:var(--red);color:var(--red)}
+.callout{border-radius:12px;padding:14px 18px;background:var(--surface-2);margin:18px 0;max-width:46em;font-size:15.5px}
+.callout strong{color:var(--k)}
+.block-h{font-size:22px;font-weight:800;margin:34px 0 12px}
+.block-h small{display:block;font:400 15px/1.5 var(--body);color:var(--ink-2);margin-top:6px;letter-spacing:0}
+
+/* filters */
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.chipf{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;font-weight:700;font-size:14px;display:flex;gap:8px;align-items:center}
+.chipf i{width:10px;height:10px;border-radius:3px;background:var(--tc,var(--ink-2))}
+.chipf[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.search{flex:1;min-width:200px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 16px;font-size:15px}
+
+/* selectable cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.pick{position:relative;text-align:left;background:var(--surface);border:1.5px solid var(--line);border-radius:14px;padding:14px 16px 14px 16px;display:flex;flex-direction:column;gap:6px;transition:border-color .2s,background .2s,transform .2s}
+.pick:hover{border-color:var(--k)}
+.pick[aria-pressed="true"]{border-color:var(--k);background:color-mix(in srgb,var(--k) 9%,var(--surface));box-shadow:inset 4px 0 0 var(--k)}
+.pick .tick{position:absolute;top:12px;right:12px;width:24px;height:24px;border-radius:7px;border:2px solid var(--line);display:grid;place-items:center;font:700 13px var(--mono);color:transparent;background:var(--bg)}
+.pick[aria-pressed="true"] .tick{background:var(--k);border-color:var(--k);color:var(--surface)}
+.pick .id{font:600 12px var(--mono);color:var(--ink-2)}
+.pick h4{font-size:17px;padding-right:30px}
+.pick p{margin:0;font-size:14.5px;color:var(--ink-2);line-height:1.45}
+.pick .meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto;padding-top:4px}
+.tagc{font:600 11.5px var(--body);padding:2px 8px;border-radius:999px;background:var(--surface-2);color:var(--ink-2)}
+.tagc.lv-Entry{color:var(--green)}.tagc.lv-Mid{color:var(--amber)}.tagc.lv-Senior{color:var(--red)}
+.tagc.cat{color:var(--catc)}
+.tagc.match{background:var(--k);color:var(--surface)}
+
+/* credentials */
+.creds{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.cred{padding:18px}
+.cred .big{font:800 34px/1 var(--display);color:var(--k);margin:6px 0 2px}
+.cred .big small{font:400 14px var(--body);color:var(--ink-2)}
+.cred a{font-size:14px;font-weight:700}
+.stack{display:flex;gap:6px;align-items:center;margin:16px 0 4px;font-size:14px;color:var(--ink-2);flex-wrap:wrap}
+.stack span{padding:4px 10px;border-radius:8px;background:var(--surface-2);font-weight:700;color:var(--ink)}
+.plan{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:16px}
+.plan.n3{grid-template-columns:repeat(3,minmax(0,1fr))}.plan.n2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.sem{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.sem-h{padding:12px 14px;background:var(--surface-2);display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.sem-h h4{font-size:16px}
+.sem-h span{font:600 12.5px var(--mono);color:var(--ink-2)}
+.course{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:start;padding:9px 14px;border-top:1px solid var(--line);font-size:14.5px;line-height:1.35;cursor:pointer}
+.course input{margin-top:3px;accent-color:var(--green-b);width:16px;height:16px}
+.course .cc{font:600 12px var(--mono);color:var(--ink-2);display:block}
+.course .cr{font:600 12px var(--mono);color:var(--ink-2)}
+.course.done .ct{text-decoration:line-through;color:var(--ink-2)}
+.course .bd{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
+.course .bd i{font:700 10.5px var(--mono);font-style:normal;padding:1px 6px;border-radius:5px;background:var(--surface-2);color:var(--ink-2)}
+.milestone{margin-top:auto;padding:10px 14px;border-top:2px dashed var(--green-b);background:rgba(0,168,107,.08);font-size:13.5px;font-weight:700;color:var(--green)}
+.empty{border:2px dashed var(--line);border-radius:14px;padding:26px;text-align:center;color:var(--ink-2)}
+.prog-bars{display:grid;gap:8px;margin-top:14px;max-width:46em}
+.pbar{display:grid;grid-template-columns:minmax(0,240px) 1fr auto;gap:12px;align-items:center;font-size:14.5px}
+.pbar .tr{height:8px;border-radius:8px;background:var(--surface-2);overflow:hidden}
+.pbar .tr span{display:block;height:100%;background:var(--green-b);transition:width .4s}
+.pbar .nums{font:600 12.5px var(--mono);color:var(--ink-2)}
+
+/* certs */
+.lvl-h{font:700 15px var(--body);color:var(--ink-2);margin:22px 0 10px;display:flex;align-items:center;gap:10px}
+.lvl-h::after{content:"";flex:1;height:1px;background:var(--line)}
+.recs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}
+.rec{display:flex;align-items:center;gap:8px;border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 8px 6px 14px;font-weight:700;font-size:14.5px}
+.rec .ct{font:700 12px var(--mono);background:var(--violet);color:var(--surface);border-radius:999px;padding:2px 8px}
+.rec[aria-pressed="true"]{border-color:var(--violet);background:color-mix(in srgb,var(--violet) 10%,var(--surface))}
+
+/* segmented choices */
+.choice{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 18px}
+.opt{border:1.5px solid var(--line);background:var(--surface);border-radius:12px;padding:12px 18px;font-weight:700;text-align:left;min-width:170px}
+.opt small{display:block;font-weight:400;font-size:13.5px;color:var(--ink-2)}
+.opt[aria-pressed="true"]{border-color:var(--k);background:color-mix(in srgb,var(--k) 10%,var(--surface));box-shadow:inset 0 -3px 0 var(--k)}
+.form2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 18px;max-width:46em;margin-bottom:18px}
+.checks{display:flex;flex-wrap:wrap;gap:8px}
+.ck{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 12px;font-size:14.5px;cursor:pointer}
+.ck input{accent-color:var(--k)}
+.ck:has(input:checked){border-color:var(--k)}
+
+/* review */
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 20px}
+.notes{list-style:none;margin:0 0 20px;padding:0;display:grid;gap:8px;max-width:50em}
+.notes li{border-left:4px solid var(--amber);background:var(--surface);padding:10px 14px;border-radius:4px 10px 10px 4px;font-size:15.5px}
+.notes li.good{border-left-color:var(--green-b)}
+.missing{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px}
+.missing a{font-size:14px;font-weight:700;border:1px dashed var(--red);color:var(--red);border-radius:999px;padding:4px 12px;text-decoration:none}
+.report{background:#fff;color:#14213D;border:1px solid var(--line);border-radius:16px;padding:34px 38px;box-shadow:var(--shadow);font-size:15px;line-height:1.5}
+.report h3{font:800 30px/1.1 var(--display);margin:0 0 4px}
+.report h4{font:800 18px var(--display);margin:24px 0 8px;padding-bottom:4px;border-bottom:2px solid #0047AB;color:#0047AB}
+.report .sub{color:#4A5873;margin:0}
+.report table{border-collapse:collapse;width:100%;margin:4px 0}
+.report th,.report td{text-align:left;padding:6px 8px;border-bottom:1px solid #D3DCE8;vertical-align:top}
+.report th{font-size:12.5px;color:#4A5873}
+.report .none{color:#8A96AD;font-style:italic}
+.report .kv{display:grid;grid-template-columns:200px 1fr;gap:4px 14px}
+.report .kv dt{font-weight:700;color:#4A5873}.report .kv dd{margin:0}
+.report .sig{display:grid;grid-template-columns:2fr 2fr 1fr;gap:24px;margin-top:40px}
+.report .sig div{border-top:1px solid #14213D;padding-top:4px;font-size:13px;color:#4A5873}
+.report .rp-terms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.report .rp-terms h5{margin:0 0 4px;font:700 14px var(--body)}
+.report .disc{font-size:12.5px;color:#4A5873;margin-top:22px}
+.tbl{overflow-x:auto}
+
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 22px);transform:translate(-50%,30px);opacity:0;background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-weight:700;font-size:15px;transition:.35s;z-index:80;pointer-events:none;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.next-step{margin-top:26px;display:flex;justify-content:flex-end}
+footer{max-width:1240px;margin:0 auto;padding:30px 20px 50px;color:var(--ink-2);font-size:14px;border-top:1px solid var(--line)}
+
+@media (max-width:1100px){.plan,.plan.n3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:980px){
+  .hero{grid-template-columns:1fr;padding-top:34px;gap:30px}
+  .wrap{grid-template-columns:1fr;gap:0}
+  .side{position:static;margin:0 -20px 10px;overflow-x:auto;border-bottom:1px solid var(--line)}
+  .side nav ol{display:flex;gap:4px;padding:8px 14px}
+  .side a{white-space:nowrap;grid-template-columns:auto auto auto}
+  .side-note{display:none}
+  .creds{grid-template-columns:1fr}
+  .meter-bar{width:70px}.meter .pct-l{display:none}
+}
+@media (max-width:640px){.plan,.plan.n3,.plan.n2,.form2,.who{grid-template-columns:1fr}.mod-head{grid-template-columns:1fr;gap:6px}.mod-num{font-size:44px}.theme-btn .tl{display:none}.brand{font-size:17px}.top-in{gap:10px}.report{padding:22px 18px}.report .kv{grid-template-columns:1fr}.report .rp-terms{grid-template-columns:1fr}.pbar{grid-template-columns:1fr auto}.pbar .tr{grid-column:1/-1;grid-row:2}}
+
+@media print{
+  @page{margin:.6in}
+  body{background:#fff}
+  body::before,.top,.hero,.side,.mod:not(#review),#review .mod-head,#review .actions,#review .notes-wrap,#review .missing,footer,.toast{display:none!important}
+  .wrap{display:block;padding:0}
+  section.mod{border:0;padding:0}
+  .report{border:0;box-shadow:none;padding:0}
+  .report h4{break-after:avoid}
+  .report tr{break-inside:avoid}
+}
+
+/* ===== pathway planner additions ===== */
+.sem .crow{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;padding:10px 14px;border-top:1px solid var(--line);font-size:14.5px;line-height:1.35}
+.crow input[type=checkbox]{margin-top:3px;accent-color:var(--green-b);width:16px;height:16px}
+.crow .top-l{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.crow .cc{font:600 12px var(--mono);color:var(--ink-2)}
+.crow .cr{font:600 12px var(--mono);color:var(--ink-2);white-space:nowrap}
+.crow .ct{display:block}
+.crow.done .ct{text-decoration:line-through;color:var(--ink-2)}
+.crow .bd{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
+.crow .bd i{font:700 10.5px var(--mono);font-style:normal;padding:1px 6px;border-radius:5px;background:var(--surface-2);color:var(--ink-2)}
+.crow .bd i.off{color:var(--amber)}
+.crow .iss{margin:6px 0 0;padding:6px 8px;border-radius:6px;font-size:13px;background:rgba(198,43,58,.09);color:var(--red);border-left:3px solid var(--red)}
+.crow .iss.check{background:rgba(168,98,0,.1);color:var(--amber);border-left-color:var(--amber)}
+.crow .ph{width:100%;margin-top:6px;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:5px 8px;font-size:13.5px}
+.crow .mv{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12.5px;color:var(--ink-2)}
+.crow .mv select{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:3px 6px;font-size:12.5px;max-width:100%}
+.crow details{margin-top:6px;font-size:13px;color:var(--ink-2)}
+.crow details summary{cursor:pointer;font-weight:700;color:var(--navy)}
+.crow details ul{margin:4px 0 0;padding-left:18px}
+.crow details p{margin:4px 0 0}
+.sem.warn{border-color:var(--amber)}
+.sem .load{padding:8px 14px;border-top:1px solid var(--line);font-size:13px;color:var(--amber);background:rgba(168,98,0,.08)}
+.plan-tools{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.entry{margin:0 0 16px;padding-left:20px;max-width:46em;font-size:15px}
+.linkrow{display:flex;gap:10px 18px;flex-wrap:wrap;margin:8px 0 0;font-size:14.5px;font-weight:700}
+.pick .prim{position:static;align-self:flex-start}
+.report ul{margin:4px 0;padding-left:20px}
+.report .small{font-size:12.5px;color:#4A5873}
+@media (max-width:1100px){.plan.n5,.plan.n6,.plan.nx{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.plan.n5,.plan.n6,.plan.nx{grid-template-columns:repeat(3,minmax(0,1fr))}
+.plan.n1{grid-template-columns:minmax(0,420px)}
+@media (max-width:640px){.plan.n5,.plan.n6,.plan.nx,.plan.n1{grid-template-columns:1fr}}
+.fld .ck input{width:auto;flex:none}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href="#top"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span id="brandName"></span></a>
+    <div class="meter" aria-label="Plan progress"><span class="pct-l">Plan</span><div class="meter-bar"><span id="meterFill"></span></div><span id="meterPct">0%</span></div>
+    <button class="theme-btn" id="themeBtn" aria-pressed="false"><span class="knob" aria-hidden="true"></span><span class="tl">Dark mode</span></button>
+  </div>
+</header>
+
+<div class="hero" id="top">
+  <div>
+    <h1 id="heroTitle"></h1>
+    <p class="hero-sub" id="heroSub"></p>
+    <div class="who" id="who">
+      <h2>About you</h2>
+      <div class="fld"><label for="stName">Your name</label><input id="stName" autocomplete="name"></div>
+      <div class="fld"><label for="stEmail">Email (optional)</label><input id="stEmail" type="email" autocomplete="email"></div>
+      <div class="fld"><label for="stStart">First semester in the program</label><select id="stStart"></select></div>
+      <div class="fld"><label for="stLoad">Enrollment</label><select id="stLoad"><option value="full">Full-time (12+ credits)</option><option value="part">Part-time (fewer than 12 credits)</option></select></div>
+      <p class="hint">Your answers save automatically in this browser. Nothing is sent anywhere.</p>
+    </div>
+    <div class="cta"><a class="btn" id="startBtn" href="#">Start</a><a class="btn ghost" href="#review">See my plan</a></div>
+  </div>
+  <div class="rail" aria-label="Your pathway so far">
+    <h2>Your pathway <span id="railName"></span></h2>
+    <ol id="railList"></ol>
+    <div class="rail-foot"><span id="railSaved">Autosaves as you go</span><a class="btn ghost small" href="#review">Review and print</a></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <aside class="side">
+    <nav aria-label="Planning steps"><ol id="sideNav"></ol></nav>
+    <p class="side-note"></p>
+  </aside>
+  <main id="main"></main>
+</div>
+<footer id="foot"></footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ================= PROGRAM PACK (everything program-specific lives here) ================= */
+const PACK = {
+ "id": "bcc-plgls-aas",
+ "packVersion": 2,
+ "college": "Brookdale Community College",
+ "program": {
+  "code": "PLGLS",
+  "name": "Paralegal Studies Program, A.A.S.",
+  "short": "Paralegal Studies A.A.S.",
+  "kind": "career",
+  "credits": "60",
+  "dept": "Legal Studies",
+  "url": "https://catalog.brookdalecc.edu/programs/PLGLS",
+  "retrieved": "November 14, 2026",
+  "minGrade": "A grade of C or higher is required in all career studies courses. The catalog lists these classes under both LEGL and PLGL codes.",
+  "catalog": "2026-27"
+ },
+ "brand": "Brookdale Pathway Planner",
+ "hero": {
+  "title": "Plan the route from your first class to your first paralegal job.",
+  "sub": "Pick the kind of legal work you want to do, then build the classes, certifications, and experience that get you there. Bring the finished plan to your advising appointment at Brookdale.",
+  "goal": "First paralegal job",
+  "goalDone": "Your plan is ready for advising.",
+  "goalTodo": "Finish the steps to complete your plan."
+ },
+ "steps": [
+  {
+   "id": "careers",
+   "type": "careers",
+   "nav": "Careers",
+   "color": "navy",
+   "title": "Choose 3 to 6 kinds of legal work",
+   "intro": "Paralegals work under a lawyer's supervision in many areas of law. Pick the ones that sound like work you'd enjoy. Your picks suggest which career studies classes to choose in step 2."
+  },
+  {
+   "id": "plan",
+   "type": "plan",
+   "nav": "Course plan",
+   "color": "green",
+   "title": "Build your semester-by-semester plan",
+   "intro": "This is the catalog's suggested sequence. Seven of your classes are your choice from the career studies lists. Pick them here, check off what you've passed, and move a class to another term if you need to. The planner checks prerequisites and which terms each class runs."
+  },
+  {
+   "id": "certs",
+   "type": "certs",
+   "nav": "Certifications",
+   "color": "violet",
+   "title": "Decide about a professional certification",
+   "intro": "A certification is an exam-based credential from a national paralegal association. It is separate from your Brookdale degree."
+  },
+  {
+   "id": "settings",
+   "type": "settings",
+   "nav": "Workplaces",
+   "color": "amber",
+   "title": "Pick the workplaces you'll target",
+   "intro": "Paralegals work in many kinds of organizations. Highlighted tags show where a workplace commonly hires for the careers you picked."
+  },
+  {
+   "id": "transfer",
+   "type": "transfer",
+   "nav": "Transfer",
+   "color": "teal",
+   "title": "Will you continue to a bachelor's degree?",
+   "intro": "This program is built for employment, not transfer, but it may transfer in part or in full to some four-year schools. If a bachelor's degree or law school is in your plans, say so now."
+  },
+  {
+   "id": "experience",
+   "type": "experience",
+   "nav": "Experience",
+   "color": "red",
+   "title": "Plan experience in a legal setting",
+   "intro": "Employers look for experience in a law office. The Paralegal Internship (LEGL 299) can count as one of your career studies choices."
+  },
+  {
+   "id": "review",
+   "type": "review",
+   "nav": "Review and print",
+   "color": "ink",
+   "title": "Review, save, and print",
+   "intro": "This is the plan you'll bring to advising. Save it to keep working later, print it, or download a copy."
+  }
+ ],
+ "groups": {
+  "ge": {
+   "name": "General Education",
+   "tag": "GE"
+  },
+  "cs": {
+   "name": "Career Studies",
+   "tag": "CS"
+  },
+  "el": {
+   "name": "Elective",
+   "tag": "EL"
+  }
+ },
+ "load": {
+  "min": 12,
+  "max": 18
+ },
+ "courses": {
+  "ENGL121": {
+   "t": "English Composition: The Writing Process",
+   "cr": 3,
+   "grp": "ge",
+   "preText": "ENGL 095 (C or higher) or college placement"
+  },
+  "COMM": {
+   "t": "English Composition II or Public Speaking",
+   "cr": 3,
+   "grp": "ge",
+   "ph": true,
+   "short": "Communication choice",
+   "pick": [
+    "ENGL122",
+    "SPCH115"
+   ],
+   "phNote": "The catalog requires ENGL 122 or SPCH 115. Its suggested sequence shows SPCH 115."
+  },
+  "ENGL122": {
+   "t": "English Composition: Writing and Research",
+   "cr": 3,
+   "grp": "ge",
+   "pre": [
+    "ENGL121"
+   ]
+  },
+  "SPCH115": {
+   "t": "Public Speaking",
+   "cr": 3,
+   "grp": "ge",
+   "preText": "Foundational studies requirement in reading"
+  },
+  "SOC": {
+   "t": "Social Sciences elective",
+   "cr": 3,
+   "grp": "ge",
+   "ph": true,
+   "short": "Social Sciences",
+   "phNote": "Your choice from the Social Sciences general education list."
+  },
+  "HUMX": {
+   "t": "Humanities elective",
+   "cr": 3,
+   "grp": "ge",
+   "ph": true,
+   "short": "Humanities",
+   "phNote": "Your choice from the Humanities general education list."
+  },
+  "MST": {
+   "t": "Mathematics, Science, or Technological Competency",
+   "cr": 3,
+   "grp": "ge",
+   "ph": true,
+   "short": "Math/Science/Tech",
+   "phNote": "Your choice, 3 to 4 credits. COMP 129 may not be used toward general education in this program."
+  },
+  "GE1": {
+   "t": "General Education elective",
+   "cr": 3,
+   "grp": "ge",
+   "ph": true,
+   "short": "Gen Ed elective",
+   "phNote": "Any general education class. One is recommended from the Cultural and Global Awareness knowledge area. MUSI classes may not be used."
+  },
+  "GE2": {
+   "t": "General Education elective",
+   "cr": 3,
+   "grp": "ge",
+   "ph": true,
+   "short": "Gen Ed elective",
+   "phNote": "Any general education class. MUSI classes may not be used."
+  },
+  "ELEC": {
+   "t": "Free elective",
+   "cr": 2,
+   "grp": "el",
+   "ph": true,
+   "short": "Elective",
+   "phNote": "1 to 3 credits, enough to bring your total to 60."
+  },
+  "LEGL105": {
+   "t": "Introduction to Law",
+   "cr": 3,
+   "grp": "cs",
+   "desc": "An overview of law, court systems, and legal procedure, and the roles of the paralegal and the lawyer."
+  },
+  "LEGL106": {
+   "t": "Legal Research and Writing",
+   "cr": 4,
+   "grp": "cs",
+   "co": [
+    "ENGL121",
+    "LEGL105"
+   ],
+   "desc": "Legal research methods and writing case briefs, legal briefs, and memoranda."
+  },
+  "LEGL145": {
+   "t": "Legal Ethics",
+   "cr": 3,
+   "grp": "cs",
+   "co": [
+    "LEGL105"
+   ],
+   "desc": "The ethical duties of legal assistants."
+  },
+  "LEGL205": {
+   "t": "Civil Litigation and Trial Practice",
+   "cr": 3,
+   "grp": "cs",
+   "pre": [
+    "LEGL105"
+   ],
+   "off": [
+    "S"
+   ],
+   "preText": "or instructor's approval",
+   "desc": "Supporting civil litigation under a lawyer's supervision."
+  },
+  "LEGL210": {
+   "t": "Computer Applications in Law",
+   "cr": 3,
+   "grp": "cs",
+   "pre": [
+    "LEGL105",
+    "LEGL106"
+   ],
+   "desc": "Technology used in law offices: research tools, document management, and electronic filing."
+  },
+  "CSA1": {
+   "t": "Career studies choice (Group 2)",
+   "cr": 3,
+   "grp": "cs",
+   "ph": true,
+   "short": "Group 2 choice",
+   "pick": [
+    "LEGL125",
+    "LEGL135",
+    "LEGL215",
+    "LEGL225",
+    "LEGL226",
+    "LEGL237",
+    "LEGL299"
+   ],
+   "phNote": "You need 12 credits (four classes) from Group 2."
+  },
+  "CSA2": {
+   "t": "Career studies choice (Group 2)",
+   "cr": 3,
+   "grp": "cs",
+   "ph": true,
+   "short": "Group 2 choice",
+   "pick": [
+    "LEGL125",
+    "LEGL135",
+    "LEGL215",
+    "LEGL225",
+    "LEGL226",
+    "LEGL237",
+    "LEGL299"
+   ],
+   "phNote": "You need 12 credits (four classes) from Group 2."
+  },
+  "CSA3": {
+   "t": "Career studies choice (Group 2)",
+   "cr": 3,
+   "grp": "cs",
+   "ph": true,
+   "short": "Group 2 choice",
+   "pick": [
+    "LEGL125",
+    "LEGL135",
+    "LEGL215",
+    "LEGL225",
+    "LEGL226",
+    "LEGL237",
+    "LEGL299"
+   ],
+   "phNote": "You need 12 credits (four classes) from Group 2."
+  },
+  "CSA4": {
+   "t": "Career studies choice (Group 2)",
+   "cr": 3,
+   "grp": "cs",
+   "ph": true,
+   "short": "Group 2 choice",
+   "pick": [
+    "LEGL125",
+    "LEGL135",
+    "LEGL215",
+    "LEGL225",
+    "LEGL226",
+    "LEGL237",
+    "LEGL299"
+   ],
+   "phNote": "You need 12 credits (four classes) from Group 2."
+  },
+  "CSB1": {
+   "t": "Career studies choice (Group 2 or 3)",
+   "cr": 3,
+   "grp": "cs",
+   "ph": true,
+   "short": "Group 3 choice",
+   "pick": [
+    "BUSI221",
+    "BUSI222",
+    "LEGL126",
+    "LEGL206",
+    "LEGL235",
+    "LEGL125",
+    "LEGL135",
+    "LEGL215",
+    "LEGL225",
+    "LEGL226",
+    "LEGL237",
+    "LEGL299"
+   ],
+   "phNote": "You need 9 credits (three classes) from Group 3 or from Group 2 classes you haven't already used. LEGL 295 Special Project (1 to 4 credits) can also count; ask your advisor."
+  },
+  "CSB2": {
+   "t": "Career studies choice (Group 2 or 3)",
+   "cr": 3,
+   "grp": "cs",
+   "ph": true,
+   "short": "Group 3 choice",
+   "pick": [
+    "BUSI221",
+    "BUSI222",
+    "LEGL126",
+    "LEGL206",
+    "LEGL235",
+    "LEGL125",
+    "LEGL135",
+    "LEGL215",
+    "LEGL225",
+    "LEGL226",
+    "LEGL237",
+    "LEGL299"
+   ],
+   "phNote": "You need 9 credits (three classes) from Group 3 or from Group 2 classes you haven't already used."
+  },
+  "CSB3": {
+   "t": "Career studies choice (Group 2 or 3)",
+   "cr": 3,
+   "grp": "cs",
+   "ph": true,
+   "short": "Group 3 choice",
+   "pick": [
+    "BUSI221",
+    "BUSI222",
+    "LEGL126",
+    "LEGL206",
+    "LEGL235",
+    "LEGL125",
+    "LEGL135",
+    "LEGL215",
+    "LEGL225",
+    "LEGL226",
+    "LEGL237",
+    "LEGL299"
+   ],
+   "phNote": "You need 9 credits (three classes) from Group 3 or from Group 2 classes you haven't already used."
+  },
+  "LEGL125": {
+   "t": "Real Property Transactions",
+   "cr": 3,
+   "grp": "cs",
+   "co": [
+    "LEGL105"
+   ],
+   "off": [
+    "F"
+   ],
+   "desc": "Real estate law from ownership and financing through closing, including drafting documents."
+  },
+  "LEGL135": {
+   "t": "Family Law",
+   "cr": 3,
+   "grp": "cs",
+   "co": [
+    "LEGL105"
+   ],
+   "off": [
+    "F"
+   ],
+   "desc": "Divorce, custody, support, and adoption."
+  },
+  "LEGL215": {
+   "t": "Criminal Procedure",
+   "cr": 3,
+   "grp": "cs",
+   "pre": [
+    "LEGL105"
+   ],
+   "off": [
+    "S"
+   ],
+   "preText": "or instructor's approval",
+   "desc": "Supporting criminal litigation under an attorney's supervision."
+  },
+  "LEGL225": {
+   "t": "Wills, Estates and Probate",
+   "cr": 3,
+   "grp": "cs",
+   "pre": [
+    "LEGL105"
+   ],
+   "preText": "or instructor's approval",
+   "desc": "Drafting wills and trusts and preparing estate and tax returns."
+  },
+  "LEGL226": {
+   "t": "Corporate Law Procedure",
+   "cr": 3,
+   "grp": "cs",
+   "pre": [
+    "LEGL105"
+   ],
+   "off": [
+    "F"
+   ],
+   "preText": "or instructor's approval",
+   "desc": "Forming, operating, and dissolving business entities."
+  },
+  "LEGL237": {
+   "t": "Elder Law",
+   "cr": 3,
+   "grp": "cs",
+   "pre": [
+    "LEGL105",
+    "LEGL225"
+   ],
+   "off": [
+    "S"
+   ],
+   "preText": "or instructor's approval",
+   "desc": "Assisting attorneys with elder law matters."
+  },
+  "LEGL299": {
+   "t": "Paralegal Internship",
+   "cr": 3,
+   "grp": "cs",
+   "preText": "30 credits including the 16 credits of required career studies classes, each with a C or higher, plus approval of the Program Director and Career Services",
+   "desc": "Paid paralegal work with a log of your hours."
+  },
+  "BUSI221": {
+   "t": "Business Law I",
+   "cr": 3,
+   "grp": "cs",
+   "desc": "Contracts, agency, employment, and property."
+  },
+  "BUSI222": {
+   "t": "Business Law II",
+   "cr": 3,
+   "grp": "cs",
+   "off": [
+    "U"
+   ],
+   "desc": "Sales, partnerships, corporations, commercial paper, and bankruptcy."
+  },
+  "LEGL126": {
+   "t": "Constitutional Law",
+   "cr": 3,
+   "grp": "cs",
+   "off": [
+    "F"
+   ],
+   "desc": "An introduction to the U.S. Constitution and constitutional law."
+  },
+  "LEGL206": {
+   "t": "Torts",
+   "cr": 3,
+   "grp": "cs",
+   "pre": [
+    "LEGL105"
+   ],
+   "off": [
+    "S"
+   ],
+   "preText": "or instructor's approval",
+   "desc": "Intentional torts, negligence, strict liability, and common defenses."
+  },
+  "LEGL235": {
+   "t": "Entertainment Law I",
+   "cr": 3,
+   "grp": "cs",
+   "off": [
+    "U"
+   ],
+   "desc": "Entertainment law with a focus on the music and recording industries and contracts."
+  }
+ },
+ "slots": [
+  "Fall, year one",
+  "Spring, year one",
+  "Summer, year one",
+  "Fall, year two",
+  "Spring, year two",
+  "Summer, year two"
+ ],
+ "sequence": [
+  {
+   "c": "LEGL105",
+   "slot": 0
+  },
+  {
+   "c": "CSA1",
+   "slot": 0
+  },
+  {
+   "c": "ENGL121",
+   "slot": 0
+  },
+  {
+   "c": "SOC",
+   "slot": 0
+  },
+  {
+   "c": "LEGL145",
+   "slot": 0
+  },
+  {
+   "c": "CSA2",
+   "slot": 1
+  },
+  {
+   "c": "CSB1",
+   "slot": 1
+  },
+  {
+   "c": "LEGL106",
+   "slot": 1
+  },
+  {
+   "c": "COMM",
+   "slot": 1
+  },
+  {
+   "c": "HUMX",
+   "slot": 1
+  },
+  {
+   "c": "LEGL210",
+   "slot": 3
+  },
+  {
+   "c": "CSA3",
+   "slot": 3
+  },
+  {
+   "c": "CSB2",
+   "slot": 3
+  },
+  {
+   "c": "MST",
+   "slot": 3
+  },
+  {
+   "c": "GE1",
+   "slot": 3
+  },
+  {
+   "c": "LEGL205",
+   "slot": 4
+  },
+  {
+   "c": "CSA4",
+   "slot": 4
+  },
+  {
+   "c": "CSB3",
+   "slot": 4
+  },
+  {
+   "c": "GE2",
+   "slot": 4
+  },
+  {
+   "c": "ELEC",
+   "slot": 4
+  }
+ ],
+ "entry": [
+  "The suggested sequence assumes you have met all foundational studies requirements in reading, writing, and math.",
+  "Several career studies classes run only in Fall, only in Spring, or only in Summer. Choose yours early so the terms line up."
+ ],
+ "advice": [
+  {
+   "text": "In your first fall, a career studies choice that lists LEGL 105 as 'before or together with' (Real Property Transactions or Family Law) can be taken alongside LEGL 105. Classes that need LEGL 105 finished first have to wait."
+  },
+  {
+   "text": "The Paralegal Internship needs 30 credits, including all 16 credits of required career studies classes, so it belongs in your last term."
+  }
+ ],
+ "careers": {
+  "min": 3,
+  "max": 6,
+  "more": {
+   "label": "Occupational Outlook Handbook: paralegals and legal assistants",
+   "url": "https://www.bls.gov/ooh/legal/paralegals-and-legal-assistants.htm"
+  },
+  "list": [
+   {
+    "id": "lit",
+    "name": "Litigation paralegal",
+    "desc": "Prepares pleadings, organizes evidence and discovery, and helps attorneys get ready for trial in civil cases.",
+    "courses": [
+     "LEGL206"
+    ],
+    "certs": [
+     "cp",
+     "crp"
+    ]
+   },
+   {
+    "id": "pi",
+    "name": "Personal injury paralegal",
+    "desc": "Gathers medical records, drafts demand letters, and keeps injury cases moving.",
+    "courses": [
+     "LEGL206"
+    ],
+    "certs": [
+     "cp"
+    ]
+   },
+   {
+    "id": "re",
+    "name": "Real estate paralegal",
+    "desc": "Prepares contracts, title documents, and closing packages for property sales.",
+    "courses": [
+     "LEGL125"
+    ],
+    "certs": [
+     "cp",
+     "notary"
+    ]
+   },
+   {
+    "id": "title",
+    "name": "Title examiner or closing coordinator",
+    "desc": "Searches property records and coordinates closings for a title company or lender.",
+    "courses": [
+     "LEGL125"
+    ],
+    "certs": [
+     "notary"
+    ]
+   },
+   {
+    "id": "fam",
+    "name": "Family law paralegal",
+    "desc": "Drafts documents and works with clients in divorce, custody, support, and adoption matters.",
+    "courses": [
+     "LEGL135"
+    ],
+    "certs": [
+     "cp"
+    ]
+   },
+   {
+    "id": "est",
+    "name": "Estates and probate paralegal",
+    "desc": "Drafts wills and trusts and helps administer estates through probate.",
+    "courses": [
+     "LEGL225",
+     "LEGL237"
+    ],
+    "certs": [
+     "cp",
+     "notary"
+    ]
+   },
+   {
+    "id": "elder",
+    "name": "Elder law paralegal",
+    "desc": "Supports attorneys with guardianship, long-term care planning, and benefits for older clients.",
+    "courses": [
+     "LEGL225",
+     "LEGL237"
+    ],
+    "certs": [
+     "cp"
+    ]
+   },
+   {
+    "id": "corp",
+    "name": "Corporate paralegal",
+    "desc": "Forms business entities, maintains corporate records, and prepares filings.",
+    "courses": [
+     "LEGL226",
+     "BUSI221",
+     "BUSI222"
+    ],
+    "certs": [
+     "cp",
+     "crp"
+    ]
+   },
+   {
+    "id": "contract",
+    "name": "Contracts or compliance specialist",
+    "desc": "Reviews and tracks contracts and helps an organization follow the rules that apply to it.",
+    "courses": [
+     "BUSI221",
+     "LEGL226"
+    ],
+    "certs": [
+     "crp"
+    ]
+   },
+   {
+    "id": "crim",
+    "name": "Criminal law paralegal",
+    "desc": "Supports a prosecutor's or defense attorney's office with case files, motions, and court dates.",
+    "courses": [
+     "LEGL215",
+     "LEGL126"
+    ],
+    "certs": [
+     "cp"
+    ]
+   },
+   {
+    "id": "court",
+    "name": "Court clerk or judiciary staff",
+    "desc": "Processes filings and keeps the records and calendar of a court.",
+    "courses": [
+     "LEGL215",
+     "LEGL126"
+    ],
+    "certs": []
+   },
+   {
+    "id": "gov",
+    "name": "Government agency paralegal",
+    "desc": "Researches regulations and prepares documents for a public agency.",
+    "courses": [
+     "LEGL126"
+    ],
+    "certs": [
+     "cp"
+    ]
+   },
+   {
+    "id": "ent",
+    "name": "Entertainment or intellectual property legal assistant",
+    "desc": "Supports attorneys with contracts, licensing, and rights for artists and media companies.",
+    "courses": [
+     "LEGL235",
+     "BUSI221"
+    ],
+    "certs": []
+   },
+   {
+    "id": "gen",
+    "name": "Legal assistant in a general practice",
+    "desc": "Handles a mix of client intake, drafting, and filing in a small firm that takes many kinds of cases.",
+    "courses": [
+     "LEGL135",
+     "LEGL225",
+     "LEGL125"
+    ],
+    "certs": [
+     "alp",
+     "notary"
+    ]
+   }
+  ]
+ },
+ "certs": {
+  "intro": "Certification is voluntary. Check each organization's current eligibility rules before you plan an exam date, and ask your Legal Studies faculty which ones local employers value.",
+  "levels": [
+   "Entry level",
+   "After work experience"
+  ],
+  "list": [
+   {
+    "id": "cp",
+    "short": "NALA CP",
+    "name": "Certified Paralegal (CP)",
+    "org": "NALA",
+    "level": "Entry level",
+    "desc": "A widely recognized national exam covering legal knowledge and skills.",
+    "when": "Around graduation"
+   },
+   {
+    "id": "crp",
+    "short": "NFPA CRP",
+    "name": "CORE Registered Paralegal (CRP)",
+    "org": "NFPA",
+    "level": "Entry level",
+    "desc": "Earned by passing the Paralegal CORE Competency Exam, aimed at early-career paralegals.",
+    "when": "Around graduation"
+   },
+   {
+    "id": "alp",
+    "short": "NALS ALP",
+    "name": "Accredited Legal Professional (ALP)",
+    "org": "NALS",
+    "level": "Entry level",
+    "desc": "An entry credential covering office procedures, ethics, and legal knowledge.",
+    "when": "During or after the program"
+   },
+   {
+    "id": "notary",
+    "short": "Notary Public",
+    "name": "New Jersey Notary Public commission",
+    "org": "State of New Jersey",
+    "level": "Entry level",
+    "desc": "A state commission, not a certification, that many law offices and title companies find useful.",
+    "when": "Any time"
+   },
+   {
+    "id": "pp",
+    "short": "NALS PP",
+    "name": "Professional Paralegal (PP)",
+    "org": "NALS",
+    "level": "After work experience",
+    "desc": "An advanced exam for experienced paralegals.",
+    "when": "After several years of work",
+    "exp": true
+   },
+   {
+    "id": "rp",
+    "short": "NFPA RP",
+    "name": "PACE Registered Paralegal (RP)",
+    "org": "NFPA",
+    "level": "After work experience",
+    "desc": "Earned by passing the Paralegal Advanced Competency Exam.",
+    "when": "After several years of work",
+    "exp": true
+   },
+   {
+    "id": "acp",
+    "short": "NALA ACP",
+    "name": "Advanced Certified Paralegal (ACP)",
+    "org": "NALA",
+    "level": "After work experience",
+    "desc": "Specialty credentials for paralegals who already hold the CP.",
+    "when": "After earning the CP",
+    "exp": true
+   }
+  ]
+ },
+ "settings": {
+  "list": [
+   {
+    "id": "small",
+    "name": "Small or solo law firm",
+    "note": "A few attorneys handling many kinds of matters. You'll do a bit of everything.",
+    "careers": [
+     "gen",
+     "fam",
+     "est",
+     "re",
+     "pi"
+    ]
+   },
+   {
+    "id": "large",
+    "name": "Large law firm",
+    "note": "Specialized practice groups and larger cases.",
+    "careers": [
+     "lit",
+     "corp",
+     "ent"
+    ]
+   },
+   {
+    "id": "inhouse",
+    "name": "Corporate legal department",
+    "note": "Working inside a company on its contracts, records, and compliance.",
+    "careers": [
+     "corp",
+     "contract"
+    ]
+   },
+   {
+    "id": "govt",
+    "name": "Government agency",
+    "note": "Municipal, county, state, or federal offices, including prosecutors and public defenders.",
+    "careers": [
+     "gov",
+     "crim"
+    ]
+   },
+   {
+    "id": "courts",
+    "name": "Courts",
+    "note": "Clerk's offices and judges' chambers.",
+    "careers": [
+     "court",
+     "crim"
+    ]
+   },
+   {
+    "id": "titleco",
+    "name": "Real estate and title companies",
+    "note": "Closings, title searches, and recording.",
+    "careers": [
+     "re",
+     "title"
+    ]
+   },
+   {
+    "id": "insur",
+    "name": "Insurance companies",
+    "note": "Claims, litigation support, and subrogation.",
+    "careers": [
+     "pi",
+     "lit"
+    ]
+   },
+   {
+    "id": "bank",
+    "name": "Banks and financial services",
+    "note": "Loan documents, trusts, and compliance.",
+    "careers": [
+     "contract",
+     "est",
+     "title"
+    ]
+   },
+   {
+    "id": "aid",
+    "name": "Nonprofit and legal aid",
+    "note": "Serving clients who can't afford a private attorney.",
+    "careers": [
+     "fam",
+     "elder",
+     "gen"
+    ]
+   }
+  ]
+ },
+ "transfer": {
+  "designed": false,
+  "yesSub": "Bachelor's degree, possibly law school later",
+  "majorHint": "For example: Legal Studies, Criminal Justice, Political Science",
+  "yesNote": "A.A.S. classes are built for employment, so some may transfer only as electives. Ask a transfer counselor which of your classes count at each school before you choose your electives.",
+  "schools": [
+   {
+    "id": "rutgers",
+    "name": "Rutgers University",
+    "loc": "New Brunswick, Newark, Camden"
+   },
+   {
+    "id": "monmouth",
+    "name": "Monmouth University",
+    "loc": "West Long Branch"
+   },
+   {
+    "id": "kean",
+    "name": "Kean University",
+    "loc": "Union"
+   },
+   {
+    "id": "stockton",
+    "name": "Stockton University",
+    "loc": "Galloway"
+   },
+   {
+    "id": "montclair",
+    "name": "Montclair State University",
+    "loc": "Montclair"
+   }
+  ],
+  "timing": [
+   "Right after Brookdale",
+   "While working",
+   "After a few years of work experience",
+   "Not sure yet"
+  ],
+  "todo": [
+   "I looked up my classes on NJ Transfer for each school I chose",
+   "I asked which of my career studies classes transfer",
+   "I met with a Brookdale transfer counselor",
+   "I know each school's transfer application deadline"
+  ],
+  "links": [
+   {
+    "label": "NJ Transfer (course equivalencies)",
+    "url": "https://www.njtransfer.org/"
+   },
+   {
+    "label": "Brookdale transfer agreements by program",
+    "url": "https://www.brookdalecc.edu/transfer-agreements-by-academic-program/"
+   },
+   {
+    "label": "Brookdale Legal Studies department page",
+    "url": "https://www.brookdalecc.edu/academic-institutes-and-departments/business-social-sciences/legal-studies/"
+   }
+  ],
+  "tip": "This program is not designed for transfer, though it may transfer in part or in full. Check each school before you assume a class will count."
+ },
+ "experience": {
+  "yesSub": "I want law office experience before I graduate",
+  "when": [
+   "Summer after year one",
+   "During year two",
+   "Final semester (Paralegal Internship)"
+  ],
+  "types": [
+   "Paralegal Internship for credit (LEGL 299)",
+   "Part-time job in a law office",
+   "Court observation",
+   "Volunteering with a legal aid organization",
+   "Lambda Epsilon Chi (LEX) honor society",
+   "Job shadowing or informational interviews"
+  ],
+  "hours": [
+   "Up to 10",
+   "10 to 20",
+   "20 to 30",
+   "30 or more"
+  ],
+  "callout": "Good to know: paralegals work under an attorney's supervision and may not give legal advice. This program trains paralegals; it does not train lawyers."
+ },
+ "drafted": [
+  "careers",
+  "certs",
+  "settings",
+  "transfer schools"
+ ],
+ "questions": []
+};
+</script>
+<script>
+(function(){
+/* ================= ENGINE (do not edit per program; edit the PACK above) ================= */
+const P=PACK;
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true;}catch(e){return false;}},del(k){try{localStorage.removeItem(k);}catch(e){}}};
+let toastT;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2600);}
+const toggle=(arr,v)=>{const i=arr.indexOf(v);if(i>=0)arr.splice(i,1);else arr.push(v);};
+const NAMES={F:'Fall',S:'Spring',U:'Summer'};
+const C=c=>P.courses[c];
+const fmt=c=>C(c)&&C(c).ph?C(c).short:String(c).replace(/^([A-Z]+)(\d+)$/,'$1 $2');
+const stepOf=type=>P.steps.find(s=>s.type===type);
+const has=type=>!!stepOf(type);
+const trackById=id=>(P.tracks||[]).find(t=>t.id===id),careerById=id=>((P.careers||{}).list||[]).find(c=>c.id===id),schoolById=id=>((P.transfer||{}).schools||[]).find(s=>s.id===id);
+const certById=id=>((P.certs||{}).list||[]).find(c=>c.id===id),setById=id=>((P.settings||{}).list||[]).find(c=>c.id===id);
+const TW=P.trackWord||'option';const shortT=n=>P.trackTrim?n.replace(new RegExp(P.trackTrim),''):n;
+const plural=(n,one,many)=>n===1?one:(many||one+'s');
+
+/* theme */
+const root=document.documentElement,tb=$('#themeBtn');
+function setTheme(t){root.dataset.theme=t;tb.setAttribute('aria-pressed',t==='dark');$('.tl',tb).textContent=t==='dark'?'Light mode':'Dark mode';store.set('bpp-theme',t);}
+setTheme(store.get('bpp-theme','light'));
+tb.onclick=()=>setTheme(root.dataset.theme==='dark'?'light':'dark');
+
+/* terms */
+const START_TERMS=[];(function(){const y0=new Date().getFullYear();for(let y=y0-1;y<=y0+3;y++){START_TERMS.push('Spring '+y,'Fall '+y);}})();
+function defaultStart(){const d=new Date(),y=d.getFullYear();return d.getMonth()>=5?'Fall '+y:'Spring '+y;}
+function termList(start,n){let [s,y]=start.split(' ');y=+y;let k=s==='Fall'?'F':'S';const out=[];
+  for(let i=0;i<n;i++){out.push({k,label:NAMES[k]+' '+y});if(k==='F'){k='S';y++;}else if(k==='S')k='U';else k='F';}return out;}
+
+/* ================= state ================= */
+const KEY='bpp-'+P.id+'-v1';
+const blank=()=>({v:1,pack:P.id,student:{name:'',email:'',start:defaultStart(),load:'full'},track:'',careers:[],certs:[],noCerts:false,settings:[],confirmed:false,done:[],move:{},choices:{},nterms:6,
+  transfer:{plan:'',timing:'',major:'',schools:[],other:'',todo:[]},exp:{plan:'',when:'',types:[],hours:'',notes:''},savedAt:null});
+function hydrate(d){const b=blank();const s=Object.assign(b,d||{});['student','transfer','exp'].forEach(k=>s[k]=Object.assign(blank()[k],(d&&d[k])||{}));
+  if(!START_TERMS.includes(s.student.start))START_TERMS.push(s.student.start);
+  if(s.track&&s.track!=='tbd'&&!trackById(s.track))s.track='';
+  s.careers=(s.careers||[]).filter(careerById);s.certs=(s.certs||[]).filter(certById);s.settings=(s.settings||[]).filter(setById);s.done=(s.done||[]).filter(C);s.transfer.schools=(s.transfer.schools||[]).filter(schoolById);
+  s.move=s.move&&typeof s.move==='object'?s.move:{};s.choices=s.choices&&typeof s.choices==='object'?s.choices:{};return s;}
+let S=hydrate(store.get(KEY,{}));
+function persist(){store.set(KEY,S);}
+function changed(){persist();renderAll();}
+
+/* ================= plan model ================= */
+function trackSet(){const t=trackById(S.track);return t?t.set:'core';}
+function model(){
+  const set=trackSet(),base=S.student.start.startsWith('Fall')?0:2;
+  const items=P.sequence.filter(x=>!x.sets||x.sets.includes(set)).map(x=>({code:x.c,def:base+x.slot}));
+  items.forEach(i=>{const m=S.move[i.code];i.term=Number.isInteger(m)&&m>=0?m:i.def;i.done=S.done.includes(i.code);
+    const c=C(i.code);i.sel=c.pick&&c.pick.includes(S.choices[i.code])?S.choices[i.code]:'';i.eff=i.sel?C(i.sel):c;i.name=i.sel?fmt(i.sel):fmt(i.code);});
+  const n=Math.max(S.nterms,...items.map(i=>i.term+1));
+  const terms=termList(S.student.start,n).map(t=>Object.assign(t,{courses:[],cr:0,open:0}));
+  const at={};items.forEach(i=>{at[i.code]=i;if(i.sel&&!at[i.sel])at[i.sel]=i;const t=terms[i.term];t.courses.push(i);t.cr+=C(i.code).cr;if(!i.done)t.open+=C(i.code).cr;});
+  const issues=[],seen={};
+  items.forEach(i=>{if(i.sel){if(seen[i.sel])issues.push({code:i.code,sev:'err',msg:`${fmt(i.sel)} is chosen twice. Pick a different class here.`});seen[i.sel]=1;}});
+  items.forEach(i=>{if(i.done)return;const c=i.eff,t=terms[i.term];
+    (c.pre||[]).forEach(p=>{const q=at[p];
+      if(!q){if(C(p))issues.push({code:i.code,sev:'err',msg:`${i.name} requires ${fmt(p)}, which isn’t in your plan yet.`});return;}
+      if(q.done||q.term<i.term)return;
+      const w=(P.waive||[]).find(w=>w.c===i.code&&w.pre===p&&q.term===q.def&&i.term===i.def);
+      issues.push({code:i.code,sev:w?'check':'err',msg:w?w.note:`${fmt(p)} must be passed before ${i.name}. Move one of them.`});});
+    (c.co||[]).forEach(p=>{const q=at[p];if(!q||q.done||q.term<=i.term)return;
+      issues.push({code:i.code,sev:'err',msg:`${fmt(p)} must be taken before or together with ${i.name}.`});});
+    if(c.off&&!c.off.includes(t.k))issues.push({code:i.code,sev:'err',msg:`${i.name} runs only in ${c.offNote||c.off.map(k=>NAMES[k]).join(' and ')}, not ${NAMES[t.k]}.`});});
+  terms.forEach((t,ix)=>{if(!t.open)return;
+    if(t.open>P.load.max)issues.push({term:ix,sev:'check',msg:`${t.label} has ${t.open} credits, a heavy load. Many students spread these classes over more terms.`});
+    else if(S.student.load==='full'&&t.k!=='U'&&t.open<P.load.min&&ix<terms.length-1&&terms.slice(ix+1).some(x=>x.open))issues.push({term:ix,sev:'check',msg:`${t.label} has ${t.open} credits, below the 12 needed for full-time status.`});});
+  const total=items.reduce((a,i)=>a+C(i.code).cr,0),doneCr=items.filter(i=>i.done).reduce((a,i)=>a+C(i.code).cr,0);
+  const last=terms.reduce((a,t,ix)=>t.courses.length?ix:a,0);
+  return{set,items,terms,at,issues,total,doneCr,last};}
+let M=model();
+
+/* ================= completion ================= */
+function steps(){const t=S.transfer,x=S.exp,st={};
+  if(has('track'))st.track=!!S.track;
+  if(has('careers'))st.careers=S.careers.length>=P.careers.min&&S.careers.length<=P.careers.max;
+  if(has('plan'))st.plan=(!has('track')||!!S.track)&&!M.issues.some(i=>i.sev==='err');
+  if(has('certs'))st.certs=S.certs.length>0||S.noCerts;
+  if(has('settings'))st.settings=S.settings.length>0;
+  if(has('transfer'))st.transfer=!!t.plan&&(t.plan!=='yes'||t.schools.length>0||!!t.other.trim());
+  if(has('experience'))st.experience=!!x.plan&&(x.plan==='no'||!!x.when);
+  return st;}
+
+/* ================= shells (built once) ================= */
+const COLORS={navy:'var(--navy)',green:'var(--green)',violet:'var(--violet)',amber:'var(--amber)',teal:'var(--teal)',red:'var(--red)',ink:'var(--ink)'};
+const SHELL={
+ track:()=>`<div class="status" id="trkStatus"></div><div class="grid" id="trkGrid"></div><div class="callout">${esc(P.trackNote||'')}</div>`,
+ careers:()=>`<div class="status" id="carStatus"></div><div class="filters" id="carFilters"></div><div class="grid" id="carGrid"></div>${P.careers.more?`<div class="callout"><strong>Want pay and job outlook?</strong> See the <a href="${esc(P.careers.more.url)}" target="_blank" rel="noopener">${esc(P.careers.more.label)}</a> from the U.S. Bureau of Labor Statistics.</div>`:''}`,
+ certs:()=>`<div class="status" id="certStatus"></div>${P.certs.intro?`<div class="callout">${esc(P.certs.intro)}</div>`:''}
+   <h3 class="block-h" style="margin-top:6px">Suggested by your careers<small>The number shows how many of your careers list that certification.</small></h3><div class="recs" id="certRecs"></div>
+   <div id="certGroups"></div><div class="checks" style="margin-top:16px"><label class="ck"><input type="checkbox" id="noCerts">I’m not planning a certification yet</label></div>`,
+ settings:()=>`<div class="status" id="setStatus"></div><div class="grid" id="setGrid"></div>`,
+ plan:()=>`<div class="status" id="planStatus"></div>${(P.entry||[]).length?`<h3 class="block-h" style="margin-top:6px">Before you start</h3><ul class="entry">${P.entry.map(e=>`<li>${esc(e)}</li>`).join('')}</ul>`:''}
+   <h3 class="block-h">Your classes by term<small>Badges show the requirement each class meets. Open Details for prerequisites and topics.</small></h3>
+   <div id="planBox"></div>
+   <div class="plan-tools"><button class="btn ghost small" id="addTerm">Add a term</button><button class="btn ghost small" id="resetPlan">Reset to the suggested sequence</button></div>
+   <div class="prog-bars" id="grpBars"></div>
+   <div class="checks" style="margin-top:16px"><label class="ck"><input type="checkbox" id="confirmed">I confirmed with my advisor which terms (fall, spring, summer) each of these classes runs</label></div>
+   <div class="callout"><strong>Before you register:</strong> the catalog does not say which terms every class runs. Ask your advisor whether each class runs in fall, spring, both, or summer, then tick the box above. Course numbers, credits, and prerequisites can change too. ${esc(P.program.minGrade||'')} Confirm this plan against the <a href="${esc(P.program.url)}" target="_blank" rel="noopener">current catalog page</a> and with your advisor each semester.<span id="partNote"></span></div>`,
+ transfer:()=>`<div class="status" id="trStatus"></div><div class="choice" id="trPlan" role="group" aria-label="Transfer plan"></div>
+   <div id="trMore">
+     <div class="form2">
+       <div class="fld"><label for="trTiming">When you plan to transfer</label><select id="trTiming"><option value="">Choose one</option>${P.transfer.timing.map(o=>`<option>${esc(o)}</option>`).join('')}</select></div>
+       <div class="fld"><label for="trMajor">Intended major</label><input id="trMajor" placeholder="${esc(P.transfer.majorHint||'Your intended major')}"></div>
+     </div>
+     <h3 class="block-h" style="margin-top:6px">Schools you’re considering<small>Choose as many as you like.</small></h3>
+     <div class="grid" id="schoolGrid"></div>
+     <div class="form2" style="margin-top:14px"><div class="fld full"><label for="trOther">Another school not listed</label><input id="trOther" placeholder="School name"></div></div>
+     <div class="fld" style="max-width:46em"><span class="lbl">Transfer checklist</span><div class="checks" id="trTodo"></div></div>
+     <div class="callout"><strong>Transfer tip:</strong> ${esc(P.transfer.tip||'')}<div class="linkrow">${(P.transfer.links||[]).map(l=>`<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)}</a>`).join('')}</div></div>
+   </div>`,
+ experience:()=>`<div class="status" id="exStatus"></div><div class="choice" id="exPlan" role="group" aria-label="Experience plan"></div>
+   <div id="exMore">
+     <div class="form2">
+       <div class="fld"><label for="exWhen">When</label><select id="exWhen"><option value="">Choose one</option>${P.experience.when.map(o=>`<option>${esc(o)}</option>`).join('')}</select></div>
+       <div class="fld"><label for="exHours">Hours available each week</label><select id="exHours"><option value="">Choose one</option>${P.experience.hours.map(o=>`<option>${esc(o)}</option>`).join('')}</select></div>
+     </div>
+     <div class="fld" style="max-width:46em"><span class="lbl">What kinds of experience interest you?</span><div class="checks" id="exTypes"></div></div>
+     <div class="fld" style="max-width:46em;margin-top:16px"><label for="exNotes">Anything your advisor should know</label><textarea id="exNotes" placeholder="For example: I work weekends, or I’m interested in a specific employer."></textarea></div>
+   </div>${P.experience.callout?`<div class="callout">${esc(P.experience.callout)}</div>`:''}`,
+ review:()=>`<div class="missing" id="missing"></div>
+   <div class="actions">
+     <button class="btn go" id="saveBtn">Save plan</button><button class="btn" id="printBtn">Print plan</button>
+     <button class="btn ghost" id="dlHtml">Download plan (.html)</button><button class="btn ghost" id="dlJson">Download plan file (.json)</button>
+     <button class="btn ghost" id="loadBtn">Open a plan file</button><input type="file" id="loadFile" accept=".json,application/json" hidden>
+   </div>
+   <div class="notes-wrap"><h3 class="block-h" style="margin-top:0">Advisor notes<small>Generated from your answers. Talk these through at your appointment.</small></h3><ul class="notes" id="notes"></ul></div>
+   <div class="report" id="report"></div>
+   <p style="margin-top:28px"><button class="btn ghost small" id="resetAll">Start a new plan</button></p>`};
+function build(){
+  document.title=P.brand+': '+P.program.name;
+  $('#brandName').textContent=P.brand;$('#heroTitle').textContent=P.hero.title;$('#heroSub').textContent=P.hero.sub;
+  $('#startBtn').href='#'+P.steps[0].id;$('#startBtn').textContent='Start with '+P.steps[0].nav.toLowerCase();
+  $('#sideNav').innerHTML=P.steps.map((s,i)=>`<li><a href="#${s.id}" data-k="${s.id}" style="--sk:${COLORS[s.color]||COLORS.navy}"><span class="n">${String(i+1).padStart(2,'0')}</span>${esc(s.nav)}<span class="c"></span></a></li>`).join('');
+  $('#main').innerHTML=P.steps.map((s,i)=>{const nx=P.steps[i+1];
+    return`<section class="mod" id="${s.id}" style="--k:${COLORS[s.color]||COLORS.navy}"><div class="mod-head"><div class="mod-num">${String(i+1).padStart(2,'0')}</div><div><h2>${esc(s.title)}</h2><p>${esc(s.intro)}</p></div></div>${SHELL[s.type]()}${nx?`<div class="next-step"><a class="btn" href="#${nx.id}">Next: ${esc(nx.nav.toLowerCase())}</a></div>`:''}</section>`;}).join('');
+  $('.side-note').textContent=has('track')?`Work through the steps in order. Your ${TW} in step 1 sets the classes in your course plan.`:'Work through the steps in order. Your career picks drive the suggestions in later steps.';
+  $('#foot').textContent=`${P.brand} for the ${P.program.name} at ${P.college}. Program requirements come from the ${P.program.catalog?P.program.catalog+' ':''}college catalog, retrieved ${P.program.retrieved}. Course sequences are a planning aid; the official catalog and your advisor have the final word.`;
+  $('#stStart').innerHTML=START_TERMS.map(t=>`<option>${t}</option>`).join('');}
+build();
+
+/* ================= rail ================= */
+function railSummary(){
+  const st=steps(),t=S.transfer,x=S.exp;const list=(a,f,max=2)=>a.slice(0,max).map(f).join(', ')+(a.length>max?` and ${a.length-max} more`:'');
+  const sv={
+   track:()=>S.track==='tbd'?'Still exploring':S.track?`<em>${esc(trackById(S.track).name)}</em>`:`Choose a ${TW}`,
+   certs:()=>S.certs.length?`<em>${S.certs.length} planned</em>: ${esc(list(S.certs,id=>certById(id).short||certById(id).name))}`:S.noCerts?'None planned yet':'Plan your certifications',
+   settings:()=>S.settings.length?esc(list(S.settings,id=>setById(id).name)):`Pick where you want to work`,
+   careers:()=>S.careers.length?`<em>${S.careers.length} selected</em>: ${esc(list(S.careers,id=>careerById(id).name))}`:`Choose ${P.careers.min} to ${P.careers.max} careers`,
+   plan:()=>{if(has('track')&&!S.track)return`Choose a ${TW} first`;const e=M.issues.filter(i=>i.sev==='err').length;
+     return`<em>${M.total} credits</em>, finishing ${esc(M.terms[M.last].label)}${e?`, ${e} ${plural(e,'conflict')} to fix`:''}`;},
+   transfer:()=>t.plan==='yes'?`<em>Transfer planned</em>${t.schools.length?': '+esc(list(t.schools,id=>schoolById(id).name.replace(/ \(.*\)/,''))):''}`:t.plan==='maybe'?'Undecided for now':t.plan==='no'?'Not planning to transfer':'Decide about a bachelor’s degree',
+   experience:()=>x.plan==='yes'?`<em>Yes</em>${x.when?', '+esc(x.when.toLowerCase()):''}`:x.plan==='maybe'?`<em>Maybe</em>${x.when?', '+esc(x.when.toLowerCase()):''}`:x.plan==='no'?'Not planning any':'Decide what to try'};
+  return P.steps.filter(s=>s.type!=='review').map(s=>({k:s.id,title:s.nav,c:COLORS[s.color]==='var(--green)'?'var(--green-b)':COLORS[s.color],sv:sv[s.type](),ok:st[s.type]}));}
+function renderRail(){
+  const items=railSummary(),all=items.every(x=>x.ok);
+  $('#railList').innerHTML=items.map((it,i)=>`<li class="stop${it.ok?' ok':''}" style="--sc:${it.c};${i&&items[i-1].ok?`--sc-prev:${items[i-1].c}`:''}"><span class="node">${it.ok?'✓':i+1}</span><a href="#${it.k}"><b>${esc(it.title)}</b><span class="sv">${it.sv}</span></a></li>`).join('')+
+   `<li class="stop goal${all?' ok':''}" style="--sc:var(--green-b)"><span class="node">★</span><a href="#review"><b>${esc(P.hero.goal)}</b><span class="sv">${esc(all?P.hero.goalDone:P.hero.goalTodo)}</span></a></li>`;
+  $('#railName').textContent=S.student.name?'for '+S.student.name:'';
+  $('#railSaved').textContent=S.savedAt?'Saved '+new Date(S.savedAt).toLocaleString([], {dateStyle:'medium',timeStyle:'short'}):'Autosaves as you go';}
+
+/* ================= track ================= */
+function renderTrack(){
+  $('#trkGrid').innerHTML=P.tracks.map(t=>`<button class="pick cred" data-id="${t.id}" aria-pressed="${S.track===t.id}"><span class="tick" aria-hidden="true">✓</span><h4>${esc(t.name)}</h4><span class="big">${t.total} <small>${esc(t.totalNote||'credits total')}</small></span><p>${esc(t.desc)}</p></button>`).join('')+
+    `<button class="pick cred" data-id="tbd" aria-pressed="${S.track==='tbd'}"><span class="tick" aria-hidden="true">✓</span><h4>Not sure yet</h4><p>Show me the classes every ${TW} shares. I’ll choose later.</p></button>`;
+  $$('#trkGrid .pick').forEach(b=>b.onclick=()=>{const id=b.dataset.id;if(S.track===id)S.track='';else{S.track=id;S.move={};
+      if(has('transfer')&&trackById(id)&&(!S.transfer.major.trim()||P.tracks.some(t=>t.name===S.transfer.major)))S.transfer.major=trackById(id).name;}changed();});
+  $('#trkStatus').innerHTML=S.track==='tbd'?`<b>Still exploring</b> Showing the shared core classes <span class="pill ok">Ready</span>`:S.track?`<b>${esc(trackById(S.track).name)}</b> <span class="pill ok">Ready</span>`:`Choose a ${TW} <span class="pill">Not started</span>`;}
+
+/* ================= careers ================= */
+let carCat='ALL',carQ='';
+function renderCarFilters(){
+  $('#carFilters').innerHTML=`<button class="chipf" data-c="ALL" aria-pressed="${carCat==='ALL'}">All</button>`+(P.tracks||[]).map(t=>`<button class="chipf" data-c="${t.id}" aria-pressed="${carCat===t.id}">${esc(shortT(t.name))}</button>`).join('')+
+   `<button class="chipf" data-c="SEL" aria-pressed="${carCat==='SEL'}">My picks</button><input class="search" id="carQ" type="search" placeholder="Search careers" aria-label="Search careers" value="${esc(carQ)}">`;
+  $$('#carFilters .chipf').forEach(b=>b.onclick=()=>{carCat=b.dataset.c;renderCarFilters();renderCareers();});
+  $('#carQ').oninput=e=>{carQ=e.target.value;renderCareers();};}
+function renderCareers(){
+  const q=carQ.trim().toLowerCase(),L=P.careers;
+  const list=L.list.filter(r=>(carCat==='ALL'||(carCat==='SEL'?S.careers.includes(r.id):(r.tracks||[]).includes(carCat)))&&(!q||(r.name+' '+r.desc).toLowerCase().includes(q)));
+  $('#carGrid').innerHTML=list.length?list.map(r=>{const m=(r.tracks||[]).includes(S.track);
+    return`<button class="pick" data-id="${r.id}" aria-pressed="${S.careers.includes(r.id)}"><span class="tick" aria-hidden="true">✓</span><h4>${esc(r.name)}</h4><p>${esc(r.desc)}</p><span class="meta">${m?`<span class="tagc match">Fits your ${TW}</span>`:''}${(r.tracks||[]).map(t=>`<span class="tagc">${esc(shortT(trackById(t).name))}</span>`).join('')}${(r.courses||[]).map(c=>`<span class="tagc">${esc(fmt(c))}</span>`).join('')}</span></button>`;}).join(''):'<div class="empty" style="grid-column:1/-1">No careers match. Clear the search or choose All.</div>';
+  $$('#carGrid .pick').forEach(b=>b.onclick=()=>{const id=b.dataset.id;
+    if(!S.careers.includes(id)&&S.careers.length>=L.max){toast(`You’ve picked ${L.max}. Remove one to add another.`);return;}
+    toggle(S.careers,id);changed();});
+  const n=S.careers.length;
+  $('#carStatus').innerHTML=`<b>${n}</b> of ${L.min} to ${L.max} careers selected <span class="pill ${n>=L.min?'ok':''}">${n<L.min?`Pick ${L.min-n} more`:n===L.max?'Maximum reached':'Ready'}</span>`;}
+
+/* ================= plan ================= */
+const openDet=new Set();
+function courseRow(i){
+  const slot=C(i.code),c=i.eff,iss=M.issues.filter(x=>x.code===i.code),g=P.groups[slot.grp];
+  const inPlan=(c.pre||[]).map(fmt),co=(c.co||[]).map(fmt);
+  const rec=code=>S.careers.filter(id=>(careerById(id).courses||[]).includes(code)).length;
+  const pre=[inPlan.length?inPlan.join(' and ')+' (C or higher)':'',c.preText||''].filter(Boolean).join('; ');
+  return`<div class="crow${i.done?' done':''}">
+    <input type="checkbox" data-c="${i.code}" ${i.done?'checked':''} aria-label="Passed ${esc(i.name)}">
+    <div><div class="top-l"><span class="cc">${esc(i.sel?fmt(i.sel):slot.ph?'YOUR CHOICE':fmt(i.code))}</span><span class="cr">${slot.cr} cr</span></div>
+      <span class="ct">${esc(i.sel?c.t:slot.t)}</span>
+      <span class="bd">${g?`<i title="${esc(g.name)}">${g.tag}</i>`:''}${c.off&&c.off.length<3?`<i class="off">${esc(c.offNote||c.off.map(k=>NAMES[k]).join(' and '))} only</i>`:(!slot.ph||i.sel)&&!c.off?'<i title="The catalog does not say which terms this class runs">Confirm terms</i>':''}</span>
+      ${slot.pick?`<select class="ph" data-pk="${i.code}" aria-label="Your choice for ${esc(slot.t)}"><option value="">Choose a class</option>${slot.pick.map(o=>{const n=rec(o),oc=C(o);return`<option value="${o}"${o===i.sel?' selected':''}>${n?'\u2605 ':''}${esc(fmt(o))} ${esc(oc.t)}${oc.off&&oc.off.length<3?' ('+esc(oc.offNote||oc.off.map(k=>NAMES[k]).join('/'))+' only)':''}</option>`;}).join('')}</select>`:slot.ph?`<input class="ph" data-ph="${i.code}" value="${esc(S.choices[i.code]||'')}" placeholder="Class you plan to take" aria-label="Your choice for ${esc(slot.t)}">`:''}
+      ${iss.map(x=>`<p class="iss ${x.sev==='check'?'check':''}">${esc(x.msg)}</p>`).join('')}
+      <div class="mv"><label for="mv-${i.code}">Term</label><select id="mv-${i.code}" data-mv="${i.code}">${M.terms.map((t,ix)=>`<option value="${ix}"${ix===i.term?' selected':''}>${esc(t.label)}</option>`).join('')}</select></div>
+      <details data-d="${i.code}"${openDet.has(i.code)?' open':''}><summary>Details</summary>
+        ${pre?`<p><b>Prerequisite:</b> ${esc(pre)}</p>`:''}${co.length?`<p><b>Before or together with:</b> ${esc(co.join(' and '))}</p>`:''}
+        ${c.note?`<p>${esc(c.note)}</p>`:''}${slot.phNote?`<p>${esc(slot.phNote)}</p>`:''}${slot.pick&&S.careers.some(id=>(careerById(id).courses||[]).length)?'<p>\u2605 marks classes suggested by the careers you picked.</p>':''}${c.desc?`<p>${esc(c.desc)}</p>`:''}
+        ${c.topics?`<p><b>What you’ll study:</b></p><ul>${c.topics.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>`:''}
+        ${!pre&&!co.length&&!c.note&&!slot.phNote&&!c.topics&&!c.desc?'<p>No prerequisites listed in the catalog.</p>':''}
+      </details></div></div>`;}
+function renderPlan(){
+  const errs=M.issues.filter(i=>i.sev==='err').length,chk=M.issues.filter(i=>i.sev==='check').length;
+  if(has('track')&&!S.track){$('#planStatus').innerHTML=`Choose a ${TW} in step 1 first <span class="pill">Not started</span>`;
+    $('#planBox').innerHTML=`<div class="empty">Choose a ${TW} in step 1 to see your classes by term.</div>`;$('#grpBars').innerHTML='';$('#partNote').textContent='';$('.plan-tools').hidden=true;return;}
+  $('.plan-tools').hidden=false;
+  $('#planStatus').innerHTML=`<b>${M.total}</b> credits, ${M.doneCr} completed, finishing ${esc(M.terms[M.last].label)}${chk?`, ${chk} ${plural(chk,'thing')} to check`:''} <span class="pill ${errs?'warn':'ok'}">${errs?`${errs} ${plural(errs,'conflict')} to fix`:'Ready'}</span>`;
+  const shown=M.terms.map((t,ix)=>({t,ix})).filter(o=>o.t.courses.length||(o.t.k!=='U'&&o.ix<=Math.max(M.last,S.nterms-1)));
+  const n=shown.length;
+  $('#planBox').innerHTML=`<div class="plan ${n<=4?'n'+n:'nx'}">${shown.map(({t,ix})=>{const li=M.issues.filter(x=>x.term===ix);
+    return`<div class="sem${li.length?' warn':''}"><div class="sem-h"><h4>${esc(t.label)}</h4><span>${t.cr} cr</span></div>${t.courses.length?t.courses.map(courseRow).join(''):'<div class="crow" style="grid-template-columns:1fr;color:var(--ink-2)">No classes planned. Use a class’s Term menu to move it here.</div>'}${li.map(x=>`<div class="load">${esc(x.msg)}</div>`).join('')}</div>`;}).join('')}</div>`;
+  $$('#planBox input[type=checkbox]').forEach(c=>c.onchange=()=>{toggle(S.done,c.dataset.c);changed();});
+  $$('#planBox select[data-mv]').forEach(s=>s.onchange=()=>{S.move[s.dataset.mv]=+s.value;changed();});
+  $$('#planBox input[data-ph]').forEach(s=>s.onchange=()=>{S.choices[s.dataset.ph]=s.value.trim();changed();});
+  $$('#planBox select[data-pk]').forEach(s=>s.onchange=()=>{S.choices[s.dataset.pk]=s.value;changed();});
+  $('#confirmed').checked=!!S.confirmed;
+  $$('#planBox details').forEach(d=>d.ontoggle=()=>{d.open?openDet.add(d.dataset.d):openDet.delete(d.dataset.d);});
+  const by={};M.items.forEach(i=>{const g=C(i.code).grp;by[g]=by[g]||{tot:0,done:0};by[g].tot+=C(i.code).cr;if(i.done)by[g].done+=C(i.code).cr;});
+  $('#grpBars').innerHTML=Object.keys(P.groups).filter(g=>by[g]).map(g=>`<div class="pbar"><span>${esc(P.groups[g].name)}</span><span class="tr"><span style="width:${by[g].done/by[g].tot*100}%"></span></span><span class="nums">${by[g].done} / ${by[g].tot} cr</span></div>`).join('');
+  $('#partNote').textContent=(S.student.load==='part'?' You chose part-time: move classes into later terms with each class’s Term menu, and add terms as you need them.':'')+(S.student.start.startsWith('Spring')?' The suggested sequence assumes a Fall start, so your first Spring is left open; move classes into it where prerequisites allow.':'');}
+
+/* ================= transfer ================= */
+function choiceBtns(el,opts,val,set){el.innerHTML=opts.map(([v,l,s])=>`<button class="opt" data-v="${v}" aria-pressed="${val===v}">${l}<small>${s}</small></button>`).join('');
+  $$('.opt',el).forEach(b=>b.onclick=()=>{set(b.dataset.v);changed();});}
+function renderTransfer(){
+  const t=S.transfer;
+  choiceBtns($('#trPlan'),[['yes','Yes, I plan to transfer',esc(P.transfer.yesSub||'Bachelor’s degree')],['maybe',P.transfer.designed?'Probably':'Maybe later',P.transfer.designed?'I’m still deciding where':'I want to keep the option open'],['no','No',P.transfer.designed?'I don’t plan to transfer':'I’m heading straight to work']],t.plan,v=>t.plan=v);
+  $('#trMore').hidden=!t.plan||t.plan==='no';
+  $('#trTiming').value=t.timing;if(document.activeElement!==$('#trMajor'))$('#trMajor').value=t.major;if(document.activeElement!==$('#trOther'))$('#trOther').value=t.other;
+  $('#schoolGrid').innerHTML=P.transfer.schools.map(s=>`<button class="pick" data-id="${s.id}" aria-pressed="${t.schools.includes(s.id)}"><span class="tick" aria-hidden="true">✓</span><h4>${esc(s.name)}</h4><p>${esc(s.loc)}</p>${s.note?`<p>${esc(s.note)}</p>`:''}<span class="meta">${s.primary?'<span class="tagc match">Most common destination</span>':''}${P.transfer.equiv&&P.transfer.equiv[s.id]?'<span class="tagc">Course equivalents in your report</span>':''}</span></button>`).join('');
+  $$('#schoolGrid .pick').forEach(b=>b.onclick=()=>{toggle(t.schools,b.dataset.id);changed();});
+  $('#trTodo').innerHTML=P.transfer.todo.map((g,i)=>`<label class="ck"><input type="checkbox" data-i="${i}" ${t.todo.includes(i)?'checked':''}>${esc(g)}</label>`).join('');
+  $$('#trTodo input').forEach(c=>c.onchange=()=>{toggle(t.todo,+c.dataset.i);changed();});
+  const n=t.schools.length+(t.other.trim()?1:0);
+  $('#trStatus').innerHTML=steps().transfer?`<b>${t.plan==='yes'?'Transfer planned':t.plan==='maybe'?'Keeping the option open':'Not transferring'}</b>${t.plan!=='no'&&n?`<span>${n} ${plural(n,'school')}</span>`:''} <span class="pill ok">Ready</span>`:t.plan==='yes'?'Choose at least one school <span class="pill">In progress</span>':'Choose an option <span class="pill">Not started</span>';}
+
+/* ================= experience ================= */
+function renderExp(){
+  const x=S.exp;
+  choiceBtns($('#exPlan'),[['yes','Yes',esc(P.experience.yesSub||'I want experience while I’m here')],['maybe','Maybe','Tell me more first'],['no','No','Not right now']],x.plan,v=>x.plan=v);
+  $('#exMore').hidden=!x.plan||x.plan==='no';
+  $('#exWhen').value=x.when;$('#exHours').value=x.hours;if(document.activeElement!==$('#exNotes'))$('#exNotes').value=x.notes;
+  $('#exTypes').innerHTML=P.experience.types.map(g=>`<label class="ck"><input type="checkbox" data-g="${esc(g)}" ${x.types.includes(g)?'checked':''}>${esc(g)}</label>`).join('');
+  $$('#exTypes input').forEach(c=>c.onchange=()=>{toggle(x.types,c.dataset.g);changed();});
+  $('#exStatus').innerHTML=steps().experience?`<b>${x.plan==='yes'?'Experience planned':x.plan==='maybe'?'Considering it':'None planned'}</b>${x.plan!=='no'&&x.when?`<span>${esc(x.when)}</span>`:''} <span class="pill ok">Ready</span>`:x.plan?'Choose when <span class="pill">In progress</span>':'Choose an option <span class="pill">Not started</span>';}
+
+/* ================= student ================= */
+function renderStudent(){if(document.activeElement!==$('#stName'))$('#stName').value=S.student.name;if(document.activeElement!==$('#stEmail'))$('#stEmail').value=S.student.email;$('#stStart').value=S.student.start;$('#stLoad').value=S.student.load;}
+function wire(){
+  $('#stName').oninput=e=>{S.student.name=e.target.value;changed();};
+  $('#stEmail').oninput=e=>{S.student.email=e.target.value;changed();};
+  $('#stStart').onchange=e=>{S.student.start=e.target.value;if(Object.keys(S.move).length){S.move={};toast('Start term changed. Your classes are back on the suggested sequence.');}changed();};
+  $('#stLoad').onchange=e=>{S.student.load=e.target.value;changed();};
+  if(has('plan')){$('#addTerm').onclick=()=>{S.nterms=Math.min(18,Math.max(S.nterms,M.terms.length)+1);changed();toast('Added '+M.terms[M.terms.length-1].label);};
+    $('#resetPlan').onclick=()=>{S.move={};S.nterms=6;changed();toast('Back to the suggested sequence');};}
+  if(has('plan'))$('#confirmed').onchange=e=>{S.confirmed=e.target.checked;changed();};
+  if(has('certs'))$('#noCerts').onchange=e=>{S.noCerts=e.target.checked;changed();};
+  if(has('transfer')){$('#trTiming').onchange=e=>{S.transfer.timing=e.target.value;changed();};
+    $('#trMajor').oninput=e=>{S.transfer.major=e.target.value;changed();};$('#trOther').oninput=e=>{S.transfer.other=e.target.value;changed();};}
+  if(has('experience')){$('#exWhen').onchange=e=>{S.exp.when=e.target.value;changed();};$('#exHours').onchange=e=>{S.exp.hours=e.target.value;changed();};
+    $('#exNotes').oninput=e=>{S.exp.notes=e.target.value;changed();};}}
+
+/* ================= advisor notes ================= */
+function advisorNotes(){
+  const N=[],t=S.transfer,st=steps();
+  if(has('track')&&S.track==='tbd')N.push(['warn',`You haven’t chosen a ${TW} yet. Some of your classes depend on it, so aim to decide by the end of your first term.`]);
+  if(has('plan')&&(!has('track')||S.track)){
+    M.issues.filter(i=>i.sev==='err').forEach(i=>N.push(['warn','Fix in your course plan: '+i.msg]));
+    M.issues.filter(i=>i.sev==='check').forEach(i=>N.push(['',i.msg]));
+    const open=M.items.filter(i=>C(i.code).pick&&!i.sel&&!i.done).length;if(open)N.push(['',`${open} of your class choices ${open>1?'are':'is'} still open. Pick them in your course plan so prerequisites and terms can be checked.`]);
+    if(!S.confirmed)N.push(['','Ask your advisor which terms each class in your plan runs (fall, spring, both, or summer), then tick the confirmation box in your course plan.']);}
+  (P.advice||[]).forEach(a=>{if(a.tracks?a.tracks.includes(S.track):(!has('track')||(S.track&&S.track!=='tbd')))N.push(['',a.text]);});
+  if(has('careers')&&S.track&&S.track!=='tbd'&&S.careers.length){const off=S.careers.map(careerById).filter(c=>c.tracks&&!c.tracks.includes(S.track));
+    if(off.length)N.push(['',`${off.length} of your careers (${off.map(c=>c.name).join(', ')}) ${off.length>1?'are':'is'} more common in another ${TW}. Ask whether ${trackById(S.track).name} still gets you there, or whether a different area fits better.`]);}
+  if(has('transfer')){
+    if(t.plan==='no'&&P.transfer.designed)N.push(['warn',P.transfer.noNote||'This degree is designed for transfer. If you don’t plan to transfer, ask your advisor whether a different program fits your goal better.']);
+    if(t.plan==='yes'&&!P.transfer.designed&&P.transfer.yesNote)N.push(['',P.transfer.yesNote]);
+    if(t.plan&&t.plan!=='no'){const names=[...t.schools.map(id=>schoolById(id).name),...(t.other.trim()?[t.other.trim()]:[])];
+      if(names.length&&!t.todo.includes(0))N.push(['',`Look up each of your classes on NJ Transfer for ${names.join(', ')} to see how it counts toward your major there.`]);
+      if(S.done.length===0&&names.length>1)N.push(['','Requirements differ between your schools. Compare them early so your electives work for all of them.']);}}
+  if(S.student.load==='part')N.push(['',P.partNote||'You plan to attend part-time. Map out which term you’ll take each class so prerequisites stay in order.']);
+  if(has('certs')&&S.certs.length){const adv=S.certs.map(certById).filter(c=>c.exp);if(adv.length)N.push(['','These need work experience first, so treat them as longer-term goals: '+adv.map(c=>c.name).join(', ')+'.']);}
+  if(has('experience')&&S.exp.plan==='no')N.push(['',P.experience.noNote||'Employers often ask for experience even for entry jobs. If an internship won’t fit, ask about part-time or volunteer options.']);
+  if(!N.some(n=>n[0]==='warn')&&Object.values(st).every(Boolean))N.unshift(['good','Your plan is complete. Bring it to your advisor to confirm your class schedule.']);
+  return N;}
+
+/* ================= report ================= */
+function eqSchool(){const e=P.transfer&&P.transfer.equiv;if(!e||!has('transfer')||S.transfer.plan==='no')return null;const id=S.transfer.schools.find(s=>e[s]);return id?{id,...e[id]}:null;}
+function reportHTML(){
+  const t=S.transfer,x=S.exp,now=new Date().toLocaleDateString([], {dateStyle:'long'}),none='<p class="none">Not answered yet.</p>',eq=eqSchool();
+  const sec={
+   track:()=>S.track==='tbd'?`<p>Still exploring. Showing the classes every ${TW} shares.</p>`:S.track?`<p><b>${esc(trackById(S.track).name)}</b>, ${esc(P.program.name)} (${trackById(S.track).total} credits)</p>`:none,
+   careers:()=>S.careers.length?`<div class="tbl"><table><thead><tr><th>Career</th><th>${has('track')?'Fits':'Suggested classes'}</th></tr></thead><tbody>${S.careers.map(careerById).map(r=>`<tr><td>${esc(r.name)}</td><td>${esc(has('track')?(r.tracks||[]).map(k=>shortT(trackById(k).name)).join(', '):(r.courses||[]).map(fmt).join(', '))}</td></tr>`).join('')}</tbody></table></div>`:none,
+   certs:()=>S.certs.length?`<div class="tbl"><table><thead><tr><th>Certification</th><th>Offered by</th><th>When</th></tr></thead><tbody>${S.certs.map(certById).map(c=>`<tr><td>${esc(c.name)}</td><td>${esc(c.org||'')}</td><td>${esc(c.when||'Set with advisor')}</td></tr>`).join('')}</tbody></table></div>`:S.noCerts?'<p>No certification planned yet.</p>':none,
+   settings:()=>S.settings.length?`<ul>${S.settings.map(setById).map(x=>`<li><b>${esc(x.name)}</b>${x.note?': '+esc(x.note):''}</li>`).join('')}</ul>`:none,
+   plan:()=>{if(has('track')&&!S.track)return none;const errs=M.issues.filter(i=>i.sev==='err');
+     return`<p><b>${M.total}</b> credits planned, <b>${M.doneCr}</b> completed, finishing ${esc(M.terms[M.last].label)}.</p><div class="rp-terms">${M.terms.filter(q=>q.courses.length).map(q=>`<div><h5>${esc(q.label)}, ${q.cr} credits</h5><table><tbody>${q.courses.map(i=>{const c=C(i.code);
+       const e=i.eff;return`<tr><td style="width:84px;white-space:nowrap">${esc(i.sel?fmt(i.sel):c.ph?'Choice':fmt(i.code))}</td><td>${esc(i.sel?e.t:c.t)}${c.ph&&!c.pick&&S.choices[i.code]?': '+esc(S.choices[i.code]):''}${c.pick&&!i.sel?' (not chosen yet)':''}${i.done?' (completed)':''}${eq?`<br><span class="small">${esc(eq.label)}: ${esc((e.eq&&e.eq[eq.id])||'look up on NJ Transfer')}</span>`:''}</td><td style="width:26px">${c.cr}</td></tr>`;}).join('')}</tbody></table></div>`).join('')}</div>
+       ${eq?`<p class="small">${esc(eq.source)}</p>`:''}<p class="small">${S.confirmed?'\u2611':'\u2610'} Terms offered confirmed with an advisor</p>${errs.length?`<p style="margin:8px 0 0;font-weight:700;color:#C62B3A">Conflicts to fix</p><ul>${errs.map(i=>`<li>${esc(i.msg)}</li>`).join('')}</ul>`:''}`;},
+   transfer:()=>{if(!t.plan)return none;const schools=[...t.schools.map(id=>schoolById(id).name),...(t.other.trim()?[t.other.trim()]:[])];
+     return`<dl class="kv"><dt>Plan</dt><dd>${t.plan==='yes'?'Yes, I plan to transfer':t.plan==='maybe'?'Probably':'No'}</dd>${t.plan!=='no'?`<dt>Timing</dt><dd>${esc(t.timing||'Not set')}</dd><dt>Intended major</dt><dd>${esc(t.major||'Not set')}</dd><dt>Schools</dt><dd>${schools.length?schools.map(esc).join(', '):'Not set'}</dd><dt>Checklist</dt><dd>${P.transfer.todo.map((g,i)=>`${t.todo.includes(i)?'☑':'☐'} ${esc(g)}`).join('<br>')}</dd>`:''}</dl>`;},
+   experience:()=>x.plan?`<dl class="kv"><dt>Plan</dt><dd>${x.plan==='yes'?'Yes':x.plan==='maybe'?'Maybe':'No'}</dd>${x.plan!=='no'?`<dt>When</dt><dd>${esc(x.when||'Not set')}</dd><dt>Hours per week</dt><dd>${esc(x.hours||'Not set')}</dd><dt>Interested in</dt><dd>${x.types.length?x.types.map(esc).join(', '):'Not set'}</dd>${x.notes.trim()?`<dt>Notes</dt><dd>${esc(x.notes)}</dd>`:''}`:''}</dl>`:none};
+  const notes=advisorNotes();
+  return`<h3>Academic and Career Plan</h3><p class="sub">${esc(S.student.name||'Student name')}${S.student.email?', '+esc(S.student.email):''}. ${esc(P.program.name)}, ${esc(P.college)}. Starting ${esc(S.student.start)}, ${S.student.load==='part'?'part-time':'full-time'}. Prepared ${now}.</p>
+   ${P.steps.filter(s=>s.type!=='review').map((s,i)=>`<h4>${i+1}. ${esc(s.nav)}</h4>${sec[s.type]()}`).join('')}
+   ${notes.length?`<h4>Advisor notes</h4><ul>${notes.map(n=>`<li>${esc(n[1])}</li>`).join('')}</ul>`:''}
+   <div class="sig"><div>Student signature</div><div>Advisor signature</div><div>Date</div></div>
+   <p class="disc">Course numbers, credits, prerequisites, and sequences are a planning aid taken from the ${esc(P.college)} ${esc(P.program.catalog||'')} catalog page for ${esc(P.program.code)}, retrieved ${esc(P.program.retrieved)}. Confirm them with the current catalog and your advisor before registering.</p>`;}
+function renderReview(){
+  const st=steps(),miss=P.steps.filter(s=>s.type!=='review'&&!st[s.type]);
+  $('#missing').innerHTML=miss.map(s=>`<a href="#${s.id}">Finish: ${esc(s.nav)}</a>`).join('');
+  $('#notes').innerHTML=advisorNotes().map(([c,txt])=>`<li class="${c==='good'?'good':''}">${esc(txt)}</li>`).join('')||'<li>Notes appear here as you complete the steps.</li>';
+  $('#report').innerHTML=reportHTML();}
+
+/* ================= progress ================= */
+function renderProgress(){const st=steps(),keys=Object.keys(st),done=keys.filter(k=>st[k]).length,pct=Math.round(done/keys.length*100);
+  $('#meterFill').style.width=pct+'%';$('#meterPct').textContent=pct+'%';
+  P.steps.forEach(s=>{const a=$(`#sideNav a[data-k="${s.id}"]`);if(s.type==='review'){$('.c',a).textContent=pct+'%';return;}
+    a.classList.toggle('done',!!st[s.type]);$('.c',a).textContent=s.type==='careers'?`${S.careers.length}/${P.careers.max}`:s.type==='certs'&&S.certs.length?S.certs.length:s.type==='settings'&&S.settings.length?S.settings.length:st[s.type]?'✓':'';});}
+
+function renderCerts(){
+  const sc={};S.careers.forEach(id=>(careerById(id).certs||[]).forEach(c=>sc[c]=(sc[c]||0)+1));
+  const recs=Object.entries(sc).filter(([id])=>certById(id)).sort((a,b)=>b[1]-a[1]);
+  $('#certRecs').innerHTML=recs.length?recs.map(([id,n])=>`<button class="rec" data-id="${id}" aria-pressed="${S.certs.includes(id)}">${esc(certById(id).short||certById(id).name)}<span class="ct" title="Listed for ${n} of your careers">${n}</span></button>`).join(''):'<div class="empty" style="width:100%">Pick careers first to see suggestions.</div>';
+  const levels=P.certs.levels||[...new Set(P.certs.list.map(c=>c.level))];
+  $('#certGroups').innerHTML=levels.map(L=>`<div class="lvl-h">${esc(L)}</div><div class="grid">${P.certs.list.filter(c=>c.level===L).map(c=>`<button class="pick" data-id="${c.id}" aria-pressed="${S.certs.includes(c.id)}"><span class="tick" aria-hidden="true">✓</span><span class="id">${esc(c.org||'')}</span><h4>${esc(c.name)}</h4><p>${esc(c.desc||'')}</p><span class="meta">${sc[c.id]?`<span class="tagc match">Fits ${sc[c.id]} of your careers</span>`:''}${c.course?`<span class="tagc">Prep: ${esc(fmt(c.course))}</span>`:''}${c.when?`<span class="tagc">${esc(c.when)}</span>`:''}</span></button>`).join('')}</div>`).join('');
+  $$('#certRecs .rec,#certGroups .pick').forEach(b=>b.onclick=()=>{toggle(S.certs,b.dataset.id);if(S.certs.length)S.noCerts=false;changed();});
+  $('#noCerts').checked=!!S.noCerts;const n=S.certs.length;
+  $('#certStatus').innerHTML=n?`<b>${n}</b> ${plural(n,'certification')} planned <span class="pill ok">Ready</span>`:S.noCerts?`<b>None planned yet</b> <span class="pill ok">Ready</span>`:`Choose a certification, or tick “not planning one yet” <span class="pill">Not started</span>`;}
+function renderSettings(){
+  $('#setGrid').innerHTML=P.settings.list.map(x=>{const m=(x.careers||[]).filter(r=>S.careers.includes(r));
+    return`<button class="pick" data-id="${x.id}" aria-pressed="${S.settings.includes(x.id)}"><span class="tick" aria-hidden="true">✓</span><h4>${esc(x.name)}</h4><p>${esc(x.note||'')}</p><span class="meta">${m.length?`<span class="tagc match">Hires for ${m.length} of your careers</span>`:''}${(x.careers||[]).slice(0,3).map(r=>careerById(r)?`<span class="tagc">${esc(careerById(r).name)}</span>`:'').join('')}</span></button>`;}).join('');
+  $$('#setGrid .pick').forEach(b=>b.onclick=()=>{toggle(S.settings,b.dataset.id);changed();});
+  const n=S.settings.length;$('#setStatus').innerHTML=n?`<b>${n}</b> selected <span class="pill ok">Ready</span>`:`Choose at least one <span class="pill">Not started</span>`;}
+const R={certs:renderCerts,settings:renderSettings,track:renderTrack,careers:renderCareers,plan:renderPlan,transfer:renderTransfer,experience:renderExp,review:renderReview};
+function renderAll(){M=model();renderStudent();renderRail();P.steps.forEach(s=>R[s.type]());renderProgress();}
+wire();if(has('careers'))renderCarFilters();renderAll();
+
+/* ================= actions ================= */
+$('#saveBtn').onclick=()=>{S.savedAt=Date.now();if(store.set(KEY,S)){renderRail();toast('Plan saved in this browser');}else toast('This browser blocked saving. Download the plan file instead.');};
+$('#printBtn').onclick=()=>{renderReview();window.print();};
+function slug(){return(S.student.name||'my').trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'my';}
+function offerFile(filename,data,mime){
+  try{const url=URL.createObjectURL(new Blob([data],{type:mime}));const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);toast('Downloaded '+filename);}
+  catch(e){toast('Downloads aren’t available here. Use Print instead.');}}
+$('#dlJson').onclick=()=>offerFile(`${slug()}-${P.program.code.toLowerCase()}-plan.json`,JSON.stringify(Object.assign({},S,{exportedAt:new Date().toISOString(),app:'brookdale-pathway-planner'}),null,2),'application/json');
+$('#dlHtml').onclick=()=>{
+  const css=[...document.styleSheets].flatMap(sh=>{try{return[...sh.cssRules].map(r=>r.cssText).filter(t=>t.startsWith('.report'));}catch(e){return[];}}).join('\n');
+  const doc=`<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Academic and Career Plan: ${esc(S.student.name||'Student')}</title><style>body{margin:0;background:#F5F8FC;font:15px/1.5 "Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;color:#14213D}.wrapr{max-width:900px;margin:30px auto;padding:0 16px}:root{--display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;--body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif}.report{border:1px solid #D3DCE8;border-radius:16px;padding:34px 38px;background:#fff}${css}@media print{body{background:#fff}.wrapr{margin:0}.report{border:0;padding:0}}</style></head><body><div class="wrapr"><div class="report">${reportHTML()}</div></div></body></html>`;
+  offerFile(`${slug()}-${P.program.code.toLowerCase()}-plan.html`,doc,'text/html');};
+$('#loadBtn').onclick=()=>$('#loadFile').click();
+$('#loadFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result);if(!d||d.pack!==P.id||!Array.isArray(d.done))throw 0;
+    S=hydrate(d);$('#stStart').innerHTML=START_TERMS.map(t=>`<option>${t}</option>`).join('');persist();renderAll();toast('Plan opened');}
+    catch(err){toast('That file isn’t a plan for this program. Choose a .json plan file from this planner.');}
+    e.target.value='';};r.readAsText(f);};
+let armed=false;$('#resetAll').onclick=e=>{if(!armed){armed=true;e.target.textContent='Select again to erase this plan';setTimeout(()=>{armed=false;e.target.textContent='Start a new plan';},4000);return;}
+  S=blank();store.del(KEY);armed=false;e.target.textContent='Start a new plan';renderAll();toast('Started a new plan');location.hash='#top';};
+
+/* nav highlight */
+if('IntersectionObserver' in window){const io=new IntersectionObserver(es=>{es.forEach(en=>{if(en.isIntersecting)$$('#sideNav a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+en.target.id));});},{rootMargin:'-40% 0px -55% 0px'});
+  $$('section.mod').forEach(s=>io.observe(s));}
+window.__bpp={get S(){return S;},get M(){return M;},steps,advisorNotes};
+})();
+
+</script>
+</body>
+</html>

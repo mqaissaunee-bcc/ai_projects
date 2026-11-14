@@ -1,0 +1,1025 @@
+{
+  "id": "bcc-plgls-aas",
+  "packVersion": 2,
+  "college": "Brookdale Community College",
+  "program": {
+    "code": "PLGLS",
+    "name": "Paralegal Studies Program, A.A.S.",
+    "short": "Paralegal Studies A.A.S.",
+    "kind": "career",
+    "credits": "60",
+    "dept": "Legal Studies",
+    "url": "https://catalog.brookdalecc.edu/programs/PLGLS",
+    "retrieved": "November 14, 2026",
+    "minGrade": "A grade of C or higher is required in all career studies courses. The catalog lists these classes under both LEGL and PLGL codes.",
+    "catalog": "2026-27"
+  },
+  "brand": "Brookdale Pathway Planner",
+  "hero": {
+    "title": "Plan the route from your first class to your first paralegal job.",
+    "sub": "Pick the kind of legal work you want to do, then build the classes, certifications, and experience that get you there. Bring the finished plan to your advising appointment at Brookdale.",
+    "goal": "First paralegal job",
+    "goalDone": "Your plan is ready for advising.",
+    "goalTodo": "Finish the steps to complete your plan."
+  },
+  "steps": [
+    {
+      "id": "careers",
+      "type": "careers",
+      "nav": "Careers",
+      "color": "navy",
+      "title": "Choose 3 to 6 kinds of legal work",
+      "intro": "Paralegals work under a lawyer's supervision in many areas of law. Pick the ones that sound like work you'd enjoy. Your picks suggest which career studies classes to choose in step 2."
+    },
+    {
+      "id": "plan",
+      "type": "plan",
+      "nav": "Course plan",
+      "color": "green",
+      "title": "Build your semester-by-semester plan",
+      "intro": "This is the catalog's suggested sequence. Seven of your classes are your choice from the career studies lists. Pick them here, check off what you've passed, and move a class to another term if you need to. The planner checks prerequisites and which terms each class runs."
+    },
+    {
+      "id": "certs",
+      "type": "certs",
+      "nav": "Certifications",
+      "color": "violet",
+      "title": "Decide about a professional certification",
+      "intro": "A certification is an exam-based credential from a national paralegal association. It is separate from your Brookdale degree."
+    },
+    {
+      "id": "settings",
+      "type": "settings",
+      "nav": "Workplaces",
+      "color": "amber",
+      "title": "Pick the workplaces you'll target",
+      "intro": "Paralegals work in many kinds of organizations. Highlighted tags show where a workplace commonly hires for the careers you picked."
+    },
+    {
+      "id": "transfer",
+      "type": "transfer",
+      "nav": "Transfer",
+      "color": "teal",
+      "title": "Will you continue to a bachelor's degree?",
+      "intro": "This program is built for employment, not transfer, but it may transfer in part or in full to some four-year schools. If a bachelor's degree or law school is in your plans, say so now."
+    },
+    {
+      "id": "experience",
+      "type": "experience",
+      "nav": "Experience",
+      "color": "red",
+      "title": "Plan experience in a legal setting",
+      "intro": "Employers look for experience in a law office. The Paralegal Internship (LEGL 299) can count as one of your career studies choices."
+    },
+    {
+      "id": "review",
+      "type": "review",
+      "nav": "Review and print",
+      "color": "ink",
+      "title": "Review, save, and print",
+      "intro": "This is the plan you'll bring to advising. Save it to keep working later, print it, or download a copy."
+    }
+  ],
+  "groups": {
+    "ge": {
+      "name": "General Education",
+      "tag": "GE"
+    },
+    "cs": {
+      "name": "Career Studies",
+      "tag": "CS"
+    },
+    "el": {
+      "name": "Elective",
+      "tag": "EL"
+    }
+  },
+  "load": {
+    "min": 12,
+    "max": 18
+  },
+  "courses": {
+    "ENGL121": {
+      "t": "English Composition: The Writing Process",
+      "cr": 3,
+      "grp": "ge",
+      "preText": "ENGL 095 (C or higher) or college placement"
+    },
+    "COMM": {
+      "t": "English Composition II or Public Speaking",
+      "cr": 3,
+      "grp": "ge",
+      "ph": true,
+      "short": "Communication choice",
+      "pick": [
+        "ENGL122",
+        "SPCH115"
+      ],
+      "phNote": "The catalog requires ENGL 122 or SPCH 115. Its suggested sequence shows SPCH 115."
+    },
+    "ENGL122": {
+      "t": "English Composition: Writing and Research",
+      "cr": 3,
+      "grp": "ge",
+      "pre": [
+        "ENGL121"
+      ]
+    },
+    "SPCH115": {
+      "t": "Public Speaking",
+      "cr": 3,
+      "grp": "ge",
+      "preText": "Foundational studies requirement in reading"
+    },
+    "SOC": {
+      "t": "Social Sciences elective",
+      "cr": 3,
+      "grp": "ge",
+      "ph": true,
+      "short": "Social Sciences",
+      "phNote": "Your choice from the Social Sciences general education list."
+    },
+    "HUMX": {
+      "t": "Humanities elective",
+      "cr": 3,
+      "grp": "ge",
+      "ph": true,
+      "short": "Humanities",
+      "phNote": "Your choice from the Humanities general education list."
+    },
+    "MST": {
+      "t": "Mathematics, Science, or Technological Competency",
+      "cr": 3,
+      "grp": "ge",
+      "ph": true,
+      "short": "Math/Science/Tech",
+      "phNote": "Your choice, 3 to 4 credits. COMP 129 may not be used toward general education in this program."
+    },
+    "GE1": {
+      "t": "General Education elective",
+      "cr": 3,
+      "grp": "ge",
+      "ph": true,
+      "short": "Gen Ed elective",
+      "phNote": "Any general education class. One is recommended from the Cultural and Global Awareness knowledge area. MUSI classes may not be used."
+    },
+    "GE2": {
+      "t": "General Education elective",
+      "cr": 3,
+      "grp": "ge",
+      "ph": true,
+      "short": "Gen Ed elective",
+      "phNote": "Any general education class. MUSI classes may not be used."
+    },
+    "ELEC": {
+      "t": "Free elective",
+      "cr": 2,
+      "grp": "el",
+      "ph": true,
+      "short": "Elective",
+      "phNote": "1 to 3 credits, enough to bring your total to 60."
+    },
+    "LEGL105": {
+      "t": "Introduction to Law",
+      "cr": 3,
+      "grp": "cs",
+      "desc": "An overview of law, court systems, and legal procedure, and the roles of the paralegal and the lawyer."
+    },
+    "LEGL106": {
+      "t": "Legal Research and Writing",
+      "cr": 4,
+      "grp": "cs",
+      "co": [
+        "ENGL121",
+        "LEGL105"
+      ],
+      "desc": "Legal research methods and writing case briefs, legal briefs, and memoranda."
+    },
+    "LEGL145": {
+      "t": "Legal Ethics",
+      "cr": 3,
+      "grp": "cs",
+      "co": [
+        "LEGL105"
+      ],
+      "desc": "The ethical duties of legal assistants."
+    },
+    "LEGL205": {
+      "t": "Civil Litigation and Trial Practice",
+      "cr": 3,
+      "grp": "cs",
+      "pre": [
+        "LEGL105"
+      ],
+      "off": [
+        "S"
+      ],
+      "preText": "or instructor's approval",
+      "desc": "Supporting civil litigation under a lawyer's supervision."
+    },
+    "LEGL210": {
+      "t": "Computer Applications in Law",
+      "cr": 3,
+      "grp": "cs",
+      "pre": [
+        "LEGL105",
+        "LEGL106"
+      ],
+      "desc": "Technology used in law offices: research tools, document management, and electronic filing."
+    },
+    "CSA1": {
+      "t": "Career studies choice (Group 2)",
+      "cr": 3,
+      "grp": "cs",
+      "ph": true,
+      "short": "Group 2 choice",
+      "pick": [
+        "LEGL125",
+        "LEGL135",
+        "LEGL215",
+        "LEGL225",
+        "LEGL226",
+        "LEGL237",
+        "LEGL299"
+      ],
+      "phNote": "You need 12 credits (four classes) from Group 2."
+    },
+    "CSA2": {
+      "t": "Career studies choice (Group 2)",
+      "cr": 3,
+      "grp": "cs",
+      "ph": true,
+      "short": "Group 2 choice",
+      "pick": [
+        "LEGL125",
+        "LEGL135",
+        "LEGL215",
+        "LEGL225",
+        "LEGL226",
+        "LEGL237",
+        "LEGL299"
+      ],
+      "phNote": "You need 12 credits (four classes) from Group 2."
+    },
+    "CSA3": {
+      "t": "Career studies choice (Group 2)",
+      "cr": 3,
+      "grp": "cs",
+      "ph": true,
+      "short": "Group 2 choice",
+      "pick": [
+        "LEGL125",
+        "LEGL135",
+        "LEGL215",
+        "LEGL225",
+        "LEGL226",
+        "LEGL237",
+        "LEGL299"
+      ],
+      "phNote": "You need 12 credits (four classes) from Group 2."
+    },
+    "CSA4": {
+      "t": "Career studies choice (Group 2)",
+      "cr": 3,
+      "grp": "cs",
+      "ph": true,
+      "short": "Group 2 choice",
+      "pick": [
+        "LEGL125",
+        "LEGL135",
+        "LEGL215",
+        "LEGL225",
+        "LEGL226",
+        "LEGL237",
+        "LEGL299"
+      ],
+      "phNote": "You need 12 credits (four classes) from Group 2."
+    },
+    "CSB1": {
+      "t": "Career studies choice (Group 2 or 3)",
+      "cr": 3,
+      "grp": "cs",
+      "ph": true,
+      "short": "Group 3 choice",
+      "pick": [
+        "BUSI221",
+        "BUSI222",
+        "LEGL126",
+        "LEGL206",
+        "LEGL235",
+        "LEGL125",
+        "LEGL135",
+        "LEGL215",
+        "LEGL225",
+        "LEGL226",
+        "LEGL237",
+        "LEGL299"
+      ],
+      "phNote": "You need 9 credits (three classes) from Group 3 or from Group 2 classes you haven't already used. LEGL 295 Special Project (1 to 4 credits) can also count; ask your advisor."
+    },
+    "CSB2": {
+      "t": "Career studies choice (Group 2 or 3)",
+      "cr": 3,
+      "grp": "cs",
+      "ph": true,
+      "short": "Group 3 choice",
+      "pick": [
+        "BUSI221",
+        "BUSI222",
+        "LEGL126",
+        "LEGL206",
+        "LEGL235",
+        "LEGL125",
+        "LEGL135",
+        "LEGL215",
+        "LEGL225",
+        "LEGL226",
+        "LEGL237",
+        "LEGL299"
+      ],
+      "phNote": "You need 9 credits (three classes) from Group 3 or from Group 2 classes you haven't already used."
+    },
+    "CSB3": {
+      "t": "Career studies choice (Group 2 or 3)",
+      "cr": 3,
+      "grp": "cs",
+      "ph": true,
+      "short": "Group 3 choice",
+      "pick": [
+        "BUSI221",
+        "BUSI222",
+        "LEGL126",
+        "LEGL206",
+        "LEGL235",
+        "LEGL125",
+        "LEGL135",
+        "LEGL215",
+        "LEGL225",
+        "LEGL226",
+        "LEGL237",
+        "LEGL299"
+      ],
+      "phNote": "You need 9 credits (three classes) from Group 3 or from Group 2 classes you haven't already used."
+    },
+    "LEGL125": {
+      "t": "Real Property Transactions",
+      "cr": 3,
+      "grp": "cs",
+      "co": [
+        "LEGL105"
+      ],
+      "off": [
+        "F"
+      ],
+      "desc": "Real estate law from ownership and financing through closing, including drafting documents."
+    },
+    "LEGL135": {
+      "t": "Family Law",
+      "cr": 3,
+      "grp": "cs",
+      "co": [
+        "LEGL105"
+      ],
+      "off": [
+        "F"
+      ],
+      "desc": "Divorce, custody, support, and adoption."
+    },
+    "LEGL215": {
+      "t": "Criminal Procedure",
+      "cr": 3,
+      "grp": "cs",
+      "pre": [
+        "LEGL105"
+      ],
+      "off": [
+        "S"
+      ],
+      "preText": "or instructor's approval",
+      "desc": "Supporting criminal litigation under an attorney's supervision."
+    },
+    "LEGL225": {
+      "t": "Wills, Estates and Probate",
+      "cr": 3,
+      "grp": "cs",
+      "pre": [
+        "LEGL105"
+      ],
+      "preText": "or instructor's approval",
+      "desc": "Drafting wills and trusts and preparing estate and tax returns."
+    },
+    "LEGL226": {
+      "t": "Corporate Law Procedure",
+      "cr": 3,
+      "grp": "cs",
+      "pre": [
+        "LEGL105"
+      ],
+      "off": [
+        "F"
+      ],
+      "preText": "or instructor's approval",
+      "desc": "Forming, operating, and dissolving business entities."
+    },
+    "LEGL237": {
+      "t": "Elder Law",
+      "cr": 3,
+      "grp": "cs",
+      "pre": [
+        "LEGL105",
+        "LEGL225"
+      ],
+      "off": [
+        "S"
+      ],
+      "preText": "or instructor's approval",
+      "desc": "Assisting attorneys with elder law matters."
+    },
+    "LEGL299": {
+      "t": "Paralegal Internship",
+      "cr": 3,
+      "grp": "cs",
+      "preText": "30 credits including the 16 credits of required career studies classes, each with a C or higher, plus approval of the Program Director and Career Services",
+      "desc": "Paid paralegal work with a log of your hours."
+    },
+    "BUSI221": {
+      "t": "Business Law I",
+      "cr": 3,
+      "grp": "cs",
+      "desc": "Contracts, agency, employment, and property."
+    },
+    "BUSI222": {
+      "t": "Business Law II",
+      "cr": 3,
+      "grp": "cs",
+      "off": [
+        "U"
+      ],
+      "desc": "Sales, partnerships, corporations, commercial paper, and bankruptcy."
+    },
+    "LEGL126": {
+      "t": "Constitutional Law",
+      "cr": 3,
+      "grp": "cs",
+      "off": [
+        "F"
+      ],
+      "desc": "An introduction to the U.S. Constitution and constitutional law."
+    },
+    "LEGL206": {
+      "t": "Torts",
+      "cr": 3,
+      "grp": "cs",
+      "pre": [
+        "LEGL105"
+      ],
+      "off": [
+        "S"
+      ],
+      "preText": "or instructor's approval",
+      "desc": "Intentional torts, negligence, strict liability, and common defenses."
+    },
+    "LEGL235": {
+      "t": "Entertainment Law I",
+      "cr": 3,
+      "grp": "cs",
+      "off": [
+        "U"
+      ],
+      "desc": "Entertainment law with a focus on the music and recording industries and contracts."
+    }
+  },
+  "slots": [
+    "Fall, year one",
+    "Spring, year one",
+    "Summer, year one",
+    "Fall, year two",
+    "Spring, year two",
+    "Summer, year two"
+  ],
+  "sequence": [
+    {
+      "c": "LEGL105",
+      "slot": 0
+    },
+    {
+      "c": "CSA1",
+      "slot": 0
+    },
+    {
+      "c": "ENGL121",
+      "slot": 0
+    },
+    {
+      "c": "SOC",
+      "slot": 0
+    },
+    {
+      "c": "LEGL145",
+      "slot": 0
+    },
+    {
+      "c": "CSA2",
+      "slot": 1
+    },
+    {
+      "c": "CSB1",
+      "slot": 1
+    },
+    {
+      "c": "LEGL106",
+      "slot": 1
+    },
+    {
+      "c": "COMM",
+      "slot": 1
+    },
+    {
+      "c": "HUMX",
+      "slot": 1
+    },
+    {
+      "c": "LEGL210",
+      "slot": 3
+    },
+    {
+      "c": "CSA3",
+      "slot": 3
+    },
+    {
+      "c": "CSB2",
+      "slot": 3
+    },
+    {
+      "c": "MST",
+      "slot": 3
+    },
+    {
+      "c": "GE1",
+      "slot": 3
+    },
+    {
+      "c": "LEGL205",
+      "slot": 4
+    },
+    {
+      "c": "CSA4",
+      "slot": 4
+    },
+    {
+      "c": "CSB3",
+      "slot": 4
+    },
+    {
+      "c": "GE2",
+      "slot": 4
+    },
+    {
+      "c": "ELEC",
+      "slot": 4
+    }
+  ],
+  "entry": [
+    "The suggested sequence assumes you have met all foundational studies requirements in reading, writing, and math.",
+    "Several career studies classes run only in Fall, only in Spring, or only in Summer. Choose yours early so the terms line up."
+  ],
+  "advice": [
+    {
+      "text": "In your first fall, a career studies choice that lists LEGL 105 as 'before or together with' (Real Property Transactions or Family Law) can be taken alongside LEGL 105. Classes that need LEGL 105 finished first have to wait."
+    },
+    {
+      "text": "The Paralegal Internship needs 30 credits, including all 16 credits of required career studies classes, so it belongs in your last term."
+    }
+  ],
+  "careers": {
+    "min": 3,
+    "max": 6,
+    "more": {
+      "label": "Occupational Outlook Handbook: paralegals and legal assistants",
+      "url": "https://www.bls.gov/ooh/legal/paralegals-and-legal-assistants.htm"
+    },
+    "list": [
+      {
+        "id": "lit",
+        "name": "Litigation paralegal",
+        "desc": "Prepares pleadings, organizes evidence and discovery, and helps attorneys get ready for trial in civil cases.",
+        "courses": [
+          "LEGL206"
+        ],
+        "certs": [
+          "cp",
+          "crp"
+        ]
+      },
+      {
+        "id": "pi",
+        "name": "Personal injury paralegal",
+        "desc": "Gathers medical records, drafts demand letters, and keeps injury cases moving.",
+        "courses": [
+          "LEGL206"
+        ],
+        "certs": [
+          "cp"
+        ]
+      },
+      {
+        "id": "re",
+        "name": "Real estate paralegal",
+        "desc": "Prepares contracts, title documents, and closing packages for property sales.",
+        "courses": [
+          "LEGL125"
+        ],
+        "certs": [
+          "cp",
+          "notary"
+        ]
+      },
+      {
+        "id": "title",
+        "name": "Title examiner or closing coordinator",
+        "desc": "Searches property records and coordinates closings for a title company or lender.",
+        "courses": [
+          "LEGL125"
+        ],
+        "certs": [
+          "notary"
+        ]
+      },
+      {
+        "id": "fam",
+        "name": "Family law paralegal",
+        "desc": "Drafts documents and works with clients in divorce, custody, support, and adoption matters.",
+        "courses": [
+          "LEGL135"
+        ],
+        "certs": [
+          "cp"
+        ]
+      },
+      {
+        "id": "est",
+        "name": "Estates and probate paralegal",
+        "desc": "Drafts wills and trusts and helps administer estates through probate.",
+        "courses": [
+          "LEGL225",
+          "LEGL237"
+        ],
+        "certs": [
+          "cp",
+          "notary"
+        ]
+      },
+      {
+        "id": "elder",
+        "name": "Elder law paralegal",
+        "desc": "Supports attorneys with guardianship, long-term care planning, and benefits for older clients.",
+        "courses": [
+          "LEGL225",
+          "LEGL237"
+        ],
+        "certs": [
+          "cp"
+        ]
+      },
+      {
+        "id": "corp",
+        "name": "Corporate paralegal",
+        "desc": "Forms business entities, maintains corporate records, and prepares filings.",
+        "courses": [
+          "LEGL226",
+          "BUSI221",
+          "BUSI222"
+        ],
+        "certs": [
+          "cp",
+          "crp"
+        ]
+      },
+      {
+        "id": "contract",
+        "name": "Contracts or compliance specialist",
+        "desc": "Reviews and tracks contracts and helps an organization follow the rules that apply to it.",
+        "courses": [
+          "BUSI221",
+          "LEGL226"
+        ],
+        "certs": [
+          "crp"
+        ]
+      },
+      {
+        "id": "crim",
+        "name": "Criminal law paralegal",
+        "desc": "Supports a prosecutor's or defense attorney's office with case files, motions, and court dates.",
+        "courses": [
+          "LEGL215",
+          "LEGL126"
+        ],
+        "certs": [
+          "cp"
+        ]
+      },
+      {
+        "id": "court",
+        "name": "Court clerk or judiciary staff",
+        "desc": "Processes filings and keeps the records and calendar of a court.",
+        "courses": [
+          "LEGL215",
+          "LEGL126"
+        ],
+        "certs": []
+      },
+      {
+        "id": "gov",
+        "name": "Government agency paralegal",
+        "desc": "Researches regulations and prepares documents for a public agency.",
+        "courses": [
+          "LEGL126"
+        ],
+        "certs": [
+          "cp"
+        ]
+      },
+      {
+        "id": "ent",
+        "name": "Entertainment or intellectual property legal assistant",
+        "desc": "Supports attorneys with contracts, licensing, and rights for artists and media companies.",
+        "courses": [
+          "LEGL235",
+          "BUSI221"
+        ],
+        "certs": []
+      },
+      {
+        "id": "gen",
+        "name": "Legal assistant in a general practice",
+        "desc": "Handles a mix of client intake, drafting, and filing in a small firm that takes many kinds of cases.",
+        "courses": [
+          "LEGL135",
+          "LEGL225",
+          "LEGL125"
+        ],
+        "certs": [
+          "alp",
+          "notary"
+        ]
+      }
+    ]
+  },
+  "certs": {
+    "intro": "Certification is voluntary. Check each organization's current eligibility rules before you plan an exam date, and ask your Legal Studies faculty which ones local employers value.",
+    "levels": [
+      "Entry level",
+      "After work experience"
+    ],
+    "list": [
+      {
+        "id": "cp",
+        "short": "NALA CP",
+        "name": "Certified Paralegal (CP)",
+        "org": "NALA",
+        "level": "Entry level",
+        "desc": "A widely recognized national exam covering legal knowledge and skills.",
+        "when": "Around graduation"
+      },
+      {
+        "id": "crp",
+        "short": "NFPA CRP",
+        "name": "CORE Registered Paralegal (CRP)",
+        "org": "NFPA",
+        "level": "Entry level",
+        "desc": "Earned by passing the Paralegal CORE Competency Exam, aimed at early-career paralegals.",
+        "when": "Around graduation"
+      },
+      {
+        "id": "alp",
+        "short": "NALS ALP",
+        "name": "Accredited Legal Professional (ALP)",
+        "org": "NALS",
+        "level": "Entry level",
+        "desc": "An entry credential covering office procedures, ethics, and legal knowledge.",
+        "when": "During or after the program"
+      },
+      {
+        "id": "notary",
+        "short": "Notary Public",
+        "name": "New Jersey Notary Public commission",
+        "org": "State of New Jersey",
+        "level": "Entry level",
+        "desc": "A state commission, not a certification, that many law offices and title companies find useful.",
+        "when": "Any time"
+      },
+      {
+        "id": "pp",
+        "short": "NALS PP",
+        "name": "Professional Paralegal (PP)",
+        "org": "NALS",
+        "level": "After work experience",
+        "desc": "An advanced exam for experienced paralegals.",
+        "when": "After several years of work",
+        "exp": true
+      },
+      {
+        "id": "rp",
+        "short": "NFPA RP",
+        "name": "PACE Registered Paralegal (RP)",
+        "org": "NFPA",
+        "level": "After work experience",
+        "desc": "Earned by passing the Paralegal Advanced Competency Exam.",
+        "when": "After several years of work",
+        "exp": true
+      },
+      {
+        "id": "acp",
+        "short": "NALA ACP",
+        "name": "Advanced Certified Paralegal (ACP)",
+        "org": "NALA",
+        "level": "After work experience",
+        "desc": "Specialty credentials for paralegals who already hold the CP.",
+        "when": "After earning the CP",
+        "exp": true
+      }
+    ]
+  },
+  "settings": {
+    "list": [
+      {
+        "id": "small",
+        "name": "Small or solo law firm",
+        "note": "A few attorneys handling many kinds of matters. You'll do a bit of everything.",
+        "careers": [
+          "gen",
+          "fam",
+          "est",
+          "re",
+          "pi"
+        ]
+      },
+      {
+        "id": "large",
+        "name": "Large law firm",
+        "note": "Specialized practice groups and larger cases.",
+        "careers": [
+          "lit",
+          "corp",
+          "ent"
+        ]
+      },
+      {
+        "id": "inhouse",
+        "name": "Corporate legal department",
+        "note": "Working inside a company on its contracts, records, and compliance.",
+        "careers": [
+          "corp",
+          "contract"
+        ]
+      },
+      {
+        "id": "govt",
+        "name": "Government agency",
+        "note": "Municipal, county, state, or federal offices, including prosecutors and public defenders.",
+        "careers": [
+          "gov",
+          "crim"
+        ]
+      },
+      {
+        "id": "courts",
+        "name": "Courts",
+        "note": "Clerk's offices and judges' chambers.",
+        "careers": [
+          "court",
+          "crim"
+        ]
+      },
+      {
+        "id": "titleco",
+        "name": "Real estate and title companies",
+        "note": "Closings, title searches, and recording.",
+        "careers": [
+          "re",
+          "title"
+        ]
+      },
+      {
+        "id": "insur",
+        "name": "Insurance companies",
+        "note": "Claims, litigation support, and subrogation.",
+        "careers": [
+          "pi",
+          "lit"
+        ]
+      },
+      {
+        "id": "bank",
+        "name": "Banks and financial services",
+        "note": "Loan documents, trusts, and compliance.",
+        "careers": [
+          "contract",
+          "est",
+          "title"
+        ]
+      },
+      {
+        "id": "aid",
+        "name": "Nonprofit and legal aid",
+        "note": "Serving clients who can't afford a private attorney.",
+        "careers": [
+          "fam",
+          "elder",
+          "gen"
+        ]
+      }
+    ]
+  },
+  "transfer": {
+    "designed": false,
+    "yesSub": "Bachelor's degree, possibly law school later",
+    "majorHint": "For example: Legal Studies, Criminal Justice, Political Science",
+    "yesNote": "A.A.S. classes are built for employment, so some may transfer only as electives. Ask a transfer counselor which of your classes count at each school before you choose your electives.",
+    "schools": [
+      {
+        "id": "rutgers",
+        "name": "Rutgers University",
+        "loc": "New Brunswick, Newark, Camden"
+      },
+      {
+        "id": "monmouth",
+        "name": "Monmouth University",
+        "loc": "West Long Branch"
+      },
+      {
+        "id": "kean",
+        "name": "Kean University",
+        "loc": "Union"
+      },
+      {
+        "id": "stockton",
+        "name": "Stockton University",
+        "loc": "Galloway"
+      },
+      {
+        "id": "montclair",
+        "name": "Montclair State University",
+        "loc": "Montclair"
+      }
+    ],
+    "timing": [
+      "Right after Brookdale",
+      "While working",
+      "After a few years of work experience",
+      "Not sure yet"
+    ],
+    "todo": [
+      "I looked up my classes on NJ Transfer for each school I chose",
+      "I asked which of my career studies classes transfer",
+      "I met with a Brookdale transfer counselor",
+      "I know each school's transfer application deadline"
+    ],
+    "links": [
+      {
+        "label": "NJ Transfer (course equivalencies)",
+        "url": "https://www.njtransfer.org/"
+      },
+      {
+        "label": "Brookdale transfer agreements by program",
+        "url": "https://www.brookdalecc.edu/transfer-agreements-by-academic-program/"
+      },
+      {
+        "label": "Brookdale Legal Studies department page",
+        "url": "https://www.brookdalecc.edu/academic-institutes-and-departments/business-social-sciences/legal-studies/"
+      }
+    ],
+    "tip": "This program is not designed for transfer, though it may transfer in part or in full. Check each school before you assume a class will count."
+  },
+  "experience": {
+    "yesSub": "I want law office experience before I graduate",
+    "when": [
+      "Summer after year one",
+      "During year two",
+      "Final semester (Paralegal Internship)"
+    ],
+    "types": [
+      "Paralegal Internship for credit (LEGL 299)",
+      "Part-time job in a law office",
+      "Court observation",
+      "Volunteering with a legal aid organization",
+      "Lambda Epsilon Chi (LEX) honor society",
+      "Job shadowing or informational interviews"
+    ],
+    "hours": [
+      "Up to 10",
+      "10 to 20",
+      "20 to 30",
+      "30 or more"
+    ],
+    "callout": "Good to know: paralegals work under an attorney's supervision and may not give legal advice. This program trains paralegals; it does not train lawyers."
+  },
+  "drafted": [
+    "careers",
+    "certs",
+    "settings",
+    "transfer schools"
+  ],
+  "questions": []
+}
