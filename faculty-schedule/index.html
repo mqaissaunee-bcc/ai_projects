@@ -622,7 +622,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         <div id="moaBox" hidden>
           <h3 style="margin:12px 0 6px;font-size:.9rem">Overload agreements</h3>
           <p class="hint" id="moaSummary"></p>
-          <div class="btn-row">
+          <div class="btn-row" id="moaDocs">
             <button class="btn" id="btnMoa" type="button">Open agreements</button>
             <button class="btn ghost" id="btnMoaWord" type="button">⤓ Word file</button>
           </div>
@@ -789,8 +789,9 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         <p>Press <b>Edit</b> on that section. You can change days, start and end times, room, and the printed title, and add a second meeting pattern for a course that meets at two different times. Your corrections are saved and survive a page reload.</p></details>
       <details data-go="#sectionList"><summary>Why is my 3-credit course counted as 4 hours?</summary>
         <p>Load is counted in contact hours, but the schedule report only publishes credits, and the two differ for lab courses. Open <b>Edit</b> on the section and set "Contact hours for load" to the right number. The published credit value still prints in the course table.</p></details>
-      <details data-go="#btnMoa"><summary>How do I get the memorandum of agreement for my overload?</summary>
-        <p>Flag each overload section with the <b>PT</b> button, then use <b>Open agreements</b> in the export panel. One agreement is produced for each part of term you have overload in, listing those sections with their credits, and with the session dates filled in from the college calendar. Print it to PDF, or download the Word version to edit.</p>
+      <details data-go="#moaBox"><summary>Who produces the memorandum of agreement for an overload?</summary>
+        <p>The Institute Office does, and sends it to you. Faculty have no step in that process, so the agreements are only in the <b>Agreements and payment</b> view — if you are teaching an overload, flag the section <b>PT</b> so your own contact hours come out right, and the office takes it from there.</p>
+        <p>For the office: flag each overload section with <b>PT</b>, then use <b>Open agreements</b> in the export panel. One agreement is produced for each part of term the person has overload in, listing those sections with their credits, and with the session dates filled in from the college calendar. Print it to PDF, or download the Word version to edit.</p>
         <p>Under "Agreement details" the office enters the institute name, dean, phone, and staff to notify, plus a rate per credit and the payment dates for each part of term. All of it is remembered, so it only has to be done once. Several institutes can be saved and switched between. Left without a rate, the amount column prints empty for the Institute Office to complete. The dean's signature line is always left blank — that is for the dean to sign.</p>
         <p>Rates differ between terms and between fall and summer, so each part of term has its own rate field; the default is only used where a session has none. The wording describing the session can also be typed in, for a term your office words differently from the tool.</p>
         <p>Office staff can share their setup with another office using "Save settings file" — it holds institutes, rate, and payment dates only, with no schedules or personal details in it.</p>
@@ -902,6 +903,16 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
             the load.</li>
           <li>Labs that are no longer on your sheet no longer clash with anything, so the false
             overlaps between a lecture and the lab running alongside it are gone.</li>
+          <li><b>Overload agreements are now only in the office's view.</b> They are drawn up by
+            the Institute Office and sent out, so faculty, chairs and deans no longer see the
+            agreements, the institute and dean fields, the rate per credit, the payment dates or
+            the settings file. Flagging a section <b>PT</b> stays exactly where it was: that is
+            about your own contact hours, not about the agreement.</li>
+          <li>The office now gets the agreement details before anyone has been flagged, so the
+            institute, rate and payment dates can be filled in once up front; the documents
+            themselves still appear only when there is overload to write one about.</li>
+          <li>An answer in the help no longer offers to take you to a control your view does not
+            have — it just tells you who does that part.</li>
           <li><b>Fixed: nobody was ever offered the guided tour.</b> The offer used to appear on a
             first visit, until the role chooser arrived and took that visit for itself — after
             which new faculty were never asked. The tour is now offered once the role is settled,
@@ -2929,7 +2940,16 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     document.body.classList.toggle("color-print", !!state.opts.printColor);
     document.body.classList.toggle("moa-view", state.view === "moa");
     var groups = moaGroups();
-    $("moaBox").hidden = !groups.length || $("moaBox").dataset.roleHidden === "1";
+    // Two halves, two rules. The office owns the settings — institute, dean,
+    // rate, payment dates — and needs them before anybody has been flagged, so
+    // the box is theirs whether or not an agreement is pending. The documents
+    // themselves only exist once there is overload to write one about.
+    var ownsMoa = $("moaBox").dataset.roleHidden !== "1";
+    $("moaBox").hidden = !ownsMoa || (!groups.length && !$("moaDetails"));
+    $("moaDocs").hidden = !groups.length;
+    $("moaSummary").textContent = groups.length ? "" :
+      "No overload flagged yet. Flag a person's overload sections with PT in step 2 and the " +
+      "agreements appear here; the details below only have to be filled in once.";
     if(groups.length){
       $("moaSummary").textContent = groups.length + " agreement" + (groups.length===1?"":"s") +
         " needed: " + groups.map(function(g){
@@ -2940,6 +2960,9 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     $("btnBackToSchedule").hidden = state.view !== "moa";
     renderMoaControls();
     renderSessionPicker(); renderChips(); renderSectionList(); renderWhoPicker(); renderCustomList(); renderReleaseList(); renderBanners(); renderSheets();
+    // Whether a control is on screen is only settled once everything has been
+    // rendered, so the help's offers to visit one are checked here.
+    syncGoButtons();
   }
 
   /* ===== written summary, for email or the clipboard ===== */
@@ -3305,11 +3328,16 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
 
   /* ===== roles: which parts of the tool a person is shown ===== */
   var ROLES = {
+    // Overload agreements are drawn up and sent out by the Institute Office.
+    // Faculty and chairs have no part in that process, so neither the documents
+    // nor the rate-and-payment settings behind them belong on their screen —
+    // flagging a section PT still counts it out of their own load, which is
+    // their business and stays where it is.
     faculty: {label:"My own schedule",
-              panels:["p1","p2","p3","p4","p5","p6"], hideMoa:false, dept:false,
+              panels:["p1","p2","p3","p4","p5","p6"], hideMoa:true, dept:false,
               note:"Work through steps 1 to 4, then print from step 6."},
     chair:   {label:"My department",
-              panels:["p1","p2","p3","p4","p5","p6"], hideMoa:false, dept:true,
+              panels:["p1","p2","p3","p4","p5","p6"], hideMoa:true, dept:true,
               note:"Add each person in step 1; the summary page leads the printout."},
     dean:    {label:"Reviewing schedules",
               panels:["p1","p2","p5","p6"], hideMoa:true, dept:true,
@@ -3335,6 +3363,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     // Loading a feed by hand is a maintainer's job, not something to offer faculty.
     $("btnLoadData").hidden = !!state.role && state.role !== "all";
     $("roleNote").textContent = r.note || "";
+    syncGoButtons();
     $("roleNote").hidden = !r.note;
     var sel = $("rolePickTop");
     sel.hidden = !state.role;
@@ -3438,6 +3467,18 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       b2.addEventListener("click", function(){ goToControl(sel); });
       row.appendChild(b2);
       d.appendChild(row);
+    });
+    syncGoButtons();
+  }
+  function syncGoButtons(){
+    // An answer can describe something this role does not have — agreements, to
+    // a faculty member. The answer is still worth reading; the offer to walk
+    // them to a control that is not on their screen is not.
+    faqEntries().forEach(function(d){
+      var row = d.querySelector(".go-row");
+      if(!row) return;
+      var target = document.querySelector(d.getAttribute("data-go"));
+      row.hidden = !target || !onScreen(target);
     });
   }
   function filterHelp(q){

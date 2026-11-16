@@ -313,10 +313,15 @@ setTimeout(() => {
   ok('days come back when untrimmed', dayCols() === beforeDays);
 
   // ---- memorandum of agreement ----
-  ok('agreements panel hidden with no overload', $('moaBox').hidden === true);
+  // The office needs the institute, rate and payment dates before anyone is
+  // flagged, so the box is theirs from the start — but there is no document to
+  // open until there is overload to write one about.
+  ok('the office keeps the settings with no overload flagged', $('moaBox').hidden === false);
+  ok('but no agreement to open yet', $('moaDocs').hidden === true);
+  ok('and it says why', /No overload flagged yet/.test($('moaSummary').textContent));
   const anyPt = [...$('sectionList').querySelectorAll('.pt-toggle')][0];
   anyPt.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
-  ok('agreements panel appears once something is flagged', $('moaBox').hidden === false);
+  ok('agreements appear once something is flagged', $('moaDocs').hidden === false);
   ok('panel says how many are needed', /agreement/.test($('moaSummary').textContent));
   $('btnMoa').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   const moa = doc.querySelector('.moa-doc');
@@ -1137,6 +1142,44 @@ setTimeout(() => {
           ok('taking the offer closes the help', n$('helpModal').hidden === true);
           ok('and opens the step the control lives in', n$('p4').open === true);
         }
+
+        // ---- agreements belong to the office ----
+        // They are drawn up by the Institute Office and sent out; faculty have
+        // no step in it, so none of that machinery is on their screen.
+        const moaOn = () => {
+          const box = nd.getElementById('moaBox');
+          for (let n2 = box; n2 && n2 !== nd.body; n2 = n2.parentNode) if (n2.hidden) return false;
+          return true;
+        };
+        const setRole = r => {
+          n$('rolePickTop').value = r;
+          n$('rolePickTop').dispatchEvent(new nw.Event('change', { bubbles: true }));
+        };
+        setRole('admin');
+        ok('the office view keeps the agreements', nd.getElementById('moaBox').dataset.roleHidden !== '1');
+        setRole('faculty');
+        ok('a faculty member is not shown agreements', moaOn() === false);
+        ok('nor the rate and payment settings behind them',
+           nd.getElementById('moaDetails') === null || moaOn() === false);
+        setRole('chair');
+        ok('nor is a chair', moaOn() === false);
+        ok('but PT stays, because it changes their own load',
+           nd.getElementById('p2').hidden === false);
+
+        // An answer about something this role has not got should not offer to
+        // walk them to it.
+        n$('btnHelp').dispatchEvent(new nw.MouseEvent('click', { bubbles: true }));
+        type('memorandum of agreement');
+        const moaAnswer = shown()[0];
+        ok('the agreements answer is still readable', !!moaAnswer);
+        ok('and says who actually produces them',
+           /Institute Office does/.test(moaAnswer.textContent));
+        ok('but offers no trip to a control this role lacks',
+           moaAnswer.querySelector('.go-row').hidden === true);
+        setRole('admin');
+        ok('while the office is still taken straight there',
+           moaAnswer.querySelector('.go-row').hidden === false);
+        setRole('all');
         // Enter follows the top answer without reaching for the mouse.
         n$('btnHelp').dispatchEvent(new nw.MouseEvent('click', { bubbles: true }));
         n$('p6').open = false;
