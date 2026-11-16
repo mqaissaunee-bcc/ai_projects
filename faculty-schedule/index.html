@@ -730,7 +730,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       schedule by hand.
     </div>
     <div class="banner info no-print" id="firstRun" hidden>
-      First time here? The guided tour takes about a minute.
+      <span id="firstRunText">First time here? The guided tour takes about a minute.</span>
       <button class="btn sm" id="firstRunTour" type="button" style="margin-left:8px">Show me around</button>
       <button class="btn sm ghost" id="firstRunSkip" type="button">No thanks</button>
     </div>
@@ -902,6 +902,19 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
             the load.</li>
           <li>Labs that are no longer on your sheet no longer clash with anything, so the false
             overlaps between a lecture and the lab running alongside it are gone.</li>
+          <li><b>Fixed: nobody was ever offered the guided tour.</b> The offer used to appear on a
+            first visit, until the role chooser arrived and took that visit for itself — after
+            which new faculty were never asked. The tour is now offered once the role is settled,
+            and it is still on the Walkthrough tab for anyone who wants it again.</li>
+          <li>The tour skips the steps your role does not show, instead of pointing at a panel that
+            is not there, and it has a new last step on searching the help.</li>
+          <li><b>And it comes back round.</b> This is a form people fill in twice a year and forget
+            in between, so the offer returns when you start a term with nothing in it yet and it
+            has been a couple of months — "Welcome back. It has been a while." It never interrupts
+            a schedule you are part-way through, and turning it down keeps it away until next time
+            rather than until your next reload.</li>
+          <li>Fixed: the tour's callout was placed from where a panel had been rather than where it
+            had just scrolled to, which put the last step's bubble below the bottom of the window.</li>
           <li><b>Search the help.</b> The button at the top now reads <b>? How do I…</b> and opens a
             search box over all thirty-nine questions — or press <b>?</b> from anywhere on the page.
             Type "release time", "lab", "two pages", "send to my dean"; whole questions work too.</li>
@@ -3344,24 +3357,37 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     var r = ROLES[role];
     if(r && r.openMoa){ $("p6").open = true; }
     if(role === "faculty" || role === "chair"){ $("p1").open = true; }
+    offerTour();
   }
 
   /* ===== help, walkthrough, FAQ ===== */
   var TOUR = [
     {sel:"#p1", title:"Start with your name",
-     body:"Type your last name and pick yourself. Your sections load automatically and your printed name is filled in."},
+     body:"Type your last name and pick yourself. Your sections load automatically and your printed name is filled in. Chairs can add several people and get one sheet each."},
     {sel:"#p2", title:"Check what you are teaching",
-     body:"Uncheck anything that is not yours. Edit corrects a wrong room, time, or title, and sets contact hours when they differ from the published credits. PT marks a section as overload."},
+     body:"Untick anything that is not yours. A lab the published schedule puts under somebody else is already off your sheet and out of your load — the row says so, with Put it back if you do cover it. Edit corrects a wrong room, time or title; PT marks a section as overload."},
     {sel:"#p3", title:"Add your office hours",
-     body:"Choose days, set the times, and add the block — or drag across an empty part of the grid on the right. Blocks can be dragged to move and resized from the bottom edge, and the hours are totalled for you."},
+     body:"Choose days, set the times and add the block — or drag across an empty part of the grid on the right. Blocks can be dragged to move and resized from the bottom edge, and the hours are totalled for you."},
     {sel:"#p4", title:"Your details and release time",
-     body:"Office, phone, and email print at the top of the schedule. Add a line for any release time with what it was released for."},
+     body:"Office, phone and email print at the top of the schedule. Add a line for any release time with what it was released for, and the hours you owe drop to match."},
     {sel:"#p5", title:"How it prints",
-     body:"Fitting to one page is already on. Turn on the signature line here if your schedule needs approval."},
+     body:"Fitting to one page is already on. Turn on the signature line here if your schedule needs approval. Hide empty days and Collapse empty hours sit above the grid, for shrinking a sparse week once you have built it."},
     {sel:"#p6", title:"Export it",
-     body:"Print opens your browser's dialog — set the destination to Save as PDF to get a file. Calendar, image, and spreadsheet downloads are here too."}
+     body:"Print opens your browser's dialog — set the destination to Save as PDF to get a file. Calendar, image and spreadsheet downloads are here too, and overload agreements if you have any."},
+    {sel:"#btnHelp", title:"If you get stuck",
+     body:"Search the help from here, or press ? from anywhere on the page. Type what you are trying to do — release time, two pages, send to my dean — and the answer comes with a button that takes you to the control it is talking about."}
   ];
-  var tourIdx = -1, tourTarget = null;
+  var tourIdx = -1, tourTarget = null, tourList = TOUR;
+  function onScreen(node){
+    // A role hides the steps it does not need rather than removing them, so a
+    // hidden panel still answers querySelector. Walking up for `hidden` works
+    // where offsetParent does not, and the tour must not point at a panel the
+    // person cannot see.
+    for(var n = node; n && n !== document.body; n = n.parentNode){
+      if(n.hidden) return false;
+    }
+    return true;
+  }
 
   function openHelp(tab){
     $("helpBackdrop").hidden = false;
@@ -3527,26 +3553,47 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     clearTourTarget();
     $("tourCallout").hidden = true;
     tourIdx = -1;
-    try{ localStorage.setItem("bcc-faculty-schedule-tour", "seen"); }catch(e){}
+    markTourSeen();
+  }
+  var TOUR_KEY = "bcc-faculty-schedule-tour";
+  var TOUR_GAP_DAYS = 70;
+  function markTourSeen(){
+    try{ localStorage.setItem(TOUR_KEY, new Date().toISOString().slice(0,10)); }catch(e){}
+  }
+  function daysSinceTour(){
+    // Returns null when the tour has never been offered. A value written by an
+    // older build is the word "seen" with no date, which counts as long ago —
+    // so people who dismissed the old six-step tour are shown the new one once.
+    var raw = null;
+    try{ raw = localStorage.getItem(TOUR_KEY); }catch(e){}
+    if(!raw) return null;
+    var t = Date.parse(raw);
+    if(isNaN(t)) return 9999;
+    return Math.floor((Date.now() - t) / 86400000);
   }
   function showTourStep(i){
-    if(i < 0 || i >= TOUR.length){ endTour(); return; }
+    if(i < 0 || i >= tourList.length){ endTour(); return; }
     tourIdx = i;
-    var step = TOUR[i], el2 = document.querySelector(step.sel);
+    var step = tourList[i], el2 = document.querySelector(step.sel);
     if(!el2){ endTour(); return; }
     clearTourTarget();
     if(el2.tagName === "DETAILS") el2.open = true;
     el2.classList.add("tour-target");
     tourTarget = el2;
-    $("tourCount").textContent = "Step " + (i+1) + " of " + TOUR.length;
+    $("tourCount").textContent = "Step " + (i+1) + " of " + tourList.length;
     $("tourTitle").textContent = step.title;
     $("tourBody").textContent = step.body;
     $("tourBack").hidden = i === 0;
-    $("tourNext").textContent = i === TOUR.length - 1 ? "Done" : "Next";
+    $("tourNext").textContent = i === tourList.length - 1 ? "Done" : "Next";
     var call = $("tourCallout");
     call.hidden = false;
     if(typeof el2.scrollIntoView === "function"){
-      try{ el2.scrollIntoView({block:"nearest", behavior:"smooth"}); }
+      // Deliberately not smooth: the callout is placed from the element's
+      // rectangle on the very next line, and a smooth scroll is still running
+      // then, so the rectangle would be the one from before the scroll. The
+      // last step points at the toolbar, which is the furthest to travel, and
+      // its callout landed several hundred pixels below the window.
+      try{ el2.scrollIntoView({block:"nearest", behavior:"auto"}); }
       catch(e){ el2.scrollIntoView(); }
     }
     // place beside the panel on a wide screen, below it on a narrow one
@@ -3566,7 +3613,33 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
   function startTour(){
     closeHelp();
     $("firstRun").hidden = true;
+    markTourSeen();        // starting counts, so abandoning it does not re-ask on reload
+    // Only the steps this person's role actually shows.
+    tourList = TOUR.filter(function(s){
+      var node = document.querySelector(s.sel);
+      return node && onScreen(node);
+    });
+    if(!tourList.length){ tourList = TOUR; }
     showTourStep(0);
+  }
+  function offerTour(){
+    // The tour used to be offered on a first visit — until the role chooser
+    // arrived and took that first visit for itself, after which nobody was
+    // ever asked. It is offered once the role is settled instead.
+    //
+    // And offered again later, because this is a form people fill in twice a
+    // year and forget in between. The trigger is a term with nothing in it yet
+    // and a long gap since the tour was last put in front of them — not the
+    // version number, which moves whenever a typo is fixed and would turn the
+    // offer into something to dismiss on sight.
+    if(!state.role || state.faculty.length) return;      // never interrupt a build
+    var days = daysSinceTour();
+    if(days !== null && days < TOUR_GAP_DAYS) return;
+    $("firstRunText").textContent = days === null
+      ? "First time here? The guided tour takes about a minute."
+      : "Welcome back. It has been a while — the tour takes about a minute, and covers what has changed.";
+    $("firstRunTour").textContent = days === null ? "Show me around" : "Remind me";
+    $("firstRun").hidden = false;
   }
 
   /* ===== fit to one page ===== */
@@ -3891,6 +3964,10 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     renderTermPicker();
     fetchFeed(feedPath(code), 0);
     toast("Showing " + ((TERMS || []).filter(function(x){ return x.code===code; })[0] || {}).label);
+    // A new term with nothing in it is the moment somebody is starting the job
+    // again, months after the last time, which is exactly when the reminder is
+    // worth having. offerTour decides whether enough time has passed.
+    offerTour();
   }
   function loadTerms(){
     fetch(TERMS_INDEX + "?t=" + Date.now()).then(function(r){
@@ -4049,7 +4126,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     $("firstRunTour").addEventListener("click", startTour);
     $("firstRunSkip").addEventListener("click", function(){
       $("firstRun").hidden = true;
-      try{ localStorage.setItem("bcc-faculty-schedule-tour","seen"); }catch(e){}
+      markTourSeen();   // turning it down counts; it comes back next term, not next load
     });
     document.addEventListener("keydown", function(e){
       if(e.key !== "Escape") return;
@@ -4235,14 +4312,11 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       if(used && lastSeen !== APP_VERSION) $("newsDot").hidden = false;
       if(!used) localStorage.setItem("bcc-faculty-schedule-seen", APP_VERSION);
     }catch(e){}
-    var seen = true;
-    try{ seen = !!localStorage.getItem("bcc-faculty-schedule-tour"); }catch(e){}
     applyRole();
-    if(!state.role){
-      $("rolePick").hidden = false;
-    } else if(!seen && !state.faculty.length){
-      $("firstRun").hidden = false;
-    }
+    // A new visitor settles their role first and is offered the tour after, by
+    // chooseRole; someone who already has one is offered it here.
+    if(!state.role) $("rolePick").hidden = false;
+    else offerTour();
     $("termPick").addEventListener("change", function(){ switchTerm($("termPick").value); });
     if(typeof fetch === "function"){ loadTerms(); }
     else { fetchFeed(DATA_CANDIDATES, 0); }

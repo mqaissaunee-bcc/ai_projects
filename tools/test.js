@@ -664,15 +664,22 @@ setTimeout(() => {
   $('btnHelp').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   $('startTour').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   ok('tour starts and closes help', $('tourCallout').hidden === false && $('helpModal').hidden === true);
-  ok('tour opens on step 1', /Step 1 of 6/.test($('tourCount').textContent));
+  // Read the length off the callout so adding a step does not need a test edit.
+  const tourLen = parseInt(($('tourCount').textContent.match(/of (\d+)/) || [])[1], 10);
+  ok('tour opens on step 1', /^Step 1 of \d+$/.test($('tourCount').textContent));
+  ok('the tour covers every panel and then some', tourLen >= 6);
   ok('tour highlights the first panel', doc.querySelector('#p1').classList.contains('tour-target'));
   ok('Back hidden on the first step', $('tourBack').hidden === true);
   $('tourNext').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
-  ok('tour advances', /Step 2 of 6/.test($('tourCount').textContent));
+  ok('tour advances', /^Step 2 of \d+$/.test($('tourCount').textContent));
   ok('highlight moves with it',
      doc.querySelector('#p2').classList.contains('tour-target') &&
      !doc.querySelector('#p1').classList.contains('tour-target'));
-  for (let i = 0; i < 5; i++) $('tourNext').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  ok('the last step is labelled Done',
+     (() => { for (let i = 2; i < tourLen; i++)
+                $('tourNext').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+              return $('tourNext').textContent === 'Done'; })());
+  $('tourNext').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   ok('tour ends after the last step', $('tourCallout').hidden === true);
   ok('no highlight left behind', !doc.querySelector('.tour-target'));
   ok('tour completion remembered', !!window.localStorage.getItem('bcc-faculty-schedule-tour'));
@@ -999,6 +1006,83 @@ setTimeout(() => {
         ok('and ticking it again takes them back off', hrs() === 15);
       }
 
+      // ---- a new visitor is actually offered the tour ----
+      // The offer used to live on the first visit; the role chooser then took
+      // that visit for itself and nobody was ever asked again.
+      const nv = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true,
+                                   url: 'https://example.org/' });
+      const vw = nv.window, vd = nv.window.document, v$ = id => vd.getElementById(id);
+      setTimeout(() => {
+        ok('a new visitor is asked their role first', v$('rolePick').hidden === false);
+        ok('and is not offered the tour over the top of it', v$('firstRun').hidden === true);
+        vd.querySelector('#rolePick .role-card')
+          .dispatchEvent(new vw.MouseEvent('click', { bubbles: true }));
+        ok('choosing a role puts the chooser away', v$('rolePick').hidden === true);
+        ok('and the tour is offered straight after', v$('firstRun').hidden === false);
+
+        // A role that hides steps must not have the tour point at them.
+        v$('firstRunTour').dispatchEvent(new vw.MouseEvent('click', { bubbles: true }));
+        ok('taking the offer starts the tour', v$('tourCallout').hidden === false);
+        const total = () => parseInt((v$('tourCount').textContent.match(/of (\d+)/) || [])[1], 10);
+        const full = total();
+        for (let i = 0; i < full; i++)
+          v$('tourNext').dispatchEvent(new vw.MouseEvent('click', { bubbles: true }));
+        ok('finishing it is remembered',
+           !!vw.localStorage.getItem('bcc-faculty-schedule-tour'));
+        ok('what is remembered is a date, not just a flag',
+           /^\d{4}-\d{2}-\d{2}$/.test(vw.localStorage.getItem('bcc-faculty-schedule-tour')));
+        ok('and it is not offered again', v$('firstRun').hidden === true);
+
+        // ---- offered again once they have had time to forget ----
+        // The job comes round twice a year, so the reminder has to as well.
+        // Each case is a fresh page with the record pre-seeded, because that is
+        // the only way the real decision gets exercised.
+        const seeded = (tourValue, saved) => {
+          let boot = "try{localStorage.setItem('bcc-faculty-schedule-tour'," +
+                     JSON.stringify(tourValue) + ");";
+          if (saved) boot += "localStorage.setItem('bcc-faculty-schedule-v1'," +
+                             JSON.stringify(JSON.stringify(saved)) + ");";
+          boot += "}catch(e){}";
+          const page = new JSDOM(html.replace('<script>', '<script>' + boot + '</script><script>'),
+            { runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://example.org/' });
+          return new Promise(res => setTimeout(() => {
+            const w = page.window, d = w.document;
+            const card = d.querySelector('#rolePick .role-card');
+            if (card && d.getElementById('rolePick').hidden === false) {
+              card.dispatchEvent(new w.MouseEvent('click', { bubbles: true }));
+            }
+            res({ offered: d.getElementById('firstRun').hidden === false,
+                  text: d.getElementById('firstRunText').textContent,
+                  button: d.getElementById('firstRunTour').textContent,
+                  w: w, d: d });
+          }, 400));
+        };
+        const ago = n => new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
+
+        Promise.all([
+          seeded(ago(7)), seeded(ago(60)), seeded(ago(120)), seeded('seen'),
+          seeded(ago(120), { role: 'all', faculty: ['Cheryl Fencik'] })
+        ]).then(([wk, twoMo, semester, legacy, midBuild]) => {
+          ok('not re-offered a week later', wk.offered === false);
+          ok('not re-offered two months later', twoMo.offered === false);
+          ok('re-offered a semester later', semester.offered === true);
+          ok('the wording acknowledges the gap', /been a while/i.test(semester.text));
+          ok('and the button is no longer a first-timer prompt', semester.button === 'Remind me');
+          ok('an older undated record counts as long ago', legacy.offered === true);
+          ok('never re-offered in the middle of a build', midBuild.offered === false);
+
+          // Turning it down resets the clock rather than asking again next load.
+          const sw = semester.w, sd = semester.d;
+          sd.getElementById('firstRunSkip')
+            .dispatchEvent(new sw.MouseEvent('click', { bubbles: true }));
+          ok('declining puts it away', sd.getElementById('firstRun').hidden === true);
+          ok('declining is dated like finishing it',
+             /^\d{4}-\d{2}-\d{2}$/.test(sw.localStorage.getItem('bcc-faculty-schedule-tour')));
+          runFindChecks();
+        });
+      }, 400);
+
+      function runFindChecks(){
       // ---- finding an answer, and the control it talks about ----
       // The questions were always in the page; what was missing was any way to
       // reach one without opening Help, picking a tab and reading down a list.
@@ -1063,6 +1147,7 @@ setTimeout(() => {
         ok('Enter follows the top answer', n$('helpModal').hidden === true);
         runManyChecks();
       }, 400);
+      }
 
       function runManyChecks(){
       // ---- a long faculty list can be cleared ----
