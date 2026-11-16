@@ -914,6 +914,19 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
             the load.</li>
           <li>Labs that are no longer on your sheet no longer clash with anything, so the false
             overlaps between a lecture and the lab running alongside it are gone.</li>
+          <li><b>Clinicals you are listed on but do not run.</b> A nursing clinical carries three
+            to five names: the first runs the group, and the rest are the concepts faculty who need
+            the roster and the Canvas shell. Those are now off your schedule and out of your hours,
+            with the section still in the list and a tick box to put it back. The concepts lecture
+            is untouched — it carries the same names and there everybody does teach it.</li>
+          <li>Fixed: a clinical recorded twice over, once for the campus room and once for the
+            hospital, counted as thirteen hours for a day that is seven and a half long.
+            Overlapping patterns of one section are now merged before they are counted.</li>
+          <li><b>A name that is not in this term now says where it is.</b> Searching for someone
+            who teaches in another term used to return a bare "no match" — and Nursing has no
+            instructor listed on any of its 109 spring sections, so not one nursing name can be
+            found there. The search now names the term it looked in and, where the person teaches
+            in another, offers to switch to it.</li>
           <li><b>Blocks that run for only part of the term.</b> Nursing teaches in blocks — a
             section meets five weeks of the fifteen — so a meeting pattern now takes <b>Runs from</b>
             and <b>Runs to</b> in Edit, and the dates print on the block. The published schedule
@@ -1282,7 +1295,30 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
   }
 
   /* ===== data model ===== */
-  function isIncluded(s){ return state.include[s.id] !== false; }
+  /* A section somebody is listed on for access rather than teaching.
+     Clinicals carry three to five names: the first is the instructor who runs
+     the group, and the rest are the concepts-course faculty who need the
+     roster and the Canvas shell. Christine Hogan is named on thirteen nursing
+     clinicals and first on one, and her department's own assignment form
+     counts exactly one — so the first name is the teacher and the others are
+     not. Three or more names is the mark of it; a genuinely co-taught section
+     carries two. It is only ever a default: the section still appears in the
+     list with its tick box, so anybody this reads wrongly can put it back. */
+  function accessOnly(s, owner){
+    if(!owner || !s.i || s.i.length < 2) return false;
+    // Clinicals only, by the CLIN in the section code. The concepts lecture
+    // these groups hang off carries the same three or four names, and there
+    // they all do teach it, a run of weeks each — which is the whole reason
+    // those sections need date ranges. A rule drawn any wider takes away the
+    // sections these people actually teach.
+    if(!/CLIN/i.test(s.id)) return false;
+    return s.i.indexOf(owner) > 0;
+  }
+  function isIncluded(s, owner){
+    if(state.include[s.id] !== undefined) return state.include[s.id] !== false;
+    // A single-faculty sheet passes no name; fall back to whose sheet it is.
+    return !accessOnly(s, owner == null ? currentOwner() : owner);
+  }
   function sessionOn(pot){
     if(!state.sessions) return (pot || "15W") === "15W";
     return !!state.sessions[pot || "15W"];
@@ -1398,7 +1434,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     var patOwner = name || state.profileFor || state.faculty[0] || null;
     var list = name==null ? allSelectedSections() : sectionsFor(name);
     list.forEach(function(s){
-      if(!isIncluded(s)) return;
+      if(!isIncluded(s, patOwner)) return;
       var e=eff(s, patOwner), cvar=PALETTE[idx++ % PALETTE.length], color="var("+cvar+")";
       e.meetings.forEach(function(m){
         var st=toMin(m.s), en=toMin(m.e);
@@ -1467,13 +1503,13 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
   }
   function unscheduledFor(name){
     var list = name==null ? allSelectedSections() : sectionsFor(name);
-    return list.filter(isIncluded).map(function(s){ return eff(s, name); }).filter(function(e){
+    return list.filter(function(s){ return isIncluded(s, name); }).map(function(s){ return eff(s, name); }).filter(function(e){
       return !e.meetings.some(function(m){ return m.s && m.d && m.d.length; });
     });
   }
   function scheduledSections(name){
     var list = name==null ? allSelectedSections() : sectionsFor(name);
-    return list.filter(isIncluded).map(function(s){ return eff(s, name); });
+    return list.filter(function(s){ return isIncluded(s, name); }).map(function(s){ return eff(s, name); });
   }
 
   /* ===== sidebar rendering ===== */
@@ -1587,7 +1623,13 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     q=(q||"").trim().toLowerCase();
     if(q.length<2){ box.appendChild(el("div","empty","Type at least two letters.")); return; }
     var matches=DATA.faculty.filter(function(n){ return n.toLowerCase().indexOf(q)>-1; }).slice(0,40);
-    if(!matches.length){ box.appendChild(el("div","empty","No instructor matches that.")); return; }
+    if(!matches.length){
+      var msg = el("div","empty","No instructor matches that in " +
+        ((DATA && (DATA.termLabel || DATA.term)) || "this term") + ".");
+      box.appendChild(msg);
+      findInOtherTerms(q, msg);
+      return;
+    }
     matches.forEach(function(n){
       var b=el("button"); b.type="button"; b.setAttribute("role","option");
       b.appendChild(document.createTextNode(n));
@@ -1595,6 +1637,55 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       b.appendChild(el("span","meta",count+" section"+(count===1?"":"s")));
       b.addEventListener("click", function(){ addFaculty(n); });
       box.appendChild(b);
+    });
+  }
+  /* Somebody searching for a colleague who teaches in another term gets nothing
+     back and no reason why. Nursing has no instructor at all on any of its 109
+     spring sections, so not one nursing name can be found there, and the search
+     box cannot tell that from a typo. Each term publishes a names-only file
+     next to its feed, small enough to read them all and say where the person
+     actually is. */
+  var OTHER_NAMES = null;
+  function findInOtherTerms(q, into){
+    if(typeof fetch !== "function" || !TERMS || TERMS.length < 2) return;
+    function offer(){
+      var found = [];
+      (OTHER_NAMES || []).forEach(function(t){
+        if(t.code === activeTerm) return;
+        (t.faculty || []).forEach(function(n){
+          if(n.toLowerCase().indexOf(q) > -1) found.push({name:n, term:t});
+        });
+      });
+      if(!found.length) return;
+      var seen = {};
+      found.slice(0, 4).forEach(function(f){
+        var key = f.name + f.term.code;
+        if(seen[key]) return;
+        seen[key] = 1;
+        var line = el("div","empty");
+        line.appendChild(document.createTextNode(f.name + " teaches in " + f.term.label + ". "));
+        var go = el("button","btn xs ghost","Switch to " + f.term.label); go.type = "button";
+        go.addEventListener("click", function(){
+          switchTerm(f.term.code);
+          $("facSearch").value = f.name;
+          setTimeout(function(){ renderFacultyResults(f.name.toLowerCase()); }, 500);
+        });
+        line.appendChild(go);
+        into.parentNode.appendChild(line);
+      });
+    }
+    if(OTHER_NAMES){ offer(); return; }
+    var pending = TERMS.length;
+    OTHER_NAMES = [];
+    TERMS.forEach(function(t){
+      var path = String(t.path || "").replace(/sections\.json$/, "faculty.json");
+      fetch(path + "?t=" + Date.now()).then(function(r){
+        return r.ok ? r.json() : null;
+      }).then(function(j){
+        if(j) OTHER_NAMES.push({code:t.code, label:t.label || j.termLabel || t.code, faculty:j.faculty || []});
+      }).catch(function(){}).then(function(){
+        if(--pending === 0) offer();
+      });
     });
   }
   // Title, department, office, contact details, release time, office hours and a
@@ -1702,11 +1793,11 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     var groups = state.faculty.length > 1 ? state.faculty : [currentOwner()];
     groups.forEach(function(who){
       (who ? sectionsFor(who) : allSelectedSections()).forEach(function(s){
-        if(seen[s.id] || !isIncluded(s)) return;
+        var mine = who || currentOwner();
+        if(seen[s.id] || !isIncluded(s, mine)) return;
         seen[s.id] = 1;
         var o = state.overrides[s.id];
         if(o && o.meetings) return;                  // already edited by hand
-        var mine = who || currentOwner();
         var e = eff(s, mine);
         if(e.dropped && e.dropped.length) return;    // already off this sheet
         var labs = labsOffered(e, mine);
@@ -1725,7 +1816,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       dl.textContent = "Remove " + cands.length + " lab" + (cands.length===1?"":"s");
       dl.title = "These sections have a second meeting pattern in a room the course only uses for labs.";
     }
-    $("chipSections").textContent = list.length ? list.filter(isIncluded).length+" of "+list.length : "";
+    $("chipSections").textContent = list.length
+      ? list.filter(function(s){ return isIncluded(s); }).length + " of " + list.length : "";
     if(!list.length){ box.appendChild(el("div","empty","Pick an instructor in step 1.")); return; }
     var multi = state.faculty.length > 1, shown = {};
     (multi ? state.faculty : [null]).forEach(function(who){
@@ -1748,7 +1840,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       });
       var wrap=el("div","sec"); wrap.dataset.id=s.id;
       var head=el("div","sec-head");
-      var cb=document.createElement("input"); cb.type="checkbox"; cb.checked=isIncluded(s);
+      var cb=document.createElement("input"); cb.type="checkbox"; cb.checked=isIncluded(s, owner);
       cb.id="inc-"+s.id; cb.addEventListener("change", function(){ state.include[s.id]=cb.checked; renderAll(); save(); });
       var lab=el("label","sec-title"); lab.setAttribute("for", cb.id);
       var b=el("b", null, e.course+" — "+e.title); lab.appendChild(b);
@@ -1765,6 +1857,14 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       if(e.meetings.some(function(m){return m.est;})) meta.appendChild(el("span","tag est","est. end time"));
       if(e.mode!=="inperson") meta.appendChild(el("span","tag async", MODE_LABEL[e.mode]||e.mode));
       lab.appendChild(meta);
+      if(accessOnly(s, owner) && state.include[s.id] === undefined){
+        // Not theirs to teach — say who runs it, and leave the tick box as the
+        // way back for anyone this reads wrongly.
+        lab.appendChild(el("div","sec-meta co-note",
+          "Not counted: " + (e.instructors[0] || "someone else") + " runs this clinical group. " +
+          "The other " + (e.instructors.length - 1) + " names are the concepts faculty, listed " +
+          "for roster and Canvas access. Tick it if you do run it."));
+      }
       // Three cases, in order of how much the data actually tells us.
       if(e.dropped && e.dropped.length){
         // These patterns are off this sheet already — named under somebody
@@ -2361,11 +2461,28 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
   }
   function contactFromMeetings(ms){
     // Contact hours are scheduled time: a 55-minute hour, rounded up.
-    var mins = 0;
+    //
+    // Counted per day rather than per pattern, because a section cannot meet
+    // twice at once. A nursing clinical is recorded twice over — once for the
+    // campus room and once for the hospital, Thursday 8:00–14:30 and Thursday
+    // 7:00–13:30 — and adding those gives thirteen hours for a day that is
+    // eight hours long. Overlapping stretches are merged before they are
+    // counted; patterns on different days are unaffected.
+    var byDay = {};
     (ms||[]).forEach(function(m){
       var a = toMin(m.s), b = toMin(m.e);
       if(a == null || b == null || b <= a) return;
-      mins += (b - a) * ((m.d||[]).length || 0);
+      (m.d||[]).forEach(function(d){ (byDay[d] = byDay[d] || []).push([a,b]); });
+    });
+    var mins = 0;
+    Object.keys(byDay).forEach(function(d){
+      var spans = byDay[d].sort(function(x,y){ return x[0]-y[0]; });
+      var curS = spans[0][0], curE = spans[0][1];
+      for(var i=1;i<spans.length;i++){
+        if(spans[i][0] <= curE){ curE = Math.max(curE, spans[i][1]); }
+        else { mins += curE - curS; curS = spans[i][0]; curE = spans[i][1]; }
+      }
+      mins += curE - curS;
     });
     return mins ? Math.ceil(mins/55) : 0;
   }
@@ -2992,7 +3109,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
   function renderBanners(){
     var box=$("banners"); clear(box);
     if(!DATA) return;
-    var sel=allSelectedSections().filter(isIncluded).map(function(s){ return eff(s); });
+    var sel=allSelectedSections().filter(function(s){ return isIncluded(s); }).map(function(s){ return eff(s); });
     var estCount=0;
     sel.forEach(function(e){ e.meetings.forEach(function(m){ if(m.est && m.s) estCount++; }); });
     if(estCount){

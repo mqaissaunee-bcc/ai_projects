@@ -59,6 +59,15 @@ setTimeout(() => {
   s.value = 'qais';
   s.dispatchEvent(new window.Event('input', { bubbles: true }));
   const results = $('facResults').querySelectorAll('button');
+  // A search that finds nobody has to say which term it looked in — the usual
+  // reason is that the person teaches in the other one, and Nursing has no
+  // instructor on any of its 109 spring sections at all.
+  $('facSearch').value = 'zzzqq';
+  $('facSearch').dispatchEvent(new window.Event('input', { bubbles: true }));
+  ok('an empty search names the term it searched',
+     /No instructor matches that in .+\./.test($('facResults').textContent));
+  $('facSearch').value = '';
+  $('facSearch').dispatchEvent(new window.Event('input', { bubbles: true }));
   ok('search finds instructor', results.length >= 1);
   results[0].dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
 
@@ -1011,6 +1020,79 @@ setTimeout(() => {
         ok('and ticking it again takes them back off', hrs() === 15);
       }
 
+      // ---- a clinical somebody is listed on but does not run ----
+      // A nursing clinical carries three to five names: the first runs the
+      // group, the rest are the concepts faculty who need the roster and the
+      // Canvas shell. The concepts lecture carries the same names and there
+      // they all teach it, so the rule has to stop at the clinical.
+      const cf = JSON.parse(ld.getElementById('demoData').textContent);
+      const team = ['Lead Clinician', 'Concepts One', 'Concepts Two'];
+      const mkN = (id, who) => ({
+        id: id, c: id.replace(/-\w+$/, ''), t: 'Nursing Concepts I', cr: 6, ch: null,
+        dept: 'NURS', campus: 'LINC', pot: '15W', mode: 'inperson', i: who,
+        // ch left out on purpose, so the figure is worked out from the meetings
+        m: [{ d: ['R'], s: '08:00', e: '14:30', rm: 'MAS 101' },
+            { d: ['R'], s: '07:00', e: '13:30', rm: 'HOSP CLIN' }]
+      });
+      cf.sections = [
+        mkN('NURS-171CLIN-001RZ', team),
+        mkN('NURS-171CLIN-002RZ', ['Concepts One', 'Lead Clinician', 'Concepts Two']),
+        Object.assign(mkN('NURS-171-001RL', team), {
+          m: [{ d: ['M'], s: '08:00', e: '11:45', rm: 'MAN 105' }] })
+      ];
+      cf.faculty = team;
+      const nur = new JSDOM(
+        html.replace(/(<script type="application\/json" id="demoData">)[\s\S]*?(<\/script>)/,
+                     (m0, a0, b0) => a0 + JSON.stringify(cf) + b0),
+        { runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://example.org/' });
+      const uw = nur.window, ud = nur.window.document, u$ = id => ud.getElementById(id);
+      setTimeout(() => {
+        u$('roleSkip').dispatchEvent(new uw.MouseEvent('click', { bubbles: true }));
+        const pick = n => {
+          u$('facSearch').value = n;
+          u$('facSearch').dispatchEvent(new uw.Event('input', { bubbles: true }));
+          [...ud.querySelectorAll('#facResults button')]
+            .filter(b2 => b2.textContent.indexOf(n) === 0)[0]
+            .dispatchEvent(new uw.MouseEvent('click', { bubbles: true }));
+        };
+        const onSheet = () => [...ud.querySelectorAll('.sheet[data-owner] .tbl tbody tr td:first-child')]
+          .map(x => x.textContent);
+
+        pick('Concepts One');
+        ok('the clinical she is only listed on is off her sheet',
+           onSheet().indexOf('NURS-171CLIN-001RZ') < 0);
+        ok('but the one she is first on is not',
+           onSheet().indexOf('NURS-171CLIN-002RZ') > -1);
+        ok('and the concepts lecture stays, names and all',
+           onSheet().indexOf('NURS-171-001RL') > -1);
+        ok('the row says who runs it',
+           [...ud.querySelectorAll('#sectionList .co-note')]
+             .some(n => /Lead Clinician runs this clinical/.test(n.textContent)));
+        ok('the count reflects it', /^2 of 3/.test(u$('chipSections').textContent));
+
+        // Ticking it back is the way out if the rule reads a case wrongly.
+        const row = [...ud.querySelectorAll('#sectionList .sec')]
+          .filter(n => /CLIN-001RZ/.test(n.textContent))[0];
+        const cb2 = row.querySelector('input[type=checkbox]');
+        ok('it is unticked rather than hidden', cb2 && cb2.checked === false);
+        cb2.checked = true;
+        cb2.dispatchEvent(new uw.Event('change', { bubbles: true }));
+        ok('ticking it puts it back', onSheet().indexOf('NURS-171CLIN-001RZ') > -1);
+
+        // One clinical day recorded twice — the campus room 8:00-14:30 and the
+        // hospital 7:00-13:30 — is a seven-and-a-half hour day, not thirteen.
+        const chCell = code => {
+          const tr = [...ud.querySelectorAll('.sheet[data-owner] .tbl tbody tr')]
+            .filter(r => r.cells[0].textContent === code)[0];
+          return tr ? tr.cells[2].textContent : '';
+        };
+        ok('one clinical day is counted once, not twice', chCell('NURS-171CLIN-001RZ') === '6 / 9 ch');
+        ok('and the lecture is unaffected', chCell('NURS-171-001RL') === '6 / 5 ch');
+
+        runBlockChecks();
+      }, 400);
+
+      function runBlockChecks(){
       // ---- blocks that run only part of the term ----
       // Nursing teaches in blocks: a section runs five weeks of the fifteen,
       // and the office hour changes between teaching and non-teaching weeks.
@@ -1079,6 +1161,7 @@ setTimeout(() => {
 
         runTourChecks();
       }, 400);
+      }
 
       function runTourChecks(){
       // ---- a new visitor is actually offered the tour ----

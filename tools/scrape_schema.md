@@ -157,3 +157,12 @@ Neither fallback changes the published figures: `ch` on the section stays the
 whole-section total, and the subtraction happens in the tool, per sheet — so a
 rebuild never rewrites history, and turning the option off in Display restores
 the published numbers exactly.
+
+## faculty.json
+
+Each build writes a names-only `faculty.json` beside its `sections.json` — the
+term code, its label, and the instructor list, a few kilobytes. The tool reads
+every term's copy when a search comes up empty, so somebody looking for a
+colleague who teaches in another term is told where they are rather than given
+a bare "no match". Nothing else reads it; it is derived entirely from the feed
+and is rebuilt with it.

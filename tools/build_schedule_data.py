@@ -985,6 +985,16 @@ def main():
     with open(args.out, "w") as f:
         json.dump(out, f, separators=(",", ":"))
 
+    # A names-only file beside the feed. Somebody searching for a colleague who
+    # teaches in another term gets nothing back and no reason why — Nursing is
+    # not staffed in the spring export at all, so not one of them can be found
+    # there. This is small enough for the tool to read every term's copy and
+    # say where the person actually is, without pulling down a whole feed.
+    names_path = os.path.join(outdir or ".", "faculty.json")
+    with open(names_path, "w") as f:
+        json.dump({"term": args.term, "termLabel": out["termLabel"],
+                   "faculty": faculty}, f, separators=(",", ":"))
+
     print(f"{len(sections)} sections · {len(faculty)} instructors · {multi} multi-pattern -> {args.out}")
     print(f"  {est} meeting times with no end time" + ("   <-- these print with a ≈ flag" if est else ""))
     print(f"  {no_room} scheduled meetings with no room")
