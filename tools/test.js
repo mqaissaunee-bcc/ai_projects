@@ -1011,6 +1011,76 @@ setTimeout(() => {
         ok('and ticking it again takes them back off', hrs() === 15);
       }
 
+      // ---- blocks that run only part of the term ----
+      // Nursing teaches in blocks: a section runs five weeks of the fifteen,
+      // and the office hour changes between teaching and non-teaching weeks.
+      // The published export carries no dates at all, so they are typed in.
+      const blk = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true,
+                                    url: 'https://example.org/' });
+      const bw = blk.window, bd = blk.window.document, b$ = id => bd.getElementById(id);
+      setTimeout(() => {
+        b$('roleSkip').dispatchEvent(new bw.MouseEvent('click', { bubbles: true }));
+        b$('facSearch').value = 'fencik';
+        b$('facSearch').dispatchEvent(new bw.Event('input', { bubbles: true }));
+        bd.querySelector('#facResults button')
+          .dispatchEvent(new bw.MouseEvent('click', { bubbles: true }));
+
+        const addOh = (from, to, start, end) => {
+          b$('cLabel').value = 'Office Hours';
+          b$('cDays').querySelector('input[value=M]').checked = true;
+          b$('cStart').value = start; b$('cEnd').value = end;
+          b$('cFrom').value = from; b$('cTo').value = to;
+          b$('addCustom').dispatchEvent(new bw.MouseEvent('click', { bubbles: true }));
+        };
+        // Her teaching weeks are two hours; the rest of the term is three.
+        addOh('2026-10-05', '2026-11-02', '12:00', '14:00');
+        addOh('2026-09-14', '2026-09-28', '11:00', '14:00');
+        ok('both blocks are kept', bd.querySelectorAll('#customList .custom-item').length === 2);
+        ok('the list says which weeks each runs',
+           /Oct 5/.test(b$('customList').textContent) && /Sep 14/.test(b$('customList').textContent));
+
+        const line = () => bd.querySelector('.sheet[data-owner] .load-line').textContent;
+        // Summed flat these would read 5, a figure true in no week of the term.
+        ok('hours that change are reported as a range', /Office hours: 2\u20133/.test(line()));
+        ok('and not added together', !/Office hours: 5/.test(line()));
+
+        const grid = () => [...bd.querySelectorAll('.sheet[data-owner] .blk')]
+          .map(x => x.textContent).join(' | ');
+        ok('the dates print on the block', /Oct 5/.test(grid()));
+        // She has a clash of her own between two BIOL sections, so the check is
+        // specifically that the two office hours do not clash with each other.
+        const clashLines = () => [...bd.querySelectorAll('#banners .conflict-line')]
+          .map(n => n.textContent);
+        ok('two Monday hours on different weeks are not a clash',
+           !clashLines().some(t => /Office Hours.*overlaps.*Office Hours/.test(t)));
+
+        // An undated block runs every week, so it does clash with both.
+        b$('cLabel').value = 'Committee';
+        b$('cType').value = 'other';
+        b$('cDays').querySelector('input[value=M]').checked = true;
+        b$('cStart').value = '12:30'; b$('cEnd').value = '13:30';
+        b$('cFrom').value = ''; b$('cTo').value = '';
+        b$('addCustom').dispatchEvent(new bw.MouseEvent('click', { bubbles: true }));
+        ok('a block with no dates still clashes with the dated ones',
+           clashLines().some(t => /Committee/.test(t)));
+
+        // ---- the word itself ----
+        b$('optStudentHours').checked = true;
+        b$('optStudentHours').dispatchEvent(new bw.Event('change', { bubbles: true }));
+        ok('the load line follows the setting', /Student hours:/.test(line()));
+        ok('so does the step heading', b$('p3Title').textContent === 'Student hours');
+        ok('and the type in the block form', b$('cTypeOh').textContent === 'Student hours');
+        ok('and the required-hours field', /^Student hours required/.test(b$('fOhRequiredLabel').textContent));
+        ok('a default label on the grid follows it too',
+           /Student Hours/.test(grid()) && !/Office Hours/.test(grid()));
+        b$('optStudentHours').checked = false;
+        b$('optStudentHours').dispatchEvent(new bw.Event('change', { bubbles: true }));
+        ok('and it goes back', /Office hours:/.test(line()));
+
+        runTourChecks();
+      }, 400);
+
+      function runTourChecks(){
       // ---- a new visitor is actually offered the tour ----
       // The offer used to live on the first visit; the role chooser then took
       // that visit for itself and nobody was ever asked again.
@@ -1086,6 +1156,7 @@ setTimeout(() => {
           runFindChecks();
         });
       }, 400);
+      }
 
       function runFindChecks(){
       // ---- finding an answer, and the control it talks about ----

@@ -453,7 +453,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     </details>
 
     <details class="panel" id="p3">
-      <summary><span class="panel-num">3</span> Office hours &amp; other blocks <span class="count-chip" id="chipCustom"></span></summary>
+      <summary><span class="panel-num">3</span> <span id="p3Title">Office hours</span> &amp; other blocks <span class="count-chip" id="chipCustom"></span></summary>
       <div class="panel-body">
         <div id="customList"></div>
         <div class="field"><label for="cLabel">Label</label>
@@ -465,7 +465,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         <div class="row2">
           <div class="field"><label for="cType">Type</label>
             <select id="cType">
-              <option value="oh">Office hours</option>
+              <option value="oh" id="cTypeOh">Office hours</option>
               <option value="release">Release-time activity</option>
               <option value="other">Other commitment</option>
             </select></div>
@@ -479,6 +479,16 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
           <div class="field"><label for="cStart">Start</label><input type="time" id="cStart" value="10:00"></div>
           <div class="field"><label for="cEnd">End</label><input type="time" id="cEnd" value="11:00"></div>
         </div>
+        <details id="cWeeksBox" style="margin-bottom:9px">
+          <summary class="btn sm ghost" style="display:inline-flex">Only on certain weeks</summary>
+          <div class="row2" style="margin-top:8px">
+            <div class="field"><label for="cFrom">From</label><input type="date" id="cFrom"></div>
+            <div class="field"><label for="cTo">To</label><input type="date" id="cTo"></div>
+          </div>
+          <p class="hint">For hours that change part-way through the term. Leave empty for every
+            week. Add one block per pattern — one for your teaching weeks, one for the rest — and
+            each prints with its dates.</p>
+        </details>
         <div class="btn-row">
           <button class="btn primary" id="addCustom" type="button">Add block</button>
           <button class="btn ghost" id="cancelCustom" type="button" hidden>Cancel</button>
@@ -522,7 +532,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
               No load requirement — lab assistant, adjunct, part-time</label>
             <p class="hint">Ticked, the sheet reports the hours taught without measuring them against
               a full load, and asks for no office hours.</p></div>
-          <div class="field"><label for="fOhRequired">Office hours required</label>
+          <div class="field"><label for="fOhRequired" id="fOhRequiredLabel">Office hours required</label>
             <input type="number" id="fOhRequired" min="0" max="20" step="0.5" placeholder="auto">
             <p class="hint">Left on auto this is one hour per three contact hours owed, so it falls
               with release time. Type a number to override it.</p></div>
@@ -555,6 +565,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         <label class="check"><input type="checkbox" id="optCode" checked> Show section codes</label>
         <label class="check"><input type="checkbox" id="optCredits" checked> Show credits in the course table</label>
         <label class="check"><input type="checkbox" id="optOwnPatterns" checked> Leave off meeting patterns the schedule lists under someone else</label>
+        <label class="check"><input type="checkbox" id="optStudentHours"> Call office hours <b>student hours</b></label>
         <label class="check"><input type="checkbox" id="optWeekend"> Always show Saturday and Sunday</label>
         <label class="check"><input type="checkbox" id="optColor" checked> Color-code courses on screen</label>
         <label class="check"><input type="checkbox" id="optPrintColor"> Print the blocks in full color</label>
@@ -903,6 +914,21 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
             the load.</li>
           <li>Labs that are no longer on your sheet no longer clash with anything, so the false
             overlaps between a lecture and the lab running alongside it are gone.</li>
+          <li><b>Blocks that run for only part of the term.</b> Nursing teaches in blocks — a
+            section meets five weeks of the fifteen — so a meeting pattern now takes <b>Runs from</b>
+            and <b>Runs to</b> in Edit, and the dates print on the block. The published schedule
+            carries no dates at all, so these are typed in.</li>
+          <li>Office hours take the same dates, under <b>Only on certain weeks</b>. Add one block
+            per pattern — Monday 12–2 on your teaching weeks, Monday 11–2 on the rest — and each
+            prints with its own dates. Two blocks on the same day in different weeks are no longer
+            reported as a clash.</li>
+          <li>Where the hours change through the term the total is given as a range —
+            "Student hours: 2–3 of 5" — instead of adding every block together and reporting a
+            figure that is true in no week of the term. The calendar export stops repeating a block
+            after its last date.</li>
+          <li><b>Schools that say student hours can say student hours.</b> One switch in Display
+            options renames them everywhere: the step, the grid blocks, the load line, the course
+            table and the exports.</li>
           <li><b>Overload agreements are now only in the office's view.</b> They are drawn up by
             the Institute Office and sent out, so faculty, chairs and deans no longer see the
             agreements, the institute and dean fields, the rate per credit, the payment dates or
@@ -1198,7 +1224,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     profile: {name:"",title:"",dept:"",office:"",phone:"",email:"",zoom:"",termLabel:"",termStart:"",termEnd:"",notes:"",loadBase:"15",ohRequired:"",released:"",releasedFor:""},
     pot: "15W",                 // legacy; migrated into sessions on load
     sessions: null,             // {15W:true, 11W:false, …} — null until the feed is known
-    opts: {code:true, credits:true, ownPatterns:true, weekend:false, trimDays:false, trimHours:false, color:true, table:true, h24:false, load:true, sign:false, fit:true, dept:true, printColor:false, online:"banner", density:58}
+    opts: {code:true, credits:true, ownPatterns:true, studentHours:false, weekend:false, trimDays:false, trimHours:false, color:true, table:true, h24:false, load:true, sign:false, fit:true, dept:true, printColor:false, online:"banner", density:58}
   };
 
   /* ===== small helpers ===== */
@@ -1304,7 +1330,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
   function srcMeetings(s){
     return (s.m||[]).map(function(m){
       return {d:(m.d||[]).slice(), s:m.s, e:m.e, rm:m.rm, est:!!m.est,
-              in:m["in"]||null, lab:!!m.lab, kind:m.kind||null, sure:!!m.sure};
+              in:m["in"]||null, lab:!!m.lab, kind:m.kind||null, sure:!!m.sure,
+              from:m.from||"", to:m.to||""};
     });
   }
   /* Patterns the published schedule puts on somebody else.
@@ -1336,6 +1363,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     // merged section: source data + user overrides
     var o = state.overrides[s.id] || {};
     var src = srcMeetings(s), dropped = [];
+    // (meeting dates ride along on the override, see srcMeetings)
     var meetings;
     if(o.meetings){
       meetings = o.meetings;                    // a hand edit wins outright
@@ -1382,9 +1410,11 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
             // The full section code heads the block — BIOL-112-801RL, rather
             // than BIOL-112 with the section number tucked in beside the room.
             title: state.opts.code ? e.id : e.course,
-            sub: (m.rm || "") + (ptHoursFor(e) ? (m.rm ? " · " : "") + ptLabel(e) : "") +
-                 (e.pot && e.pot !== "15W" ? ((m.rm || ptHoursFor(e)) ? " · " : "") + e.pot : ""),
-            sub2:e.title, room:m.rm, sectionId:e.id});
+            sub: [m.rm || "", ptHoursFor(e) ? ptLabel(e) : "",
+                  (e.pot && e.pot !== "15W") ? e.pot : "",
+                  dateSpan(m.from, m.to)].filter(Boolean).join(" · "),
+            sub2:e.title, room:m.rm, sectionId:e.id,
+            from:m.from||"", to:m.to||""});
         });
       });
     });
@@ -1395,12 +1425,35 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       c.days.forEach(function(d){
         out.push({day:d, start:st, end:Math.max(en,st+15),
           kind:c.type==="oh"?"oh":(c.type==="release"?"release":"other"),
-          title:c.label||(c.type==="oh"?"Office Hours":(c.type==="release"?"Release Time":"Blocked")),
-          sub:c.loc||"", sub2:"", est:false,
+          title:c.label||(c.type==="oh"?ohTitle():(c.type==="release"?"Release Time":"Blocked")),
+          sub:[c.loc||"", dateSpan(c.from, c.to)].filter(Boolean).join(" · "),
+          sub2:"", est:false,
+          from:c.from||"", to:c.to||"",
           customId:c.id});
       });
     });
     return out;
+  }
+  /* "Oct 5 – Nov 2", or nothing when a block runs the whole term. */
+  function dateSpan(from, to){
+    if(!from && !to) return "";
+    if(from && to) return shortDate(from) + "\u2009\u2013\u2009" + shortDate(to);
+    return from ? "from " + shortDate(from) : "to " + shortDate(to);
+  }
+  function shortDate(iso){
+    if(!iso) return "";
+    var p = String(iso).split("-");
+    if(p.length !== 3) return iso;
+    var MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    return MON[parseInt(p[1],10)-1] + " " + parseInt(p[2],10);
+  }
+  /* Do two dated blocks ever fall in the same week? An undated block runs all
+     term and so overlaps everything. */
+  function spansOverlap(a, b){
+    if((!a.from && !a.to) || (!b.from && !b.to)) return true;
+    var aF = a.from || "0000-01-01", aT = a.to || "9999-12-31";
+    var bF = b.from || "0000-01-01", bT = b.to || "9999-12-31";
+    return aF <= bT && bF <= aT;
   }
   function onlineDaysOf(e){
     // Days a course is pinned to without a meeting time — set by ticking days
@@ -1730,7 +1783,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         keep.addEventListener("click", function(){
           var o = state.overrides[s.id] || (state.overrides[s.id]={});
           o.meetings = (e.source||[]).map(function(m){
-            return {d:(m.d||[]).slice(), s:m.s, e:m.e, rm:m.rm, est:!!m.est};
+            return {d:(m.d||[]).slice(), s:m.s, e:m.e, rm:m.rm, est:!!m.est, from:m.from||"", to:m.to||""};
           });
           renderAll(); save();
         });
@@ -1753,7 +1806,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
           drop.addEventListener("click", function(){
             var o = state.overrides[s.id] || (state.overrides[s.id]={});
             o.meetings = e.meetings.filter(function(m){ return labs.indexOf(m) < 0; }).map(function(m){
-              return {d:(m.d||[]).slice(), s:m.s, e:m.e, rm:m.rm, est:!!m.est};
+              return {d:(m.d||[]).slice(), s:m.s, e:m.e, rm:m.rm, est:!!m.est, from:m.from||"", to:m.to||""};
             });
             renderAll(); save();
           });
@@ -1831,6 +1884,18 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       var ir=document.createElement("input"); ir.type="text"; ir.value=m.rm||""; ir.placeholder="MAS 212";
       ir.setAttribute("aria-label","Room for "+s.id); fr.appendChild(ir);
       g.appendChild(fs); g.appendChild(fe); g.appendChild(fr); row.appendChild(g);
+      // Nursing teaches in blocks — a section runs five weeks of the fifteen —
+      // and the published schedule carries no dates at all, so they are typed
+      // in here. Per pattern rather than per section, because two sections of
+      // the same course can run on different weeks.
+      var gd=el("div","row2");
+      var fd1=el("div","field"); fd1.appendChild(el("label",null,"Runs from (optional)"));
+      var id1=document.createElement("input"); id1.type="date"; id1.value=m.from||"";
+      id1.setAttribute("aria-label","First meeting date for "+s.id); fd1.appendChild(id1);
+      var fd2=el("div","field"); fd2.appendChild(el("label",null,"Runs to"));
+      var id2=document.createElement("input"); id2.type="date"; id2.value=m.to||"";
+      id2.setAttribute("aria-label","Last meeting date for "+s.id); fd2.appendChild(id2);
+      gd.appendChild(fd1); gd.appendChild(fd2); row.appendChild(gd);
       // Any pattern can go, not just the later ones: someone may teach the lab
       // of a course and not its lecture, which is the first pattern.
       var rm=el("button","btn sm ghost danger","Remove this pattern"); rm.type="button";
@@ -1842,13 +1907,17 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       row.appendChild(rm);
       row._read=function(){
         return {d:[].slice.call(db.querySelectorAll("input:checked")).map(function(x){ return x.value; }),
-                s:is.value||null, e:ie.value||null, rm:ir.value.trim()||null, est:false};
+                s:is.value||null, e:ie.value||null, rm:ir.value.trim()||null, est:false,
+                from:id1.value||"", to:id2.value||""};
       };
       rows.appendChild(row);
       renumber();
     }
     patterns.forEach(addRow);
 
+    box.appendChild(el("p","hint","Runs from and to are for a section that meets for only part of "
+      + "the term — a block the published schedule gives no dates for. Leave them empty for a "
+      + "section that runs all term."));
     box.appendChild(el("p","hint","Teaching only part of a section — the lab but not the lecture, say? "
       + "Remove the pattern you do not cover. For an online course with no set time, tick the days you "
       + "want it shown on and leave start and end blank. Tick nothing to keep it off the day columns."));
@@ -1935,8 +2004,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     var item=el("div","custom-item");
     var t=el("div","t");
     t.appendChild(el("b",null,c.label||"Block"));
-    t.appendChild(el("div","sec-meta", dayLabel(c.days)+" · "+fmtTime(toMin(c.start))+"–"+fmtTime(toMin(c.end))+
-      (c.loc?" · "+c.loc:"")));
+    t.appendChild(el("div","sec-meta", [dayLabel(c.days) + " · " + fmtTime(toMin(c.start)) + "–" +
+      fmtTime(toMin(c.end)), c.loc || "", dateSpan(c.from, c.to)].filter(Boolean).join(" · ")));
     var ed=el("button","btn sm ghost","Edit"); ed.type="button";
     ed.addEventListener("click", function(){ startEditCustom(c.id); });
     var del=el("button","btn sm ghost danger","Remove"); del.type="button";
@@ -1952,7 +2021,10 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
   function renderCustomList(){
     var box=$("customList"); clear(box);
     $("chipCustom").textContent = state.custom.length ? state.custom.length+"" : "";
-    if(!state.custom.length){ box.appendChild(el("div","empty","No office hours added yet.")); return; }
+    if(!state.custom.length){
+      box.appendChild(el("div","empty","No " + ohWord() + " added yet."));
+      return;
+    }
 
     if(state.faculty.length < 2){
       state.custom.forEach(function(c){ box.appendChild(customItem(c)); });
@@ -1994,6 +2066,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     editingCustomId = null;
     $("cLabel").value = ""; $("cLoc").value = "";
     $("cStart").value = "10:00"; $("cEnd").value = "11:00";
+    $("cFrom").value = ""; $("cTo").value = "";
+    $("cWeeksBox").open = false;
     $("cType").value = "oh";
     if($("cWho").options.length) $("cWho").value = "";
     setCustomDays([]);
@@ -2008,6 +2082,9 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     $("cType").value = c.type || "oh";
     if($("cWho").querySelector('option[value="'+(c.who||"").replace(/"/g,'\\"')+'"]')) $("cWho").value = c.who || "";
     $("cStart").value = c.start || ""; $("cEnd").value = c.end || "";
+    $("cFrom").value = c.from || ""; $("cTo").value = c.to || "";
+    // Open the fold when there is a range in it, or it looks empty.
+    $("cWeeksBox").open = !!(c.from || c.to);
     setCustomDays(c.days);
     $("addCustom").textContent = "Save changes";
     $("cancelCustom").hidden = false;
@@ -2260,6 +2337,28 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     if(!p) return "";
     return isFullyPt(e) ? "PT" : (p + " hr" + (p===1?"":"s") + " PT");
   }
+  /* Schools name this differently — Health Sciences calls them student hours —
+     and it is the same thing on the form either way, so it is one word in one
+     place rather than a second kind of block. */
+  function ohWord(cap){
+    var w = state.opts.studentHours ? "tudent hours" : "ffice hours";
+    return (cap ? (state.opts.studentHours ? "S" : "O") : (state.opts.studentHours ? "s" : "o")) + w;
+  }
+  function ohTitle(){ return state.opts.studentHours ? "Student Hours" : "Office Hours"; }
+  function syncOhWords(){
+    // The four places the word is written into the page rather than generated.
+    var t = $("p3Title"); if(t) t.textContent = ohWord(true);
+    var o = $("cTypeOh"); if(o) o.textContent = ohWord(true);
+    var r = $("fOhRequiredLabel"); if(r) r.textContent = ohWord(true) + " required";
+    var l = $("cLabel"); if(l) l.placeholder = ohTitle();
+    // A default label already added to the grid follows the setting; one the
+    // person typed themselves is theirs and is left alone.
+    (state.custom || []).forEach(function(c){
+      if(c.type === "oh" && (c.label === "Office Hours" || c.label === "Student Hours")){
+        c.label = ohTitle();
+      }
+    });
+  }
   function contactFromMeetings(ms){
     // Contact hours are scheduled time: a 55-minute hour, rounded up.
     var mins = 0;
@@ -2322,15 +2421,64 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     }
     return Math.round((requiredContact / 3) * 100) / 100;
   }
-  function officeHours(owner){
-    var total = 0;
-    state.custom.forEach(function(c){
-      if(c.type !== "oh" || !ownsBlock(c, owner)) return;
+  function ohBlocks(owner){
+    return (state.custom || []).filter(function(c){
+      if(c.type !== "oh" || !ownsBlock(c, owner)) return false;
       var st = toMin(c.start), en = toMin(c.end);
-      if(st == null || en == null || en <= st) return;
-      total += ((en - st) / 60) * (c.days ? c.days.length : 0);
+      return st != null && en != null && en > st && c.days && c.days.length;
+    });
+  }
+  function weeklyHours(list){
+    var total = 0;
+    list.forEach(function(c){
+      total += ((toMin(c.end) - toMin(c.start)) / 60) * c.days.length;
     });
     return Math.round(total * 100) / 100;
+  }
+  /* The weekly total, which is a single number only while every block runs
+     every week. Nursing hours change with the teaching block — two hours on
+     teaching weeks, three on the rest — and adding all of them together would
+     report five, a figure that is true in no week of the term. So the term is
+     cut at every date a block starts or stops, each stretch is totalled on its
+     own, and what comes back is the range actually worked. */
+  function officeHoursRange(owner){
+    var list = ohBlocks(owner);
+    if(!list.length) return {min:0, max:0};
+    var dated = list.filter(function(c){ return c.from || c.to; });
+    if(!dated.length) return {min:weeklyHours(list), max:weeklyHours(list)};
+    var cuts = [];
+    dated.forEach(function(c){
+      if(c.from) cuts.push(c.from);
+      if(c.to) cuts.push(nextDay(c.to));
+    });
+    var cal = (DATA && DATA.calendar) || {};
+    if(cal.start) cuts.push(cal.start);
+    cuts = cuts.filter(function(v,i,a){ return v && a.indexOf(v) === i; }).sort();
+    var min = null, max = 0;
+    cuts.forEach(function(day){
+      var active = list.filter(function(c){
+        return (!c.from || c.from <= day) && (!c.to || c.to >= day);
+      });
+      var t = weeklyHours(active);
+      if(!active.length && cuts.length > 1) return;   // a gap with nothing on
+      if(min === null || t < min) min = t;
+      if(t > max) max = t;
+    });
+    return {min: min === null ? 0 : min, max: max};
+  }
+  function nextDay(iso){
+    var d = new Date(iso + "T00:00:00");
+    if(isNaN(d.getTime())) return iso;
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0,10);
+  }
+  function officeHours(owner){
+    // The lowest week is what a requirement has to be met in.
+    return officeHoursRange(owner).min;
+  }
+  function officeHoursLabel(owner){
+    var r = officeHoursRange(owner);
+    return r.min === r.max ? String(r.min) : r.min + "\u2013" + r.max;
   }
   function noLoad(){ return !!state.profile.noLoad; }
   function loadSummary(list, owner){
@@ -2352,6 +2500,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     });
     return {base:base, required:Math.max(0, base - rel), released:rel,
             load:Math.round(load*100)/100, over:Math.round(over*100)/100, office:officeHours(owner),
+            officeLabel:officeHoursLabel(owner),
             officeRequired: noLoad() ? 0 : officeRequired(Math.max(0, base - rel)),
             releaseHours: releaseHoursOn(owner), releaseExpected: releaseExpectedTotal()};
   }
@@ -2372,7 +2521,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       bits.push(reasons.length ? "Released: " + reasons.join(", ") : L.released + " released");
     }
     if(L.office || (L.officeRequired && !noLoad())){
-      bits.push("Office hours: " + L.office +
+      bits.push(ohWord(true) + ": " + (L.officeLabel || L.office) +
                 ((L.officeRequired && !noLoad()) ? " of " + L.officeRequired : ""));
     }
     if(L.releaseExpected){
@@ -2723,7 +2872,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     sheet.appendChild(head);
 
     var t = el("table","tbl"), thead = el("thead"), hr = el("tr");
-    ["Faculty","Sections","Contact hours","Required","PT / overload","Office hours","Released"]
+    ["Faculty","Sections","Contact hours","Required","PT / overload",ohWord(true),"Released"]
       .forEach(function(c){ hr.appendChild(el("th",null,c)); });
     thead.appendChild(hr); t.appendChild(thead);
     var tb = el("tbody"), totals = {sec:0, load:0, over:0, office:0};
@@ -2790,7 +2939,10 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       for(var i=0;i<day.length;i++){
         for(var j=i+1;j<day.length;j++){
           if(day[j].start >= day[i].end) break;
-          // Two blocks genuinely on top of each other in the same day column.
+          // Two blocks genuinely on top of each other in the same day column —
+          // unless they run on different weeks, which is how nursing blocks and
+          // a changing office hour sit on the same Monday without clashing.
+          if(!spansOverlap(day[i], day[j])) continue;
           var note = "";
           if(day[i].pot && day[j].pot && day[i].pot !== day[j].pot){
             // Sessions that never run at the same time cannot actually clash.
@@ -2932,11 +3084,15 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       if(L.officeRequired && L.office < L.officeRequired && (L.load || L.over)){
         box.appendChild(el("div","banner",
           (state.faculty.length > 1 ? who + ": " : "") +
-          "Office hours total " + L.office + ", below the " + L.officeRequired + " required."));
+          ohWord(true) + " total " + (L.officeLabel || L.office) +
+          (L.officeLabel && L.officeLabel !== String(L.office)
+            ? " across the term, dropping to " + L.office + " some weeks, below the "
+            : ", below the ") + L.officeRequired + " required."));
       }
     });
   }
   function renderAll(){
+    syncOhWords();
     document.body.classList.toggle("color-print", !!state.opts.printColor);
     document.body.classList.toggle("moa-view", state.view === "moa");
     var groups = moaGroups();
@@ -3005,7 +3161,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
                       .map(function(r){ return r.credits + " for " + r.reason; });
       lines.push("  Released: " + (reasons.length ? reasons.join(", ") : L.released));
     }
-    if(L.office) lines.push("  Office hours: " + L.office);
+    if(L.office) lines.push("  " + ohWord(true) + ": " + (L.officeLabel || L.office));
     if(L.over) lines.push("  PT / overload: " + L.over);
     if(p.notes){ lines.push(""); lines.push(p.notes); }
     return lines.join("\n");
@@ -3302,10 +3458,10 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     if(d.mode === "create"){
       var a = Math.min(d.anchor, snap(now)), b = Math.max(d.anchor, snap(now));
       if(b - a < SNAP) return;                  // a click, not a drag
-      state.custom.push({id:"c"+Date.now(), label:"Office Hours", type:"oh",
+      state.custom.push({id:"c"+Date.now(), label:ohTitle(), type:"oh",
         days:[col.dataset.day], start:hhmm(a), end:hhmm(b), loc:"", who:d.owner});
       renderAll(); save();
-      toast("Office hours " + fmtTime(a) + "–" + fmtTime(b) + " added. Drag to adjust.");
+      toast(ohWord(true) + " " + fmtTime(a) + "–" + fmtTime(b) + " added. Drag to adjust.");
       return;
     }
     if(!d.moved) return;
@@ -3766,6 +3922,12 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       var sd = b.pot ? sessionDates(b.pot) : null;
       var winStart = (sd && sd.start) || p.termStart;
       var winEnd   = (sd && sd.end)   || p.termEnd;
+      // A block with its own dates — a nursing teaching block, or hours that
+      // change part-way through — narrows the window further, so the calendar
+      // stops repeating it after the block ends.
+      if(b.from && b.from > winStart) winStart = b.from;
+      if(b.to   && b.to   < winEnd)   winEnd   = b.to;
+      if(winEnd < winStart) return;
       if(b.pot && b.pot !== "15W" && !sd) guessed[b.pot] = 1;
       var first = firstOccurrence(winStart, b.day);
       var day = DAYS.find(function(x){ return x.k===b.day; });
@@ -3833,7 +3995,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       });
     });
     state.custom.forEach(function(c){
-      rows.push([c.type==="oh"?"Office hours":"Other",c.label||"","",(c.days||[]).join(""),c.start||"",c.end||"",c.loc||"","","","","","","",""]);
+      rows.push([c.type==="oh"?ohWord(true):"Other",c.label||"",dateSpan(c.from,c.to),(c.days||[]).join(""),c.start||"",c.end||"",c.loc||"","","","","","","",""]);
     });
     var csv=rows.map(function(r){ return r.map(function(v){
       v=String(v==null?"":v); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v;
@@ -4058,7 +4220,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     });
   }
   function bindOptions(){
-    var map={optCode:"code",optCredits:"credits",optOwnPatterns:"ownPatterns",optWeekend:"weekend",optTrimDays:"trimDays",optTrimHours:"trimHours",optColor:"color",optTable:"table",optLoad:"load",optSign:"sign",optFit:"fit",optDept:"dept",optPrintColor:"printColor",opt24:"h24"};
+    var map={optCode:"code",optCredits:"credits",optOwnPatterns:"ownPatterns",optStudentHours:"studentHours",optWeekend:"weekend",optTrimDays:"trimDays",optTrimHours:"trimHours",optColor:"color",optTable:"table",optLoad:"load",optSign:"sign",optFit:"fit",optDept:"dept",optPrintColor:"printColor",opt24:"h24"};
     Object.keys(map).forEach(function(id){
       var node=$(id); node.checked=!!state.opts[map[id]];
       node.addEventListener("change", function(){
@@ -4093,7 +4255,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       labCandidates().forEach(function(x){
         var o = state.overrides[x.s.id] || (state.overrides[x.s.id]={});
         o.meetings = x.e.meetings.filter(function(m){ return x.labs.indexOf(m) < 0; }).map(function(m){
-          return {d:(m.d||[]).slice(), s:m.s, e:m.e, rm:m.rm, est:!!m.est};
+          return {d:(m.d||[]).slice(), s:m.s, e:m.e, rm:m.rm, est:!!m.est, from:m.from||"", to:m.to||""};
         });
         n++;
       });
@@ -4105,8 +4267,11 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       if(!days.length){ toast("Pick at least one day."); return; }
       var st=$("cStart").value, en=$("cEnd").value;
       if(!st||!en||toMin(en)<=toMin(st)){ toast("Check the start and end times."); return; }
-      var rec = {label:$("cLabel").value.trim()||($("cType").value==="oh"?"Office Hours":"Blocked"),
+      var from = $("cFrom").value || "", to = $("cTo").value || "";
+      if(from && to && to < from){ toast("The To date is before the From date."); return; }
+      var rec = {label:$("cLabel").value.trim()||($("cType").value==="oh"?ohTitle():"Blocked"),
                  type:$("cType").value, days:days, start:st, end:en, loc:$("cLoc").value.trim(),
+                 from:from, to:to,
                  who: state.faculty.length>1 ? $("cWho").value : ""};
       if(editingCustomId){
         state.custom = state.custom.map(function(c){
