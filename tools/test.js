@@ -475,6 +475,42 @@ setTimeout(() => {
   $('btnIcs').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   ok('ICS exported with term dates', downloads.some(d => typeof d === 'string' && d.endsWith('.ics')));
 
+  // The grid is absolutely positioned on screen, which Word cannot read, so
+  // the Word file rebuilds it as a real table. These check it is a table with
+  // the same day columns, and that a long class spans the rows it occupies.
+  const wordText = () => {
+    const blob = downloads.filter(d => typeof d !== 'string').slice(-1)[0];
+    return blob && blob.__text || '';
+  };
+  const origBlob = window.Blob;
+  window.Blob = function (parts, opts) {
+    const b2 = new origBlob(parts, opts);
+    b2.__text = (parts || []).join('');
+    return b2;
+  };
+  $('btnWord').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  ok('Word export triggered', downloads.some(d => typeof d === 'string' && d.endsWith('-schedule.doc')));
+  const wdoc = wordText();
+  ok('the Word file is a real document', /<html[^>]*schemas-microsoft-com/.test(wdoc));
+  ok('the week is a table, not positioned boxes',
+     /<table class="wgrid">/.test(wdoc) && !/position:absolute/.test(wdoc));
+  ok('its columns are the weekdays', /<th>Mon<\/th>/.test(wdoc) && /<th>Fri<\/th>/.test(wdoc));
+  ok('a class that runs for hours spans the rows', /rowspan="[2-9]"/.test(wdoc));
+  ok('the course table comes with it', /Courses<\/h3>/.test(wdoc));
+  ok('and the hours line', /Contact hours:/.test(wdoc));
+  window.Blob = origBlob;
+
+  // Counting a course in hours replaces the credit column rather than adding to it.
+  $('optHours').checked = true;
+  $('optHours').dispatchEvent(new window.Event('change', { bubbles: true }));
+  const headRow = () => [...doc.querySelectorAll('.sheet .tbl thead th')].map(t => t.textContent);
+  ok('the column is headed Hrs', headRow().indexOf('Hrs') > -1 && headRow().indexOf('Cr') < 0);
+  const firstVal = () => doc.querySelector('.sheet .tbl tbody tr td.num').textContent;
+  ok('and carries the hours alone, not "4 / 3 ch"', !/\//.test(firstVal()));
+  $('optHours').checked = false;
+  $('optHours').dispatchEvent(new window.Event('change', { bubbles: true }));
+  ok('unticking brings credits back', headRow().indexOf('Cr') > -1);
+
   $('btnSave').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   ok('draft saved', downloads.some(d => typeof d === 'string' && d.endsWith('draft.json')));
 

@@ -566,6 +566,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         <label class="check"><input type="checkbox" id="optCredits" checked> Show credits in the course table</label>
         <label class="check"><input type="checkbox" id="optOwnPatterns" checked> Leave off meeting patterns the schedule lists under someone else</label>
         <label class="check"><input type="checkbox" id="optStudentHours"> Call office hours <b>student hours</b></label>
+        <label class="check"><input type="checkbox" id="optHours"> Count courses in <b>hours</b> rather than credits</label>
         <label class="check"><input type="checkbox" id="optWeekend"> Always show Saturday and Sunday</label>
         <label class="check"><input type="checkbox" id="optColor" checked> Color-code courses on screen</label>
         <label class="check"><input type="checkbox" id="optPrintColor"> Print the blocks in full color</label>
@@ -629,6 +630,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
           <button class="btn" id="btnIcs" type="button">⤓ Calendar (.ics)</button>
           <button class="btn" id="btnPng" type="button">⤓ Image (.png)</button>
           <button class="btn" id="btnCsv" type="button">⤓ Spreadsheet (.csv)</button>
+          <button class="btn" id="btnWord" type="button">⤓ Word file (.doc)</button>
         </div>
         <div id="moaBox" hidden>
           <h3 style="margin:12px 0 6px;font-size:.9rem">Overload agreements</h3>
@@ -914,6 +916,15 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
             the load.</li>
           <li>Labs that are no longer on your sheet no longer clash with anything, so the false
             overlaps between a lecture and the lab running alongside it are gone.</li>
+          <li><b>The schedule downloads as a Word file.</b> Export has a <b>Word file (.doc)</b>
+            button beside the others. The week comes across as a real table with the same days and
+            rows as the screen — folded hours and hidden days included — followed by the course
+            table and the hours line, all of it editable. Print still gives the exact PDF; the Word
+            file is for when somebody needs to change something.</li>
+          <li><b>Courses can be counted in hours instead of credits.</b> One switch in Display
+            options turns the Cr column into Hrs, showing the figure the load is actually built
+            from, and the field in Edit is relabelled to match. For a department whose own form is
+            written in hours, the credit value is just noise.</li>
           <li><b>Clinicals you are listed on but do not run.</b> A nursing clinical carries three
             to five names: the first runs the group, and the rest are the concepts faculty who need
             the roster and the Canvas shell. Those are now off your schedule and out of your hours,
@@ -1237,7 +1248,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     profile: {name:"",title:"",dept:"",office:"",phone:"",email:"",zoom:"",termLabel:"",termStart:"",termEnd:"",notes:"",loadBase:"15",ohRequired:"",released:"",releasedFor:""},
     pot: "15W",                 // legacy; migrated into sessions on load
     sessions: null,             // {15W:true, 11W:false, …} — null until the feed is known
-    opts: {code:true, credits:true, ownPatterns:true, studentHours:false, weekend:false, trimDays:false, trimHours:false, color:true, table:true, h24:false, load:true, sign:false, fit:true, dept:true, printColor:false, online:"banner", density:58}
+    opts: {code:true, credits:true, ownPatterns:true, studentHours:false, hours:false, weekend:false, trimDays:false, trimHours:false, color:true, table:true, h24:false, load:true, sign:false, fit:true, dept:true, printColor:false, online:"banner", density:58}
   };
 
   /* ===== small helpers ===== */
@@ -2028,7 +2039,9 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     box.appendChild(addBtn);
 
     var fh=el("div","field");
-    fh.appendChild(el("label",null,"Contact hours for load (defaults to the "+(e.credits||0)+" credits in the schedule)"));
+    fh.appendChild(el("label",null, state.opts.hours
+      ? "Hours for this course (what the schedule and the load are counted in)"
+      : "Contact hours for load (defaults to the "+(e.credits||0)+" credits in the schedule)"));
     var ih=document.createElement("input"); ih.type="number"; ih.min="0"; ih.max="20"; ih.step="0.5";
     ih.value = state.hrs[s.id] !== undefined ? state.hrs[s.id] : "";
     ih.placeholder = String(e.credits || 0);
@@ -2676,7 +2689,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     // already shows both, and they are what pushes the table onto page two.
     var condensed = !!state.opts.fit;
     var cols = condensed ? ["Section","Course","Mode"] : ["Section","Course","Meets","Room","Mode"];
-    if(state.opts.credits) cols.splice(2,0,"Cr");
+    if(state.opts.credits) cols.splice(2,0, state.opts.hours ? "Hrs" : "Cr");
     if(anyPt) cols.push("Load");
     cols.forEach(function(c){ tr.appendChild(el("th",null,c)); });
     thead.appendChild(tr); t.appendChild(thead);
@@ -2687,13 +2700,22 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       r.appendChild(el("td",null,e.title));
       if(state.opts.credits){
         var hrs = hoursFor(e);
-        var txt = e.credits ? String(e.credits) : "—";
-        // Where contact hours differ from credits, show both: the form counts
-        // contact hours, but the agreement is written in credits.
-        if(e.credits && hrs && hrs !== parseFloat(e.credits)) txt += " / " + hrs + " ch";
-        var crCell = el("td","num", txt);
-        crCell.title = !e.credits ? "No credit value in the published schedule"
-          : (hrs !== parseFloat(e.credits) ? e.credits + " credits, " + hrs + " contact hours" : "");
+        var crCell;
+        if(state.opts.hours){
+          // Nursing counts a course in hours, not credits, and the credit value
+          // is of no use on their form — so the column is the hours alone, the
+          // same figure the load is built from and the one Edit sets.
+          crCell = el("td","num", hrs ? String(hrs) : "—");
+          crCell.title = hrs ? "" : "No hours set. Open Edit on the section to enter them.";
+        } else {
+          var txt = e.credits ? String(e.credits) : "—";
+          // Where contact hours differ from credits, show both: the form counts
+          // contact hours, but the agreement is written in credits.
+          if(e.credits && hrs && hrs !== parseFloat(e.credits)) txt += " / " + hrs + " ch";
+          crCell = el("td","num", txt);
+          crCell.title = !e.credits ? "No credit value in the published schedule"
+            : (hrs !== parseFloat(e.credits) ? e.credits + " credits, " + hrs + " contact hours" : "");
+        }
         r.appendChild(crCell);
       }
       if(!condensed){
@@ -3298,6 +3320,156 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     catch(e){ toast("Could not copy automatically — use the print or spreadsheet export instead."); }
     document.body.removeChild(ta);
   }
+
+  /* ===== the schedule as a Word file =====
+     Print already gives an exact PDF, so what a Word file adds is editing: a
+     department office wants to add a note, change a title or paste the week
+     into something else. The grid is absolutely positioned on screen, which
+     Word cannot read, so it is rebuilt here as a real table using the same
+     rows and day columns the screen uses — folding and hidden days included,
+     so the file matches what was on the page. */
+  function wordGridTable(name){
+    var blocks = blocksFor(name);
+    // Online courses pinned to a day have no block but still earn a column.
+    var extra = [];
+    scheduledSections(state.faculty.length > 1 ? name : null).forEach(function(e){
+      onlineDaysOf(e).forEach(function(d){ if(extra.indexOf(d) < 0) extra.push(d); });
+    });
+    var cols = daysShown(blocks, extra);
+    var bounds = gridBounds(blocks);
+    var segs = buildSegments(bounds, blocks);
+    var t = el("table","wgrid");
+    // Word gives an empty column almost no width, which leaves a lopsided week.
+    // Fixed layout with an explicit share each keeps the days even.
+    var cg = el("colgroup");
+    var first = el("col"); first.setAttribute("style","width:0.75in"); cg.appendChild(first);
+    var share = Math.floor(100 / cols.length) + "%";
+    cols.forEach(function(){
+      var c = el("col"); c.setAttribute("style","width:" + share); cg.appendChild(c);
+    });
+    t.appendChild(cg);
+    var thead = el("thead"), hr = el("tr");
+    hr.appendChild(el("th",null,"Time"));
+    cols.forEach(function(d){ hr.appendChild(el("th",null,d.short)); });
+    thead.appendChild(hr); t.appendChild(thead);
+
+    // Overlapping blocks share one cell: Word has no columns within a cell,
+    // and two things at once is what the person needs to see anyway.
+    var groups = {};
+    cols.forEach(function(d){
+      var day = blocks.filter(function(b){ return b.day === d.k; })
+                      .sort(function(a,b){ return a.start - b.start; });
+      var out = [], cur = null;
+      day.forEach(function(b){
+        if(cur && b.start < cur.end){ cur.items.push(b); cur.end = Math.max(cur.end, b.end); }
+        else { cur = {start:b.start, end:b.end, items:[b]}; out.push(cur); }
+      });
+      groups[d.k] = out;
+    });
+
+    var tb = el("tbody"), taken = {};
+    segs.forEach(function(seg, ri){
+      var tr = el("tr");
+      if(seg.type === "gap"){
+        tr.appendChild(el("th",null, fmtTime(seg.from) + "–" + fmtTime(seg.to)));
+        cols.forEach(function(){ tr.appendChild(el("td",null,"—")); });
+        tb.appendChild(tr); return;
+      }
+      tr.appendChild(el("th",null, fmtTime(seg.at)));
+      cols.forEach(function(d){
+        if(taken[d.k + ":" + ri]) return;                 // covered by a rowspan
+        var g = groups[d.k].filter(function(x){ return x.start < seg.at + 60 && x.end > seg.at; })[0];
+        if(!g || g.start >= seg.at + 60 || g._done){ tr.appendChild(el("td",null,"")); return; }
+        g._done = true;
+        // How many of the rows below this one the group runs through.
+        var span = 1;
+        for(var k = ri + 1; k < segs.length; k++){
+          if(segs[k].type !== "hour" || segs[k].at >= g.end) break;
+          taken[d.k + ":" + k] = true; span++;
+        }
+        var td = el("td");
+        if(span > 1) td.setAttribute("rowspan", String(span));
+        g.items.forEach(function(b, n){
+          if(n) td.appendChild(el("div","wsep","—"));
+          td.appendChild(el("div","wtitle", b.title));
+          td.appendChild(el("div", null, fmtTime(b.start) + "–" + fmtTime(b.end)));
+          if(b.sub) td.appendChild(el("div",null, b.sub));
+          if(b.sub2) td.appendChild(el("div",null, b.sub2));
+        });
+        tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb);
+    return t;
+  }
+  function buildWordSheet(name){
+    var p = state.profile;
+    var owner = state.faculty.length > 1 ? name : (state.faculty[0] || null);
+    var box = el("div");
+    box.appendChild(el("h2", null, state.faculty.length > 1 ? name : (p.name || name || "Teaching Schedule")));
+    var role = [p.title, p.dept].filter(Boolean).join(" · ");
+    if(state.faculty.length <= 1 && role) box.appendChild(el("div","wrole", role));
+    var term = p.termLabel || (DATA && DATA.termLabel) || "";
+    if(term) box.appendChild(el("div","wrole", term));
+    if(state.faculty.length <= 1){
+      var contact = [p.office ? "Office: " + p.office : "", p.phone, p.email, p.zoom]
+        .filter(Boolean).join("  ·  ");
+      if(contact) box.appendChild(el("div","wrole", contact));
+    }
+    box.appendChild(wordGridTable(state.faculty.length > 1 ? name : null));
+    var list = scheduledSections(state.faculty.length > 1 ? name : null);
+    if(state.opts.table && list.length){
+      box.appendChild(el("h3", null, "Courses"));
+      box.appendChild(buildTable(list));
+    }
+    if(state.opts.load){
+      var L = loadSummary(list, owner);
+      var bits = [];
+      if(!noLoad()) bits.push("Contact hours: " + L.load + " of " + L.required);
+      else bits.push("Contact hours: " + L.load);
+      bits.push(ohWord(true) + ": " + (L.officeLabel || L.office) +
+                (noLoad() ? "" : " of " + L.officeRequired));
+      if(L.over) bits.push("Overload: " + L.over);
+      box.appendChild(el("div","wload", bits.join("  ·  ")));
+    }
+    if(p.notes) box.appendChild(el("div","wrole", p.notes));
+    return box;
+  }
+  function exportWord(){
+    if(!state.faculty.length && !state.custom.length){
+      toast("Pick an instructor in step 1 first."); return;
+    }
+    var people = state.faculty.length ? state.faculty : [p_name()];
+    var host = el("div");
+    people.forEach(function(n, i){
+      var d = buildWordSheet(n);
+      if(i) d.style.pageBreakBefore = "always";
+      host.appendChild(d);
+    });
+    var html = "<html xmlns:o='urn:schemas-microsoft-com:office:office' " +
+      "xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>" +
+      "<head><meta charset='utf-8'><title>Teaching Schedule</title>" +
+      "<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View>" +
+      "</w:WordDocument></xml><![endif]-->" +
+      "<style>@page{size:11in 8.5in;mso-page-orientation:landscape;margin:0.5in}" +
+      "body{font-family:Calibri,Arial,sans-serif;font-size:10pt}" +
+      "h2{font-size:15pt;margin:0 0 2pt}h3{font-size:11pt;margin:10pt 0 3pt}" +
+      ".wrole{font-size:9.5pt;color:#333;margin-bottom:2pt}" +
+      ".wload{margin-top:8pt;font-size:9.5pt;border-top:1px solid #999;padding-top:4pt}" +
+      "table{border-collapse:collapse;width:100%;margin-top:8pt}" +
+      "table.wgrid{table-layout:fixed}" +
+      "th,td{border:1px solid #999;padding:3pt 4pt;vertical-align:top;font-size:8.5pt}" +
+      "thead th{background:#eee;text-align:center}" +
+      "tbody th{width:0.7in;text-align:right;color:#444;font-weight:normal}" +
+      ".wtitle{font-weight:bold}.wsep{color:#999;margin:2pt 0}" +
+      ".tbl th,.tbl td{font-size:9pt}.tbl td.num{text-align:right}" +
+      "</style></head><body>" + host.innerHTML + "</body></html>";
+    download(slug(state.profile.name || state.faculty[0] || "teaching") + "-schedule.doc",
+             "application/msword", html);
+    toast("Schedule downloaded as a Word file");
+  }
+  function p_name(){ return state.profile.name || ""; }
 
   function exportMoaWord(){
     var groups = moaGroups();
@@ -4337,7 +4509,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     });
   }
   function bindOptions(){
-    var map={optCode:"code",optCredits:"credits",optOwnPatterns:"ownPatterns",optStudentHours:"studentHours",optWeekend:"weekend",optTrimDays:"trimDays",optTrimHours:"trimHours",optColor:"color",optTable:"table",optLoad:"load",optSign:"sign",optFit:"fit",optDept:"dept",optPrintColor:"printColor",opt24:"h24"};
+    var map={optCode:"code",optCredits:"credits",optOwnPatterns:"ownPatterns",optStudentHours:"studentHours",optHours:"hours",optWeekend:"weekend",optTrimDays:"trimDays",optTrimHours:"trimHours",optColor:"color",optTable:"table",optLoad:"load",optSign:"sign",optFit:"fit",optDept:"dept",optPrintColor:"printColor",opt24:"h24"};
     Object.keys(map).forEach(function(id){
       var node=$(id); node.checked=!!state.opts[map[id]];
       node.addEventListener("change", function(){
@@ -4501,6 +4673,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       state.view = "schedule"; save(); renderAll();
     });
     $("btnMoaWord").addEventListener("click", exportMoaWord);
+    $("btnWord").addEventListener("click", exportWord);
     var instMap = {moaInstitute:"name", moaDean:"dean", moaPhone:"phone", moaContacts:"contacts"};
     Object.keys(instMap).forEach(function(id){
       $(id).addEventListener("input", function(){
