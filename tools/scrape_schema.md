@@ -166,3 +166,15 @@ every term's copy when a search comes up empty, so somebody looking for a
 colleague who teaches in another term is told where they are rather than given
 a bare "no match". Nothing else reads it; it is derived entirely from the feed
 and is rebuilt with it.
+
+## tools/qr-check.js
+
+The page draws its own QR codes for meeting links, because it loads nothing
+from a CDN. An encoder that is subtly wrong still produces a convincing square
+of dots, so `node tools/qr-check.js` pulls `qrMatrix` straight out of the page
+and checks it two ways: every sample decodes back to itself through OpenCV,
+and the fixed parts of the matrix match a reference encoder module for module.
+
+It needs `python3 -m pip install qrcode opencv-python-headless`; without them
+it reports SKIP rather than failing. `tools/test.js` does not need either — it
+only checks that a code reaches the block and is the right size for the data.

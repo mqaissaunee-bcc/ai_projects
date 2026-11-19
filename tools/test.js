@@ -217,6 +217,56 @@ setTimeout(() => {
   ok('flagging PT moves credits out of load', line !== loadBefore && /PT \/ overload: \d/.test(line));
   ok('PT column appears in the table',
      [...doc.querySelectorAll('.sheet table.tbl th')].some(th => th.textContent === 'Load'));
+  // ---- a scannable code for a meeting link ----
+  // Written from scratch, because the page loads nothing from a CDN. The
+  // matrix is checked against a known-good one in tools/qr-check.js; here we
+  // only check it reaches the block and is the right size for the data.
+  {
+    const qrBefore = doc.querySelectorAll('.sheet .blk-qr svg').length;
+    $('cLabel').value = 'Office Hours';
+    $('cDays').querySelector('input[value=W]').checked = true;
+    $('cStart').value = '10:00'; $('cEnd').value = '12:00';
+    $('cLoc').value = 'https://brookdalecc.zoom.us/j/98765432101';
+    $('addCustom').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+    const svgs = [...doc.querySelectorAll('.sheet .blk-qr svg')];
+    ok('a link puts a code on the block', svgs.length === qrBefore + 1);
+    const vb = svgs[svgs.length - 1].getAttribute('viewBox');
+    ok('the code is a square of modules', /^0 0 (\d+) \1$/.test(vb));
+    ok('and sized for that much data', parseInt(vb.split(' ')[2], 10) === 33);
+    ok('the block shows the host, not the whole query string',
+       [...doc.querySelectorAll('.sheet .blk')]
+         .some(n => /brookdalecc\.zoom\.us/.test(n.textContent) && !/98765432101/.test(n.textContent)));
+
+    $('optQr').checked = false;
+    $('optQr').dispatchEvent(new window.Event('change', { bubbles: true }));
+    ok('it can be switched off', doc.querySelectorAll('.sheet .blk-qr svg').length === qrBefore);
+    $('optQr').checked = true;
+    $('optQr').dispatchEvent(new window.Event('change', { bubbles: true }));
+    // A room is not a link, so it gets no code.
+    $('cLabel').value = 'Committee';
+    $('cType').value = 'other';
+    $('cDays').querySelector('input[value=W]').checked = true;
+    $('cStart').value = '15:00'; $('cEnd').value = '17:00';
+    $('cLoc').value = 'MAS 212';
+    $('addCustom').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+    ok('a room gets no code', doc.querySelectorAll('.sheet .blk-qr svg').length === qrBefore + 1);
+
+    // Put the schedule back as it was: later checks count the office hours.
+    const items = [...$('customList').querySelectorAll('.custom-item')];
+    items.slice(-2).forEach(it => {
+      [...it.querySelectorAll('button')].filter(b2 => b2.textContent === 'Remove')[0]
+        .dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+    });
+    $('cType').value = 'oh';
+    ok('the test left no blocks behind',
+       $('customList').querySelectorAll('.custom-item').length === items.length - 2);
+  }
+
+  // Overload is what a reviewer looks for first, so it is a badge rather than
+  // a word in the small third line — on scheduled blocks and on asynchronous
+  // courses alike, which claim no time on the grid and were easiest to miss.
+  ok('overload is a badge on the block',
+     [...doc.querySelectorAll('.sheet .blk .pt-badge')].length > 0);
   ok('PT marked on the grid block', /PT/.test(doc.querySelector('.sheet').textContent));
   ok('PT state persisted', /"pt":\{"/.test(window.localStorage.getItem('bcc-faculty-schedule-v1')));
   ok('PT toggle reflects state', ptOf(0).getAttribute('aria-pressed') === 'true');
@@ -1147,7 +1197,8 @@ setTimeout(() => {
           b$('cLabel').value = 'Office Hours';
           b$('cDays').querySelector('input[value=M]').checked = true;
           b$('cStart').value = start; b$('cEnd').value = end;
-          b$('cFrom').value = from; b$('cTo').value = to;
+          const rr = bd.querySelectorAll('#cRanges input');
+          rr[0].value = from; rr[1].value = to;
           b$('addCustom').dispatchEvent(new bw.MouseEvent('click', { bubbles: true }));
         };
         // Her teaching weeks are two hours; the rest of the term is three.
@@ -1177,10 +1228,43 @@ setTimeout(() => {
         b$('cType').value = 'other';
         b$('cDays').querySelector('input[value=M]').checked = true;
         b$('cStart').value = '12:30'; b$('cEnd').value = '13:30';
-        b$('cFrom').value = ''; b$('cTo').value = '';
+        bd.querySelectorAll('#cRanges input').forEach(x => { x.value = ''; });
         b$('addCustom').dispatchEvent(new bw.MouseEvent('click', { bubbles: true }));
         ok('a block with no dates still clashes with the dated ones',
            clashLines().some(t => /Committee/.test(t)));
+
+        // ---- one pattern of hours, two stretches of weeks ----
+        // The weeks either side of a teaching block are one pattern, not two.
+        // Written as two blocks it draws twice and reads as a clash with
+        // itself, so a block carries a list of stretches.
+        const before = bd.querySelectorAll('#customList .custom-item').length;
+        bd.querySelectorAll('#cRanges input').forEach(x => { x.value = ''; });
+        b$('cLabel').value = 'Student Hours';
+        b$('cDays').querySelector('input[value=F]').checked = true;
+        b$('cStart').value = '09:00'; b$('cEnd').value = '10:00';
+        let rr2 = bd.querySelectorAll('#cRanges input');
+        rr2[0].value = '2026-09-14'; rr2[1].value = '2026-09-28';
+        b$('cRangeAdd').dispatchEvent(new bw.MouseEvent('click', { bubbles: true }));
+        rr2 = bd.querySelectorAll('#cRanges input');
+        ok('a second stretch can be added', rr2.length === 4);
+        rr2[2].value = '2026-11-09'; rr2[3].value = '2026-12-21';
+        b$('addCustom').dispatchEvent(new bw.MouseEvent('click', { bubbles: true }));
+
+        ok('it stays one block, not two',
+           bd.querySelectorAll('#customList .custom-item').length === before + 1);
+        const fri = [...bd.querySelectorAll('#customList .custom-item')]
+          .filter(n => /Fri/.test(n.textContent))[0];
+        ok('and lists both stretches',
+           /Sep 14/.test(fri.textContent) && /Nov 9/.test(fri.textContent));
+        const friBlocks = [...bd.querySelectorAll('.sheet[data-owner] .blk')]
+          .filter(x => /Sep 14/.test(x.textContent) && /Nov 9/.test(x.textContent));
+        ok('only one block is drawn for it', friBlocks.length === 1);
+
+        // Reopening it has to bring both stretches back, not just the first.
+        [...fri.querySelectorAll('button')].filter(x => x.textContent === 'Edit')[0]
+          .dispatchEvent(new bw.MouseEvent('click', { bubbles: true }));
+        ok('editing restores every stretch', bd.querySelectorAll('#cRanges input').length === 4);
+        b$('cancelCustom').dispatchEvent(new bw.MouseEvent('click', { bubbles: true }));
 
         // ---- the word itself ----
         b$('optStudentHours').checked = true;

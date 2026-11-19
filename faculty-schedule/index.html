@@ -225,6 +225,12 @@ textarea{min-height:60px;resize:vertical}
 .sess-badge{position:absolute;right:3px;bottom:2px;font-size:.6rem;font-weight:700;letter-spacing:.04em;
   background:rgba(0,0,0,.28);border-radius:3px;padding:0 3px}
 .sess-badge.inline{position:static;background:var(--accent-soft);color:var(--ink);margin-left:4px}
+.pt-badge{position:absolute;left:3px;bottom:2px;font-size:.6rem;font-weight:800;letter-spacing:.05em;
+  background:#fff;color:#000;border-radius:3px;padding:0 3px;border:1px solid rgba(0,0,0,.35)}
+.pt-badge.inline{position:static;margin-left:4px;border-color:var(--ink-3)}
+.blk-qr{position:absolute;right:3px;bottom:3px;line-height:0;background:#fff;
+  padding:2px;border-radius:3px}
+.blk-qr svg{display:block}
 .blk.est::after{content:"≈";position:absolute;top:2px;right:4px;font-weight:700;opacity:.9}
 .blk.oh{background:var(--oh)}
 .blk.other{background:var(--ink-3)}
@@ -371,6 +377,9 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     print-color-adjust:exact;-webkit-print-color-adjust:exact}
   .blk b{font-size:8pt}
   .sess-badge{background:#e8e8e8!important;color:#000!important;print-color-adjust:exact}
+  .blk-qr{background:#fff!important;print-color-adjust:exact}
+  .pt-badge{background:#fff!important;color:#000!important;border:1px solid #000!important;
+    print-color-adjust:exact}
   /* Full-colour printing needs "background graphics" enabled in the print
      dialog; without it the fills vanish, so white text would too. Keep the
      text dark unless the fill is actually painted. */
@@ -481,13 +490,12 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         </div>
         <details id="cWeeksBox" style="margin-bottom:9px">
           <summary class="btn sm ghost" style="display:inline-flex">Only on certain weeks</summary>
-          <div class="row2" style="margin-top:8px">
-            <div class="field"><label for="cFrom">From</label><input type="date" id="cFrom"></div>
-            <div class="field"><label for="cTo">To</label><input type="date" id="cTo"></div>
-          </div>
-          <p class="hint">For hours that change part-way through the term. Leave empty for every
-            week. Add one block per pattern — one for your teaching weeks, one for the rest — and
-            each prints with its dates.</p>
+          <div id="cRanges" style="margin-top:8px"></div>
+          <button class="btn sm ghost" id="cRangeAdd" type="button">+ Another stretch of weeks</button>
+          <p class="hint">For hours that run only part of the term. Leave it empty for every week.
+            Add a stretch for each run — 9/14 to 9/28 and 11/9 to 12/21 for the weeks either side
+            of a teaching block — and they stay one block on the grid, printed with all its
+            dates.</p>
         </details>
         <div class="btn-row">
           <button class="btn primary" id="addCustom" type="button">Add block</button>
@@ -567,6 +575,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         <label class="check"><input type="checkbox" id="optOwnPatterns" checked> Leave off meeting patterns the schedule lists under someone else</label>
         <label class="check"><input type="checkbox" id="optStudentHours"> Call office hours <b>student hours</b></label>
         <label class="check"><input type="checkbox" id="optHours"> Count courses in <b>hours</b> rather than credits</label>
+        <label class="check"><input type="checkbox" id="optQr" checked> Put a scannable code on blocks with a meeting link</label>
         <label class="check"><input type="checkbox" id="optWeekend"> Always show Saturday and Sunday</label>
         <label class="check"><input type="checkbox" id="optColor" checked> Color-code courses on screen</label>
         <label class="check"><input type="checkbox" id="optPrintColor"> Print the blocks in full color</label>
@@ -916,6 +925,20 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
             the load.</li>
           <li>Labs that are no longer on your sheet no longer clash with anything, so the false
             overlaps between a lecture and the lab running alongside it are gone.</li>
+          <li><b>A scannable code for a meeting link.</b> Put a Zoom or Teams address in a block's
+            Location — or in Zoom under Your information — and the block carries a code students
+            can scan off the printed sheet. The block shows the host rather than forty characters
+            of query string, since the code holds the address in full. It is drawn only where the
+            block is tall enough to hold a readable one, and there is a switch in Display options
+            to leave it off.</li>
+          <li><b>Hours on separate stretches of weeks.</b> The weeks either side of a teaching
+            block are one pattern of hours, not two, so a block now takes several stretches —
+            9/14 to 9/28 and 11/9 to 12/21 — and stays a single block on the grid with all its
+            dates printed. Written as two blocks it drew twice and read as a clash with itself.</li>
+          <li><b>Overload is marked plainly.</b> PT was a word in the small third line, lost on a
+            short block and easy to miss entirely on an asynchronous course, which claims no time
+            on the grid at all. It is now a badge, on scheduled blocks and in the online band
+            alike.</li>
           <li><b>The schedule downloads as a Word file.</b> Export has a <b>Word file (.doc)</b>
             button beside the others. The week comes across as a real table with the same days and
             rows as the screen — folded hours and hidden days included — followed by the course
@@ -1248,7 +1271,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     profile: {name:"",title:"",dept:"",office:"",phone:"",email:"",zoom:"",termLabel:"",termStart:"",termEnd:"",notes:"",loadBase:"15",ohRequired:"",released:"",releasedFor:""},
     pot: "15W",                 // legacy; migrated into sessions on load
     sessions: null,             // {15W:true, 11W:false, …} — null until the feed is known
-    opts: {code:true, credits:true, ownPatterns:true, studentHours:false, hours:false, weekend:false, trimDays:false, trimHours:false, color:true, table:true, h24:false, load:true, sign:false, fit:true, dept:true, printColor:false, online:"banner", density:58}
+    opts: {code:true, credits:true, ownPatterns:true, studentHours:false, hours:false, qr:true, weekend:false, trimDays:false, trimHours:false, color:true, table:true, h24:false, load:true, sign:false, fit:true, dept:true, printColor:false, online:"banner", density:58}
   };
 
   /* ===== small helpers ===== */
@@ -1457,8 +1480,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
             // The full section code heads the block — BIOL-112-801RL, rather
             // than BIOL-112 with the section number tucked in beside the room.
             title: state.opts.code ? e.id : e.course,
-            sub: [m.rm || "", ptHoursFor(e) ? ptLabel(e) : "",
-                  (e.pot && e.pot !== "15W") ? e.pot : "",
+            ptLabel: ptHoursFor(e) ? ptLabel(e) : "",
+            sub: [m.rm || "", (e.pot && e.pot !== "15W") ? e.pot : "",
                   dateSpan(m.from, m.to)].filter(Boolean).join(" · "),
             sub2:e.title, room:m.rm, sectionId:e.id,
             from:m.from||"", to:m.to||""});
@@ -1473,9 +1496,10 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         out.push({day:d, start:st, end:Math.max(en,st+15),
           kind:c.type==="oh"?"oh":(c.type==="release"?"release":"other"),
           title:c.label||(c.type==="oh"?ohTitle():(c.type==="release"?"Release Time":"Blocked")),
-          sub:[c.loc||"", dateSpan(c.from, c.to)].filter(Boolean).join(" · "),
+          sub:[prettyLoc(c), spanLabel(c)].filter(Boolean).join(" · "),
           sub2:"", est:false,
-          from:c.from||"", to:c.to||"",
+          from:c.from||"", to:c.to||"", ranges:rangesOf(c),
+          url: meetingUrl(c),
           customId:c.id});
       });
     });
@@ -1487,6 +1511,12 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     if(from && to) return shortDate(from) + "\u2009\u2013\u2009" + shortDate(to);
     return from ? "from " + shortDate(from) : "to " + shortDate(to);
   }
+  /* Every stretch a block runs, as one label: "Sep 14 – Sep 28, Nov 9 – Dec 21". */
+  function spanLabel(x){
+    var rs = rangesOf(x);
+    if(!rs.length) return "";
+    return rs.map(function(r){ return dateSpan(r.from, r.to); }).filter(Boolean).join(", ");
+  }
   function shortDate(iso){
     if(!iso) return "";
     var p = String(iso).split("-");
@@ -1497,10 +1527,16 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
   /* Do two dated blocks ever fall in the same week? An undated block runs all
      term and so overlaps everything. */
   function spansOverlap(a, b){
-    if((!a.from && !a.to) || (!b.from && !b.to)) return true;
-    var aF = a.from || "0000-01-01", aT = a.to || "9999-12-31";
-    var bF = b.from || "0000-01-01", bT = b.to || "9999-12-31";
-    return aF <= bT && bF <= aT;
+    var A = rangesOf(a), B = rangesOf(b);
+    if(!A.length || !B.length) return true;          // undated runs all term
+    for(var i = 0; i < A.length; i++){
+      for(var j = 0; j < B.length; j++){
+        var aF = A[i].from || "0000-01-01", aT = A[i].to || "9999-12-31";
+        var bF = B[j].from || "0000-01-01", bT = B[j].to || "9999-12-31";
+        if(aF <= bT && bF <= aT) return true;
+      }
+    }
+    return false;
   }
   function onlineDaysOf(e){
     // Days a course is pinned to without a meeting time — set by ticking days
@@ -2118,7 +2154,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     var t=el("div","t");
     t.appendChild(el("b",null,c.label||"Block"));
     t.appendChild(el("div","sec-meta", [dayLabel(c.days) + " · " + fmtTime(toMin(c.start)) + "–" +
-      fmtTime(toMin(c.end)), c.loc || "", dateSpan(c.from, c.to)].filter(Boolean).join(" · ")));
+      fmtTime(toMin(c.end)), c.loc || "", spanLabel(c)].filter(Boolean).join(" · ")));
     var ed=el("button","btn sm ghost","Edit"); ed.type="button";
     ed.addEventListener("click", function(){ startEditCustom(c.id); });
     var del=el("button","btn sm ghost danger","Remove"); del.type="button";
@@ -2169,6 +2205,47 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       });
     }
   }
+  /* Several stretches of weeks on one block.
+     Nursing hours sit either side of a teaching block — mid-September to the
+     end of September, then November to the end of term — and that is one
+     pattern of hours, not two. Written as two blocks it draws twice on the
+     grid and reads as a clash with itself. A block therefore carries a list,
+     and `from`/`to` are kept in step with the first of them so anything saved
+     by an older build still opens. */
+  function rangesOf(c){
+    if(c && c.ranges && c.ranges.length) return c.ranges;
+    if(c && (c.from || c.to)) return [{from:c.from||"", to:c.to||""}];
+    return [];
+  }
+  function rangeRow(r){
+    var row = el("div","row2"); row.style.marginBottom = "6px";
+    var f1 = el("div","field"); f1.appendChild(el("label",null,"From"));
+    var i1 = document.createElement("input"); i1.type = "date"; i1.value = (r&&r.from)||"";
+    i1.setAttribute("aria-label","Weeks from"); f1.appendChild(i1);
+    var f2 = el("div","field"); f2.appendChild(el("label",null,"To"));
+    var i2 = document.createElement("input"); i2.type = "date"; i2.value = (r&&r.to)||"";
+    i2.setAttribute("aria-label","Weeks to"); f2.appendChild(i2);
+    var rm = el("button","btn xs ghost danger","Remove"); rm.type = "button";
+    rm.addEventListener("click", function(){
+      row.parentNode.removeChild(row);
+      if(!$("cRanges").children.length) addRangeRow();
+    });
+    f2.appendChild(rm);
+    row.appendChild(f1); row.appendChild(f2);
+    row._read = function(){ return {from:i1.value||"", to:i2.value||""}; };
+    return row;
+  }
+  function addRangeRow(r){ $("cRanges").appendChild(rangeRow(r)); }
+  function setRanges(list){
+    var box = $("cRanges"); clear(box);
+    if(!list || !list.length){ addRangeRow(); return; }
+    list.forEach(addRangeRow);
+  }
+  function readRanges(){
+    return [].slice.call($("cRanges").children)
+      .map(function(r){ return r._read(); })
+      .filter(function(r){ return r.from || r.to; });
+  }
   var editingCustomId = null;
   function setCustomDays(days){
     [].slice.call($("cDays").querySelectorAll("input")).forEach(function(x){
@@ -2179,7 +2256,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     editingCustomId = null;
     $("cLabel").value = ""; $("cLoc").value = "";
     $("cStart").value = "10:00"; $("cEnd").value = "11:00";
-    $("cFrom").value = ""; $("cTo").value = "";
+    setRanges([]);
     $("cWeeksBox").open = false;
     $("cType").value = "oh";
     if($("cWho").options.length) $("cWho").value = "";
@@ -2195,9 +2272,9 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     $("cType").value = c.type || "oh";
     if($("cWho").querySelector('option[value="'+(c.who||"").replace(/"/g,'\\"')+'"]')) $("cWho").value = c.who || "";
     $("cStart").value = c.start || ""; $("cEnd").value = c.end || "";
-    $("cFrom").value = c.from || ""; $("cTo").value = c.to || "";
+    setRanges(rangesOf(c));
     // Open the fold when there is a range in it, or it looks empty.
-    $("cWeeksBox").open = !!(c.from || c.to);
+    $("cWeeksBox").open = rangesOf(c).length > 0;
     setCustomDays(c.days);
     $("addCustom").textContent = "Save changes";
     $("cancelCustom").hidden = false;
@@ -2322,6 +2399,12 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         c.appendChild(document.createTextNode(" "));
         c.appendChild(el("span","sess-badge inline", e.pot));
       }
+      // An asynchronous course claims no time on the grid, so its overload is
+      // easy to miss entirely. It is marked here as plainly as anywhere else.
+      if(ptHoursFor(e)){
+        c.appendChild(document.createTextNode(" "));
+        c.appendChild(el("span","pt-badge inline", ptLabel(e)));
+      }
       if(withTitle) c.appendChild(el("span",null, " · " + e.title));
       c.title = e.id + " · " + e.title + " · online, no meeting time";
       return c;
@@ -2391,6 +2474,23 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         }
         if(b.sub2 && durH*rowh>62) n.appendChild(el("span","l3", b.sub2));
         if(b.pot && b.pot!=="15W") n.appendChild(el("span","sess-badge", b.pot));
+        // Overload used to be a word in the small third line, where it was lost
+        // on a short block. It is what a reviewer looks for first, so it gets a
+        // badge of its own in the corner.
+        if(b.ptLabel) n.appendChild(el("span","pt-badge", b.ptLabel));
+        // A link nobody can click on paper. The code is only drawn where there
+        // is room for one big enough to read — below that it is a grey smudge
+        // that photographs as nothing, and the link still prints as text.
+        if(b.url && state.opts.qr !== false && durH*rowh >= 64){
+          var side = Math.max(38, Math.min(54, durH*rowh - 26));
+          var code = qrSvg(b.url, side);
+          if(code){
+            var wrap2 = el("span","blk-qr");
+            wrap2.appendChild(code);
+            wrap2.title = "Scan for " + b.url;
+            n.appendChild(wrap2);
+          }
+        }
         n.title=b.title+" "+fmtTime(b.start)+"–"+fmtTime(b.end)+(b.sub?" · "+b.sub:"")+(b.est?" (estimated end time)":"");
         if(b.customId){
           n.classList.add("movable");
@@ -2418,6 +2518,11 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
           c.appendChild(line);
         } else {
           c.appendChild(el("span","l3 muted", when));
+        }
+        if(ptHoursFor(e)){
+          var ptl = el("span","l3");
+          ptl.appendChild(el("span","pt-badge inline", ptLabel(e)));
+          c.appendChild(ptl);
         }
         oc.appendChild(c);
       });
@@ -2472,6 +2577,276 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       }
     });
   }
+  /* A QR encoder small enough to live inside the page.
+     Byte mode, error level M, versions 1-10 — comfortably more than a meeting
+     link needs. Returns a square array of 0/1 modules. */
+  function qrMatrix(text){
+    // [ec codewords per block, group1 blocks, group1 data, group2 blocks, group2 data]
+    var SPEC = {
+      1:[10,1,16,0,0], 2:[16,1,28,0,0], 3:[26,1,44,0,0], 4:[18,2,32,0,0],
+      5:[24,2,43,0,0], 6:[16,4,27,0,0], 7:[18,4,31,0,0], 8:[22,2,38,2,39],
+      9:[22,3,36,2,37], 10:[26,4,43,1,44]
+    };
+    var ALIGN = {1:[],2:[6,18],3:[6,22],4:[6,26],5:[6,30],6:[6,34],
+                 7:[6,22,38],8:[6,24,42],9:[6,26,46],10:[6,28,50]};
+    var VERINFO = {7:0x07C94, 8:0x085BC, 9:0x09A99, 10:0x0A4D3};
+
+    // utf-8 bytes
+    var bytes = [];
+    for(var i=0;i<text.length;i++){
+      var cp = text.charCodeAt(i);
+      if(cp < 0x80) bytes.push(cp);
+      else if(cp < 0x800){ bytes.push(0xC0|(cp>>6), 0x80|(cp&63)); }
+      else { bytes.push(0xE0|(cp>>12), 0x80|((cp>>6)&63), 0x80|(cp&63)); }
+    }
+
+    var ver = 0, spec, totalData;
+    for(var v=1; v<=10; v++){
+      spec = SPEC[v];
+      totalData = spec[1]*spec[2] + spec[3]*spec[4];
+      var cap = totalData - (v >= 10 ? 3 : 2);
+      if(bytes.length <= cap){ ver = v; break; }
+    }
+    if(!ver) return null;                       // too long for this encoder
+    spec = SPEC[ver];
+    totalData = spec[1]*spec[2] + spec[3]*spec[4];
+
+    // ---- bit stream ----
+    var bits = [];
+    function put(val, n){ for(var k=n-1;k>=0;k--) bits.push((val>>k)&1); }
+    put(4, 4);                                  // byte mode
+    put(bytes.length, ver >= 10 ? 16 : 8);
+    bytes.forEach(function(b){ put(b, 8); });
+    var room = totalData*8;
+    for(var t=0; t<4 && bits.length<room; t++) bits.push(0);
+    while(bits.length % 8) bits.push(0);
+    var data = [];
+    for(var i2=0;i2<bits.length;i2+=8){
+      var b2=0; for(var j=0;j<8;j++) b2=(b2<<1)|bits[i2+j];
+      data.push(b2);
+    }
+    var pads=[0xEC,0x11], pi=0;
+    while(data.length < totalData) data.push(pads[pi++%2]);
+
+    // ---- GF(256) ----
+    var EXP=new Array(512), LOG=new Array(256), x=1;
+    for(var e=0;e<255;e++){ EXP[e]=x; LOG[x]=e; x<<=1; if(x&256) x^=0x11D; }
+    for(var e2=255;e2<512;e2++) EXP[e2]=EXP[e2-255];
+    function mul(a,b){ return (a&&b) ? EXP[LOG[a]+LOG[b]] : 0; }
+    function rsPoly(n){
+      var p=[1];
+      for(var i3=0;i3<n;i3++){
+        var q=p.concat([0]);
+        for(var j3=0;j3<p.length;j3++) q[j3+1]^=mul(p[j3],EXP[i3]);
+        p=q;
+      }
+      return p;
+    }
+    function ecFor(block, n){
+      var gen=rsPoly(n), rem=block.concat(new Array(n).fill(0));
+      for(var i4=0;i4<block.length;i4++){
+        var f=rem[i4]; if(!f) continue;
+        for(var j4=0;j4<gen.length;j4++) rem[i4+j4]^=mul(gen[j4],f);
+      }
+      return rem.slice(block.length);
+    }
+
+    // ---- split, ec, interleave ----
+    var blocks=[], ecs=[], at=0;
+    for(var g=0; g<2; g++){
+      var count = g ? spec[3] : spec[1], size = g ? spec[4] : spec[2];
+      for(var b3=0;b3<count;b3++){
+        var blk = data.slice(at, at+size); at += size;
+        blocks.push(blk); ecs.push(ecFor(blk, spec[0]));
+      }
+    }
+    var out=[], maxLen=Math.max.apply(null, blocks.map(function(b4){return b4.length;}));
+    for(var i5=0;i5<maxLen;i5++)
+      blocks.forEach(function(b5){ if(i5<b5.length) out.push(b5[i5]); });
+    for(var i6=0;i6<spec[0];i6++) ecs.forEach(function(e3){ out.push(e3[i6]); });
+
+    // ---- matrix ----
+    var size2 = 17 + 4*ver;
+    var m = [], used = [];
+    for(var r=0;r<size2;r++){ m.push(new Array(size2).fill(0)); used.push(new Array(size2).fill(false)); }
+    function set(r2,c2,v2){ m[r2][c2]=v2; used[r2][c2]=true; }
+    function finder(r3,c3){
+      for(var dr=-1;dr<8;dr++) for(var dc=-1;dc<8;dc++){
+        var rr=r3+dr, cc=c3+dc;
+        if(rr<0||cc<0||rr>=size2||cc>=size2) continue;
+        var on = (dr>=0&&dr<=6&&(dc===0||dc===6)) || (dc>=0&&dc<=6&&(dr===0||dr===6)) ||
+                 (dr>=2&&dr<=4&&dc>=2&&dc<=4);
+        set(rr,cc,on?1:0);
+      }
+    }
+    finder(0,0); finder(0,size2-7); finder(size2-7,0);
+    for(var i7=8;i7<size2-8;i7++){
+      set(6,i7,(i7%2===0)?1:0);
+      set(i7,6,(i7%2===0)?1:0);
+    }
+    var ac = ALIGN[ver];
+    ac.forEach(function(ar){ ac.forEach(function(acx){
+      if((ar<9&&acx<9)||(ar<9&&acx>size2-10)||(ar>size2-10&&acx<9)) return;
+      for(var dr2=-2;dr2<=2;dr2++) for(var dc2=-2;dc2<=2;dc2++)
+        set(ar+dr2, acx+dc2,
+            (Math.abs(dr2)===2||Math.abs(dc2)===2||(dr2===0&&dc2===0))?1:0);
+    }); });
+    set(size2-8, 8, 1);                          // the always-dark module
+    // reserve format areas
+    for(var i8=0;i8<9;i8++){
+      if(!used[8][i8]) used[8][i8]=true;
+      if(!used[i8][8]) used[i8][8]=true;
+    }
+    for(var i9=0;i9<8;i9++){ used[8][size2-1-i9]=true; used[size2-1-i9][8]=true; }
+    if(ver>=7){
+      for(var i10=0;i10<18;i10++){
+        var vb=(VERINFO[ver]>>i10)&1;
+        set(Math.floor(i10/3), size2-11+(i10%3), vb);
+        set(size2-11+(i10%3), Math.floor(i10/3), vb);
+      }
+    }
+
+    // ---- place data, zigzag from the bottom right ----
+    var bitIdx=0, dir=-1, row=size2-1;
+    for(var col=size2-1; col>0; col-=2){
+      if(col===6) col--;
+      while(true){
+        for(var s=0;s<2;s++){
+          var cc2=col-s;
+          if(!used[row][cc2]){
+            var bit = bitIdx < out.length*8 ? (out[bitIdx>>3]>>(7-(bitIdx&7)))&1 : 0;
+            m[row][cc2]=bit; bitIdx++;
+          }
+        }
+        row += dir;
+        if(row<0||row>=size2){ row-=dir; dir=-dir; break; }
+      }
+    }
+
+    // ---- masks, penalty, format ----
+    var MASKS=[
+      function(r,c){return (r+c)%2===0;}, function(r,c){return r%2===0;},
+      function(r,c){return c%3===0;},    function(r,c){return (r+c)%3===0;},
+      function(r,c){return (Math.floor(r/2)+Math.floor(c/3))%2===0;},
+      function(r,c){return (r*c)%2+(r*c)%3===0;},
+      function(r,c){return ((r*c)%2+(r*c)%3)%2===0;},
+      function(r,c){return ((r+c)%2+(r*c)%3)%2===0;}
+    ];
+    function penalty(g2){
+      var p=0, n=size2, i, j, run, last;
+      for(i=0;i<n;i++){
+        run=1; last=g2[i][0];
+        for(j=1;j<n;j++){
+          if(g2[i][j]===last) run++; else { if(run>=5) p+=3+(run-5); run=1; last=g2[i][j]; }
+        }
+        if(run>=5) p+=3+(run-5);
+        run=1; last=g2[0][i];
+        for(j=1;j<n;j++){
+          if(g2[j][i]===last) run++; else { if(run>=5) p+=3+(run-5); run=1; last=g2[j][i]; }
+        }
+        if(run>=5) p+=3+(run-5);
+      }
+      for(i=0;i<n-1;i++) for(j=0;j<n-1;j++)
+        if(g2[i][j]===g2[i][j+1] && g2[i][j]===g2[i+1][j] && g2[i][j]===g2[i+1][j+1]) p+=3;
+      var pat=[1,0,1,1,1,0,1,0,0,0,0];
+      function hits(line){
+        var c=0;
+        for(var k=0;k+11<=line.length;k++){
+          var ok=true;
+          for(var q=0;q<11;q++) if(line[k+q]!==pat[q]){ ok=false; break; }
+          if(ok) c++;
+          ok=true;
+          for(var q2=0;q2<11;q2++) if(line[k+q2]!==pat[10-q2]){ ok=false; break; }
+          if(ok) c++;
+        }
+        return c;
+      }
+      for(i=0;i<n;i++){
+        p += 40*hits(g2[i]);
+        var colArr=[]; for(j=0;j<n;j++) colArr.push(g2[j][i]);
+        p += 40*hits(colArr);
+      }
+      var dark=0;
+      for(i=0;i<n;i++) for(j=0;j<n;j++) dark+=g2[i][j];
+      p += 10*Math.floor(Math.abs(dark*100/(n*n)-50)/5);
+      return p;
+    }
+    function formatBits(mask){
+      var d=(0<<3)|mask;                        // 00 = error level M
+      var v3=d<<10;
+      for(var k=14;k>=10;k--) if((v3>>k)&1) v3^=0x537<<(k-10);
+      return ((d<<10)|v3)^0x5412;
+    }
+    var best=null, bestP=Infinity, bestMask=0;
+    for(var mk=0;mk<8;mk++){
+      var g3=[];
+      for(var r4=0;r4<size2;r4++){
+        g3.push(m[r4].slice());
+        for(var c4=0;c4<size2;c4++) if(!used[r4][c4] && MASKS[mk](r4,c4)) g3[r4][c4]^=1;
+      }
+      var fmt=formatBits(mk);
+      // Both copies run most-significant bit first through their own order of
+      // positions. The first goes along row 8 from the left, then up column 8;
+      // the second starts at the bottom of column 8 and goes up, then along row
+      // 8 to the right edge — seven modules in that column, not eight, since the
+      // eighth is the dark module that is always set.
+      for(var k2=0;k2<15;k2++){
+        var fb=(fmt>>(14-k2))&1;
+        if(k2<6) g3[8][k2]=fb;
+        else if(k2===6) g3[8][7]=fb;
+        else if(k2===7) g3[8][8]=fb;
+        else if(k2===8) g3[7][8]=fb;
+        else g3[14-k2][8]=fb;
+        if(k2<7) g3[size2-1-k2][8]=fb;
+        else g3[8][size2-15+k2]=fb;
+      }
+      g3[size2-8][8]=1;
+      var pen=penalty(g3);
+      if(pen<bestP){ bestP=pen; best=g3; bestMask=mk; }
+    }
+    return best;
+  }
+
+  /* The matrix as an <svg>, which stays crisp on screen and in print and needs
+     no image file. Only drawn for something that is actually a link. */
+  function meetingUrl(c){
+    var v = (c && c.loc) || "";
+    if(/^https?:\/\//i.test(v)) return v;
+    // An office hour with no link of its own falls back to the Zoom address in
+    // Your information, which is where most people put it.
+    if(c && c.type === "oh" && /^https?:\/\//i.test(state.profile.zoom || "")) return state.profile.zoom;
+    return "";
+  }
+  /* A meeting link is forty characters of query string that overruns the block
+     and tells a reader nothing. The host is the part worth printing — and
+     where the code is drawn, it carries the address in full anyway. */
+  function prettyLoc(c){
+    var v = (c && c.loc) || "";
+    var m = /^https?:\/\/([^\/?#]+)/i.exec(v);
+    return m ? m[1].replace(/^www\./i, "") : v;
+  }
+  function qrSvg(text, px){
+    var m = qrMatrix(text);
+    if(!m) return null;
+    var n = m.length, q = 2, span = n + q*2;
+    var svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
+    svg.setAttribute("viewBox", "0 0 " + span + " " + span);
+    svg.setAttribute("width", px); svg.setAttribute("height", px);
+    svg.setAttribute("role","img");
+    var bg = document.createElementNS("http://www.w3.org/2000/svg","rect");
+    bg.setAttribute("width", span); bg.setAttribute("height", span);
+    bg.setAttribute("fill", "#fff");
+    svg.appendChild(bg);
+    // One path for every dark module keeps the markup small.
+    var d = "";
+    for(var r=0;r<n;r++) for(var c=0;c<n;c++)
+      if(m[r][c]) d += "M" + (c+q) + " " + (r+q) + "h1v1h-1z";
+    var path = document.createElementNS("http://www.w3.org/2000/svg","path");
+    path.setAttribute("d", d); path.setAttribute("fill", "#000");
+    svg.appendChild(path);
+    return svg;
+  }
+
   function contactFromMeetings(ms){
     // Contact hours are scheduled time: a 55-minute hour, rounded up.
     //
@@ -2574,12 +2949,14 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
   function officeHoursRange(owner){
     var list = ohBlocks(owner);
     if(!list.length) return {min:0, max:0};
-    var dated = list.filter(function(c){ return c.from || c.to; });
+    var dated = list.filter(function(c){ return rangesOf(c).length; });
     if(!dated.length) return {min:weeklyHours(list), max:weeklyHours(list)};
     var cuts = [];
     dated.forEach(function(c){
-      if(c.from) cuts.push(c.from);
-      if(c.to) cuts.push(nextDay(c.to));
+      rangesOf(c).forEach(function(r){
+        if(r.from) cuts.push(r.from);
+        if(r.to) cuts.push(nextDay(r.to));
+      });
     });
     var cal = (DATA && DATA.calendar) || {};
     if(cal.start) cuts.push(cal.start);
@@ -2587,7 +2964,11 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     var min = null, max = 0;
     cuts.forEach(function(day){
       var active = list.filter(function(c){
-        return (!c.from || c.from <= day) && (!c.to || c.to >= day);
+        var rs = rangesOf(c);
+        if(!rs.length) return true;                  // runs every week
+        return rs.some(function(r){
+          return (!r.from || r.from <= day) && (!r.to || r.to >= day);
+        });
       });
       var t = weeklyHours(active);
       if(!active.length && cuts.length > 1) return;   // a gap with nothing on
@@ -2795,7 +3176,12 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         var r=el("tr");
         r.appendChild(el("td",null,e.id));
         r.appendChild(el("td",null,e.title));
-        r.appendChild(el("td",null,(MODE_LABEL[e.mode]||"Unscheduled")+(e.pot!=="15W"?" · "+e.pot+" session":"")));
+        var modeCell = el("td",null,(MODE_LABEL[e.mode]||"Unscheduled")+(e.pot!=="15W"?" · "+e.pot+" session":""));
+        if(ptHoursFor(e)){
+          modeCell.appendChild(document.createTextNode(" "));
+          modeCell.appendChild(el("span","pt-badge inline", ptLabel(e)));
+        }
+        r.appendChild(modeCell);
         tb.appendChild(r);
       });
       ul.appendChild(tb); box.appendChild(ul); sheet.appendChild(box);
@@ -4284,7 +4670,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       });
     });
     state.custom.forEach(function(c){
-      rows.push([c.type==="oh"?ohWord(true):"Other",c.label||"",dateSpan(c.from,c.to),(c.days||[]).join(""),c.start||"",c.end||"",c.loc||"","","","","","","",""]);
+      rows.push([c.type==="oh"?ohWord(true):"Other",c.label||"",spanLabel(c),(c.days||[]).join(""),c.start||"",c.end||"",c.loc||"","","","","","","",""]);
     });
     var csv=rows.map(function(r){ return r.map(function(v){
       v=String(v==null?"":v); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v;
@@ -4509,7 +4895,7 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     });
   }
   function bindOptions(){
-    var map={optCode:"code",optCredits:"credits",optOwnPatterns:"ownPatterns",optStudentHours:"studentHours",optHours:"hours",optWeekend:"weekend",optTrimDays:"trimDays",optTrimHours:"trimHours",optColor:"color",optTable:"table",optLoad:"load",optSign:"sign",optFit:"fit",optDept:"dept",optPrintColor:"printColor",opt24:"h24"};
+    var map={optCode:"code",optCredits:"credits",optOwnPatterns:"ownPatterns",optStudentHours:"studentHours",optHours:"hours",optQr:"qr",optWeekend:"weekend",optTrimDays:"trimDays",optTrimHours:"trimHours",optColor:"color",optTable:"table",optLoad:"load",optSign:"sign",optFit:"fit",optDept:"dept",optPrintColor:"printColor",opt24:"h24"};
     Object.keys(map).forEach(function(id){
       var node=$(id); node.checked=!!state.opts[map[id]];
       node.addEventListener("change", function(){
@@ -4556,11 +4942,12 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       if(!days.length){ toast("Pick at least one day."); return; }
       var st=$("cStart").value, en=$("cEnd").value;
       if(!st||!en||toMin(en)<=toMin(st)){ toast("Check the start and end times."); return; }
-      var from = $("cFrom").value || "", to = $("cTo").value || "";
-      if(from && to && to < from){ toast("The To date is before the From date."); return; }
+      var ranges = readRanges(), bad = null;
+      ranges.forEach(function(r){ if(r.from && r.to && r.to < r.from) bad = r; });
+      if(bad){ toast("One stretch ends before it starts."); return; }
       var rec = {label:$("cLabel").value.trim()||($("cType").value==="oh"?ohTitle():"Blocked"),
                  type:$("cType").value, days:days, start:st, end:en, loc:$("cLoc").value.trim(),
-                 from:from, to:to,
+                 ranges:ranges, from:(ranges[0]||{}).from || "", to:(ranges[0]||{}).to || "",
                  who: state.faculty.length>1 ? $("cWho").value : ""};
       if(editingCustomId){
         state.custom = state.custom.map(function(c){
@@ -4674,6 +5061,8 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     });
     $("btnMoaWord").addEventListener("click", exportMoaWord);
     $("btnWord").addEventListener("click", exportWord);
+    $("cRangeAdd").addEventListener("click", function(){ addRangeRow(); });
+    setRanges([]);                       // one empty stretch, ready to fill in
     var instMap = {moaInstitute:"name", moaDean:"dean", moaPhone:"phone", moaContacts:"contacts"};
     Object.keys(instMap).forEach(function(id){
       $(id).addEventListener("input", function(){
