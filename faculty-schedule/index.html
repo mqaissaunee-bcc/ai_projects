@@ -939,11 +939,16 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
             short block and easy to miss entirely on an asynchronous course, which claims no time
             on the grid at all. It is now a badge, on scheduled blocks and in the online band
             alike.</li>
-          <li><b>The schedule downloads as a Word file.</b> Export has a <b>Word file (.doc)</b>
-            button beside the others. The week comes across as a real table with the same days and
-            rows as the screen — folded hours and hidden days included — followed by the course
-            table and the hours line, all of it editable. Print still gives the exact PDF; the Word
-            file is for when somebody needs to change something.</li>
+          <li><b>The schedule downloads as a Word file,</b> and it now matches the sheet rather
+            than approximating it: landscape, the colour-coded blocks, your name and contact
+            details across the head, the term and closure dates, the hours line, the course table,
+            the courses that are not on the grid, and the signature lines with a typed signature
+            and date where you have set one. Export has a <b>Word file (.doc)</b> button beside
+            the others. The week is a real table with the same days and rows as the screen, folded
+            hours and hidden days included, and every part of it is editable. Print still gives
+            the exact PDF; the Word file is for when somebody needs to change something.</li>
+          <li>A meeting link in the Word file is a link you can click, rather than the forty
+            characters of address that go under the scannable code on paper.</li>
           <li><b>Courses can be counted in hours instead of credits.</b> One switch in Display
             options turns the Cr column into Hrs, showing the figure the load is actually built
             from, and the field in Edit is relabelled to match. For a department whose own form is
@@ -3775,11 +3780,36 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
         }
         var td = el("td");
         if(span > 1) td.setAttribute("rowspan", String(span));
+        var fill = wordBlockFill(g.items[0]);
+        if(fill) td.setAttribute("style", "background:" + fill + ";color:#fff");
         g.items.forEach(function(b, n){
           if(n) td.appendChild(el("div","wsep","—"));
-          td.appendChild(el("div","wtitle", b.title));
+          var ttl = el("div","wtitle", b.title);
+          if(b.ptLabel){
+            ttl.appendChild(document.createTextNode(" "));
+            ttl.appendChild(el("span","wpt", b.ptLabel));
+          }
+          if(b.pot && b.pot !== "15W"){
+            ttl.appendChild(document.createTextNode(" "));
+            ttl.appendChild(el("span","wpt", b.pot));
+          }
+          td.appendChild(ttl);
           td.appendChild(el("div", null, fmtTime(b.start) + "–" + fmtTime(b.end)));
-          if(b.sub) td.appendChild(el("div",null, b.sub));
+          if(b.sub){
+            // On paper the code is scanned; in a Word file the address is
+            // clicked, so the location line becomes the link itself rather
+            // than printing forty characters of it underneath.
+            if(b.url){
+              var line2 = el("div");
+              var a2 = document.createElement("a");
+              a2.setAttribute("href", b.url);
+              a2.appendChild(document.createTextNode(b.sub));
+              line2.appendChild(a2);
+              td.appendChild(line2);
+            } else {
+              td.appendChild(el("div",null, b.sub));
+            }
+          }
           if(b.sub2) td.appendChild(el("div",null, b.sub2));
         });
         tr.appendChild(td);
@@ -3789,37 +3819,119 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
     t.appendChild(tb);
     return t;
   }
+  // The light palette, written out rather than read from the page: a shared
+  // document should not come out in somebody's dark mode.
+  var WORD_COLORS = {"--c1":"#1f4e79","--c2":"#5c4b8a","--c3":"#1f6b4a",
+                     "--c4":"#8a5a00","--c5":"#7a3b52","--c6":"#2f6f7d"};
+  function wordBlockFill(b){
+    if(!state.opts.color) return "";
+    if(b.kind === "oh") return "#4a4d52";
+    if(b.kind === "other") return "#6f7378";
+    if(b.kind === "release") return "#7a3b52";
+    return WORD_COLORS[b.colorVar] || "#1f4e79";
+  }
   function buildWordSheet(name){
     var p = state.profile;
-    var owner = state.faculty.length > 1 ? name : (state.faculty[0] || null);
+    var multi = state.faculty.length > 1;
+    var owner = multi ? name : (state.faculty[0] || null);
+    var who = multi ? name : (p.name || name || "Teaching Schedule");
     var box = el("div");
-    box.appendChild(el("h2", null, state.faculty.length > 1 ? name : (p.name || name || "Teaching Schedule")));
+
+    // Name on the left, contact details on the right, the way the sheet does
+    // it. Word lays a two-cell table out reliably where it does not a flexbox.
+    var head = el("table","whead");
+    var hr = el("tr");
+    var left = el("td");
+    left.appendChild(el("h2", null, who));
     var role = [p.title, p.dept].filter(Boolean).join(" · ");
-    if(state.faculty.length <= 1 && role) box.appendChild(el("div","wrole", role));
+    if(!multi && role) left.appendChild(el("div","wrole", role));
     var term = p.termLabel || (DATA && DATA.termLabel) || "";
-    if(term) box.appendChild(el("div","wrole", term));
-    if(state.faculty.length <= 1){
-      var contact = [p.office ? "Office: " + p.office : "", p.phone, p.email, p.zoom]
-        .filter(Boolean).join("  ·  ");
-      if(contact) box.appendChild(el("div","wrole", contact));
+    if(term) left.appendChild(el("div","wterm", term));
+    var right = el("td","wright");
+    if(!multi){
+      [p.office ? "Office: " + p.office : "", p.phone, p.email, p.zoom]
+        .filter(Boolean).forEach(function(line){ right.appendChild(el("div","wrole", line)); });
     }
-    box.appendChild(wordGridTable(state.faculty.length > 1 ? name : null));
-    var list = scheduledSections(state.faculty.length > 1 ? name : null);
-    if(state.opts.table && list.length){
-      box.appendChild(el("h3", null, "Courses"));
-      box.appendChild(buildTable(list));
+    hr.appendChild(left); hr.appendChild(right);
+    head.appendChild(hr); box.appendChild(head);
+    box.appendChild(el("div","wrule"));
+
+    box.appendChild(wordGridTable(multi ? name : null));
+
+    // The term dates and the days the college is closed or running another
+    // day's timetable — the same line the sheet prints under the grid.
+    var cal = (DATA && DATA.calendar) || null;
+    if(cal && ((cal.closures && cal.closures.length) || (cal.swaps && cal.swaps.length))){
+      var notes = [];
+      if(cal.start && cal.end) notes.push("Term: " + cal.start + " to " + cal.end);
+      (cal.closures || []).forEach(function(c){
+        notes.push((c.label || "Closed") + ": " + c.from + (c.to && c.to !== c.from ? " to " + c.to : ""));
+      });
+      (cal.swaps || []).forEach(function(s){ notes.push(s.date + " — " + (s.label || "schedule change")); });
+      box.appendChild(el("div","wcal", notes.join("  ·  ")));
+    }
+
+    var list = scheduledSections(multi ? name : null);
+    var online = unscheduledFor(multi ? name : null);
+    if(online.length){
+      box.appendChild(el("h3", null, "Not on the weekly grid"));
+      var ot = el("table","tbl"), otb = el("tbody");
+      online.forEach(function(e){
+        var r = el("tr");
+        r.appendChild(el("td",null,e.id));
+        r.appendChild(el("td",null,e.title));
+        r.appendChild(el("td",null,(MODE_LABEL[e.mode]||"Unscheduled") +
+          (e.pot!=="15W" ? " · " + e.pot + " session" : "") +
+          (ptHoursFor(e) ? " · " + ptLabel(e) : "")));
+        otb.appendChild(r);
+      });
+      ot.appendChild(otb); box.appendChild(ot);
     }
     if(state.opts.load){
       var L = loadSummary(list, owner);
       var bits = [];
-      if(!noLoad()) bits.push("Contact hours: " + L.load + " of " + L.required);
-      else bits.push("Contact hours: " + L.load);
+      bits.push("Contact hours: " + L.load + (noLoad() ? "" : " of " + L.required));
       bits.push(ohWord(true) + ": " + (L.officeLabel || L.office) +
                 (noLoad() ? "" : " of " + L.officeRequired));
       if(L.over) bits.push("Overload: " + L.over);
+      if(L.released) bits.push("Released: " + L.released);
       box.appendChild(el("div","wload", bits.join("  ·  ")));
     }
-    if(p.notes) box.appendChild(el("div","wrole", p.notes));
+    if(state.opts.table && list.length){
+      box.appendChild(el("h3", null, "Courses"));
+      box.appendChild(buildTable(list));
+    }
+    if(p.notes) box.appendChild(el("div","wnotes", p.notes));
+
+    if(state.opts.sign){
+      // Four lines to sign, as on the form. Only the faculty line can carry a
+      // signature from here; the approvals belong to other people.
+      var signer = state.profileFor || state.profile.name || "";
+      var signsThis = !multi || (!!owner && !!signer && owner === signer);
+      var st = el("table","wsig"), str = el("tr");
+      ["Faculty signature","Department chair","Institute dean","Date"].forEach(function(lbl){
+        var cell = el("td");
+        var ruleTxt = "";
+        if(lbl === "Faculty signature" && signsThis && state.sig.mode === "typed" && state.sig.typed){
+          ruleTxt = state.sig.typed;
+        }
+        if(lbl === "Date" && signsThis && state.sig.mode !== "blank" && state.sig.date){
+          ruleTxt = state.sig.date;
+        }
+        cell.appendChild(el("div","wsig-name", ruleTxt || "\u00a0"));
+        cell.appendChild(el("div","wsig-rule", "\u00a0"));
+        cell.appendChild(el("div","wsig-label", lbl));
+        str.appendChild(cell);
+      });
+      st.appendChild(str); box.appendChild(st);
+      if(signsThis && state.sig.mode === "drawn" && state.sig.drawn){
+        box.appendChild(el("div","wfoot",
+          "A drawn signature does not travel into a Word file — print to PDF for that, or type the name instead."));
+      }
+    }
+    var stamp = (DATA && (DATA.generated||"").slice(0,10)) || "";
+    box.appendChild(el("div","wfoot",
+      "Brookdale Community College" + (stamp ? "  ·  course data: published schedule as of " + stamp : "")));
     return box;
   }
   function exportWord(){
@@ -3833,24 +3945,49 @@ ol.walk li{margin-bottom:7px;font-size:.88rem}
       if(i) d.style.pageBreakBefore = "always";
       host.appendChild(d);
     });
+    // Word only honours a page size through a named section, and only applies
+    // it to content inside a div of that class — a bare @page is ignored and
+    // the file opens portrait with the week running off the edge.
     var html = "<html xmlns:o='urn:schemas-microsoft-com:office:office' " +
       "xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>" +
       "<head><meta charset='utf-8'><title>Teaching Schedule</title>" +
-      "<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View>" +
+      "<!--[if gte mso 9]><xml><w:WordDocument>" +
+      "<w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/>" +
       "</w:WordDocument></xml><![endif]-->" +
-      "<style>@page{size:11in 8.5in;mso-page-orientation:landscape;margin:0.5in}" +
-      "body{font-family:Calibri,Arial,sans-serif;font-size:10pt}" +
-      "h2{font-size:15pt;margin:0 0 2pt}h3{font-size:11pt;margin:10pt 0 3pt}" +
-      ".wrole{font-size:9.5pt;color:#333;margin-bottom:2pt}" +
-      ".wload{margin-top:8pt;font-size:9.5pt;border-top:1px solid #999;padding-top:4pt}" +
+      "<style>" +
+      "@page WordSection1{size:11.0in 8.5in;mso-page-orientation:landscape;" +
+        "margin:0.5in 0.5in 0.5in 0.5in}" +
+      "div.WordSection1{page:WordSection1}" +
+      "body{font-family:Calibri,Arial,sans-serif;font-size:10pt;color:#1a1c1f}" +
+      "h2{font-family:Georgia,'Times New Roman',serif;font-size:16pt;margin:0 0 2pt}" +
+      "h3{font-size:11pt;margin:10pt 0 3pt}" +
+      ".wrole{font-size:9.5pt;color:#44474b;margin-bottom:1pt}" +
+      ".wterm{font-family:Georgia,'Times New Roman',serif;font-size:10.5pt;color:#44474b}" +
+      ".wright{text-align:right}" +
+      ".wrule{border-top:1.5pt solid #1a1c1f;margin:4pt 0 0}" +
+      ".wcal{margin-top:5pt;font-size:8.5pt;color:#44474b}" +
+      ".wnotes{margin-top:6pt;font-size:9pt}" +
+      ".wload{margin-top:8pt;font-size:10pt;font-weight:bold;background:#f0efec;" +
+        "padding:5pt 6pt;mso-shading:#f0efec}" +
+      ".wfoot{margin-top:8pt;font-size:8pt;color:#6f7378}" +
       "table{border-collapse:collapse;width:100%;margin-top:8pt}" +
       "table.wgrid{table-layout:fixed}" +
-      "th,td{border:1px solid #999;padding:3pt 4pt;vertical-align:top;font-size:8.5pt}" +
-      "thead th{background:#eee;text-align:center}" +
-      "tbody th{width:0.7in;text-align:right;color:#444;font-weight:normal}" +
-      ".wtitle{font-weight:bold}.wsep{color:#999;margin:2pt 0}" +
+      "table.whead,table.wsig{margin-top:0;border:none}" +
+      "table.whead td,table.wsig td{border:none;padding:0;vertical-align:top}" +
+      "table.wsig{margin-top:16pt}table.wsig td{padding-right:14pt;width:25%}" +
+      ".wsig-name{font-family:'Segoe Script','Brush Script MT',cursive;font-size:12pt;" +
+        "height:16pt;margin-bottom:1pt}" +
+      ".wsig-rule{border-bottom:0.75pt solid #1a1c1f;height:1pt;font-size:1pt}" +
+      ".wsig-label{font-size:8pt;color:#6f7378;padding-top:2pt}" +
+      "th,td{border:0.75pt solid #b9b4aa;padding:3pt 4pt;vertical-align:top;font-size:8.5pt}" +
+      "thead th{background:#f0efec;text-align:center;mso-shading:#f0efec}" +
+      "tbody th{width:0.7in;text-align:right;color:#6f7378;font-weight:normal;background:#fbfaf8}" +
+      ".wtitle{font-weight:bold}.wsep{margin:2pt 0;font-size:6pt}" +
+      ".wpt{font-size:7pt;font-weight:bold;border:0.5pt solid #fff;padding:0 2pt}" +
+      "a{color:inherit;text-decoration:underline}" +
       ".tbl th,.tbl td{font-size:9pt}.tbl td.num{text-align:right}" +
-      "</style></head><body>" + host.innerHTML + "</body></html>";
+      "</style></head><body><div class='WordSection1'>" + host.innerHTML +
+      "</div></body></html>";
     download(slug(state.profile.name || state.faculty[0] || "teaching") + "-schedule.doc",
              "application/msword", html);
     toast("Schedule downloaded as a Word file");

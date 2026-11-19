@@ -538,6 +538,11 @@ setTimeout(() => {
     b2.__text = (parts || []).join('');
     return b2;
   };
+  // An office hour with no link of its own uses the Zoom address from Your
+  // information, which is where most people put it.
+  const zoomWas = $('fZoom').value;
+  $('fZoom').value = 'https://brookdalecc.zoom.us/j/98765432101';
+  $('fZoom').dispatchEvent(new window.Event('input', { bubbles: true }));
   $('btnWord').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   ok('Word export triggered', downloads.some(d => typeof d === 'string' && d.endsWith('-schedule.doc')));
   const wdoc = wordText();
@@ -548,7 +553,19 @@ setTimeout(() => {
   ok('a class that runs for hours spans the rows', /rowspan="[2-9]"/.test(wdoc));
   ok('the course table comes with it', /Courses<\/h3>/.test(wdoc));
   ok('and the hours line', /Contact hours:/.test(wdoc));
+  // Word only honours a page size through a named section applied to a div of
+  // that class; a bare @page is ignored and the week runs off a portrait page.
+  ok('it opens landscape',
+     /@page WordSection1\{size:11\.0in 8\.5in;mso-page-orientation:landscape/.test(wdoc) &&
+     /<div class='WordSection1'>/.test(wdoc));
+  ok('the blocks keep their colours', /background:#[0-9a-f]{6};color:#fff/.test(wdoc));
+  ok('the contact details sit beside the name', /class="wright"/.test(wdoc));
+  ok('the closures and swap days come too', /Thanksgiving|Term: /.test(wdoc));
+  ok('a meeting link is clickable rather than printed in full',
+     /<a href="https:\/\/[^"]+">/.test(wdoc));
   window.Blob = origBlob;
+  $('fZoom').value = zoomWas;
+  $('fZoom').dispatchEvent(new window.Event('input', { bubbles: true }));
 
   // Counting a course in hours replaces the credit column rather than adding to it.
   $('optHours').checked = true;
