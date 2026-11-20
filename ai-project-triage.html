@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Project Requests — Triage Board</title>
+<meta name="description" content="Scoping, pros and cons, feasibility and impact ranking for twenty submitted AI project requests across the college.">
+<style>
+:root{
+  --ink:#14202B;
+  --ink-soft:#42525F;
+  --ink-faint:#6D7C88;
+  --paper:#F6F7F4;
+  --card:#FFFFFF;
+  --rule:#D9DED8;
+  --rule-strong:#B9C2BA;
+
+  --build:#1F6F6B;
+  --build-bg:#E4EFEC;
+  --check:#8A6A12;
+  --check-bg:#F4EDDB;
+  --redirect:#9C5A22;
+  --redirect-bg:#F6E9DD;
+  --decline:#8E3B30;
+  --decline-bg:#F5E3E0;
+
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+  --sans:"IBM Plex Sans","Segoe UI",system-ui,-apple-system,Helvetica,Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+
+  --sp:1rem;
+  --maxw:1180px;
+  --radius:3px;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --ink:#E8ECE7;
+    --ink-soft:#B3BDB6;
+    --ink-faint:#8A968D;
+    --paper:#111814;
+    --card:#1A2320;
+    --rule:#2E3B35;
+    --rule-strong:#43524B;
+    --build:#67C4B8;
+    --build-bg:#16302C;
+    --check:#D9B457;
+    --check-bg:#332B14;
+    --redirect:#E0975A;
+    --redirect-bg:#352517;
+    --decline:#E38578;
+    --decline-bg:#361F1C;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-padding-top:76px}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:16px;
+  line-height:1.55;
+}
+.skip-link{
+  position:absolute;left:-9999px;top:0;
+  background:var(--ink);color:var(--paper);
+  padding:.6rem 1rem;z-index:100;text-decoration:none;
+}
+.skip-link:focus{left:0}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 1.1rem}
+
+/* ---------- header ---------- */
+header.masthead{
+  border-bottom:2px solid var(--ink);
+  padding:2.2rem 0 1.3rem;
+  margin-bottom:1.6rem;
+}
+.eyebrow{
+  font-family:var(--mono);
+  font-size:.7rem;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--ink-faint);
+  margin:0 0 .5rem;
+}
+h1{
+  font-family:var(--serif);
+  font-weight:600;
+  font-size:clamp(1.85rem,4.6vw,2.9rem);
+  line-height:1.1;
+  margin:0 0 .5rem;
+  letter-spacing:-.01em;
+}
+.standfirst{
+  font-family:var(--serif);
+  font-size:clamp(1rem,2.2vw,1.18rem);
+  color:var(--ink-soft);
+  max-width:62ch;
+  margin:0;
+}
+
+/* ---------- key finding ---------- */
+.keybox{
+  background:var(--card);
+  border:1px solid var(--rule);
+  border-left:4px solid var(--build);
+  border-radius:var(--radius);
+  padding:1.25rem 1.3rem;
+  margin-bottom:1.5rem;
+}
+.keybox h2{
+  font-family:var(--sans);
+  font-size:.74rem;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--build);
+  margin:0 0 .55rem;
+  font-weight:600;
+}
+.keybox p{margin:0 0 .7rem;max-width:78ch}
+.keybox p:last-child{margin-bottom:0}
+.fieldlist{
+  font-family:var(--mono);
+  font-size:.82rem;
+  background:var(--paper);
+  border:1px solid var(--rule);
+  border-radius:var(--radius);
+  padding:.7rem .8rem;
+  color:var(--ink-soft);
+  line-height:1.7;
+}
+
+/* ---------- counts ---------- */
+.counts{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:.6rem;
+  margin-bottom:1.6rem;
+}
+.count{
+  background:var(--card);
+  border:1px solid var(--rule);
+  border-top:3px solid var(--rule-strong);
+  border-radius:var(--radius);
+  padding:.75rem .85rem;
+}
+.count .n{
+  font-family:var(--serif);
+  font-size:1.9rem;
+  line-height:1;
+  display:block;
+  margin-bottom:.2rem;
+}
+.count .lab{
+  font-size:.76rem;
+  color:var(--ink-soft);
+  letter-spacing:.02em;
+}
+.count.c-build{border-top-color:var(--build)}
+.count.c-build .n{color:var(--build)}
+.count.c-check{border-top-color:var(--check)}
+.count.c-check .n{color:var(--check)}
+.count.c-redirect{border-top-color:var(--redirect)}
+.count.c-redirect .n{color:var(--redirect)}
+.count.c-decline{border-top-color:var(--decline)}
+.count.c-decline .n{color:var(--decline)}
+
+/* ---------- filters ---------- */
+.filterbar{
+  position:sticky;
+  top:0;
+  z-index:20;
+  background:var(--paper);
+  border-bottom:1px solid var(--rule);
+  padding:.7rem 0;
+  margin-bottom:1.1rem;
+}
+.filterbar .inner{
+  display:flex;
+  flex-wrap:wrap;
+  gap:.4rem;
+  align-items:center;
+}
+.filterbar .flabel{
+  font-family:var(--mono);
+  font-size:.68rem;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--ink-faint);
+  margin-right:.3rem;
+}
+.fbtn{
+  font-family:var(--sans);
+  font-size:.83rem;
+  min-height:44px;
+  padding:.35rem .85rem;
+  background:var(--card);
+  color:var(--ink-soft);
+  border:1px solid var(--rule-strong);
+  border-radius:var(--radius);
+  cursor:pointer;
+  line-height:1.2;
+}
+.fbtn:hover{border-color:var(--ink-faint);color:var(--ink)}
+.fbtn:focus-visible{outline:2px solid var(--build);outline-offset:2px}
+.fbtn[aria-pressed="true"]{
+  background:var(--ink);
+  color:var(--paper);
+  border-color:var(--ink);
+  font-weight:600;
+}
+.count-live{
+  margin-left:auto;
+  font-size:.8rem;
+  color:var(--ink-faint);
+  font-family:var(--mono);
+}
+
+/* ---------- tier heads ---------- */
+.tier{margin-bottom:2.1rem}
+.tier-head{
+  display:flex;
+  align-items:baseline;
+  gap:.7rem;
+  flex-wrap:wrap;
+  border-bottom:1px solid var(--rule-strong);
+  padding-bottom:.4rem;
+  margin-bottom:.9rem;
+}
+.tier-head h2{
+  font-family:var(--serif);
+  font-size:1.4rem;
+  margin:0;
+  font-weight:600;
+}
+.tier-head .verdict{
+  font-family:var(--mono);
+  font-size:.68rem;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  padding:.2rem .5rem;
+  border-radius:var(--radius);
+}
+.t-build .verdict{background:var(--build-bg);color:var(--build)}
+.t-check .verdict{background:var(--check-bg);color:var(--check)}
+.t-redirect .verdict{background:var(--redirect-bg);color:var(--redirect)}
+.t-decline .verdict{background:var(--decline-bg);color:var(--decline)}
+.tier-head .gloss{
+  font-size:.88rem;
+  color:var(--ink-soft);
+  flex:1 1 100%;
+  margin-top:.15rem;
+}
+
+/* ---------- item cards ---------- */
+.item{
+  background:var(--card);
+  border:1px solid var(--rule);
+  border-radius:var(--radius);
+  padding:1rem 1.05rem;
+  margin-bottom:.7rem;
+  display:grid;
+  grid-template-columns:2.2rem 1fr;
+  gap:0 .85rem;
+  break-inside:avoid;
+}
+.item .rank{
+  font-family:var(--serif);
+  font-size:1.35rem;
+  color:var(--ink-faint);
+  line-height:1.2;
+  grid-row:1/span 3;
+}
+.item.no-rank{grid-template-columns:1fr}
+.item.no-rank .rank{display:none}
+.item h3{
+  font-family:var(--sans);
+  font-size:1.02rem;
+  font-weight:600;
+  margin:0 0 .15rem;
+  line-height:1.3;
+}
+.who{
+  font-family:var(--mono);
+  font-size:.7rem;
+  color:var(--ink-faint);
+  letter-spacing:.05em;
+  margin:0 0 .55rem;
+}
+.meters{
+  display:flex;
+  gap:1.1rem;
+  flex-wrap:wrap;
+  margin:0 0 .6rem;
+  font-size:.76rem;
+  color:var(--ink-soft);
+}
+.meter{display:flex;align-items:center;gap:.35rem}
+.meter .mlab{
+  font-family:var(--mono);
+  font-size:.66rem;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--ink-faint);
+}
+.pips{display:flex;gap:2px}
+.pip{
+  width:9px;height:9px;
+  border:1px solid var(--rule-strong);
+  border-radius:1px;
+  background:transparent;
+}
+.pip.on{background:var(--ink);border-color:var(--ink)}
+.t-build .pip.on{background:var(--build);border-color:var(--build)}
+.t-check .pip.on{background:var(--check);border-color:var(--check)}
+.t-redirect .pip.on{background:var(--redirect);border-color:var(--redirect)}
+.t-decline .pip.on{background:var(--decline);border-color:var(--decline)}
+
+.pc{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:.5rem .95rem;
+  margin-bottom:.55rem;
+}
+.pc > div > span.h{
+  display:block;
+  font-family:var(--mono);
+  font-size:.65rem;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--ink-faint);
+  margin-bottom:.15rem;
+}
+.pc p{margin:0;font-size:.875rem;line-height:1.5;color:var(--ink-soft)}
+.verdict-line{
+  border-top:1px dashed var(--rule);
+  padding-top:.5rem;
+  font-size:.875rem;
+  margin:0;
+}
+.verdict-line strong{
+  font-family:var(--mono);
+  font-size:.66rem;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--ink-faint);
+  font-weight:400;
+  display:block;
+  margin-bottom:.12rem;
+}
+
+/* ---------- talking points ---------- */
+.talk{
+  background:var(--card);
+  border:1px solid var(--rule);
+  border-radius:var(--radius);
+  padding:1.3rem 1.35rem;
+  margin-bottom:2rem;
+}
+.talk h2{
+  font-family:var(--serif);
+  font-size:1.35rem;
+  margin:0 0 .8rem;
+}
+.talk ol{margin:0;padding-left:1.2rem}
+.talk li{margin-bottom:.65rem;max-width:80ch}
+.talk li:last-child{margin-bottom:0}
+.talk li strong{color:var(--ink)}
+
+footer{
+  border-top:1px solid var(--rule);
+  padding:1.1rem 0 2.5rem;
+  font-size:.8rem;
+  color:var(--ink-faint);
+}
+
+@media (max-width:640px){
+  .pc{grid-template-columns:1fr}
+  .item{grid-template-columns:1fr}
+  .item .rank{grid-row:auto;font-size:1rem;margin-bottom:.1rem}
+  .count-live{margin-left:0;flex:1 1 100%}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+}
+@media print{
+  :root{--paper:#fff;--card:#fff}
+  body{font-size:10.5pt}
+  .filterbar{display:none}
+  .item,.keybox,.talk,.count{border-color:#bbb}
+  .tier{break-inside:auto}
+  .item{break-inside:avoid;margin-bottom:.4rem}
+  a{text-decoration:none;color:inherit}
+}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<header class="masthead">
+  <div class="wrap">
+    <p class="eyebrow">Engineering &amp; Technology · School of STEAM · Meeting brief</p>
+    <h1>AI project requests: what to build, what to hand off</h1>
+    <p class="standfirst">Twenty submitted requests, consolidated into nineteen distinct projects and sorted by whether we can actually deliver them. The constraint is not build difficulty. It is data access and who owns the system after launch.</p>
+  </div>
+</header>
+
+<main id="main">
+<div class="wrap">
+
+  <section class="keybox" aria-labelledby="unlock">
+    <h2 id="unlock">The single unlock</h2>
+    <p>Seven of these requests — late-registration surge, year-over-year section pacing, day and time patterns, department-level FTE projection, dual enrollment tracking, modality trends, and the schedule visualizer — are the same project wearing seven hats. They all run off one dataset we do not currently hold: <strong>student-section registration records with dates attached, for the last four fall and four spring terms.</strong></p>
+    <p>One extract request to Institutional Research covers work that six people submitted independently. The registration <em>date</em> field is the critical piece: we cannot rebuild a velocity curve from census snapshots, because nobody archived daily counts from Fall 2023. But if Colleague retains the registration transaction date on each student-section record, every prior term can be reconstructed retroactively.</p>
+    <p class="fieldlist">Requested fields — term code · course · section · part-of-term · modality · campus · meeting days &amp; times · instructor · hashed student ID · student-type flag (dual enrollment / HS) · registration date · drop date · status · credits</p>
+    <p style="margin-top:.8rem">Hashed IDs are sufficient for everything except cohort tracking, and they keep the request FERPA-defensible. <strong>Confirm the registration-date field exists before committing to any timeline.</strong></p>
+  </section>
+
+  <div class="counts">
+    <div class="count c-build"><span class="n">8</span><span class="lab">Build — start now</span></div>
+    <div class="count c-check"><span class="n">4</span><span class="lab">Check first, then decide</span></div>
+    <div class="count c-redirect"><span class="n">5</span><span class="lab">Redirect to the real owner</span></div>
+    <div class="count c-decline"><span class="n">2</span><span class="lab">Out of scope</span></div>
+  </div>
+
+  <nav class="filterbar" role="navigation" aria-label="Filter projects by recommendation">
+    <div class="wrap inner" style="padding:0">
+      <span class="flabel">Show</span>
+      <button class="fbtn" type="button" data-filter="all" aria-pressed="true">All 19</button>
+      <button class="fbtn" type="button" data-filter="build" aria-pressed="false">Build</button>
+      <button class="fbtn" type="button" data-filter="check" aria-pressed="false">Check first</button>
+      <button class="fbtn" type="button" data-filter="redirect" aria-pressed="false">Redirect</button>
+      <button class="fbtn" type="button" data-filter="decline" aria-pressed="false">Out of scope</button>
+      <span class="count-live" id="live" aria-live="polite">Showing all 19 projects</span>
+    </div>
+  </nav>
+
+  <!-- ============ BUILD ============ -->
+  <section class="tier t-build" data-tier="build" aria-labelledby="h-build">
+    <div class="tier-head">
+      <h2 id="h-build">Build</h2>
+      <span class="verdict">Greenlight</span>
+      <p class="gloss">Client-side single-file tools. Data never leaves the browser, which is also the answer when IT asks about governance. Ranked by priority, though #1 should ship <em>first</em> because it has no dependencies.</p>
+    </div>
+
+    <article class="item">
+      <span class="rank">1</span>
+      <div>
+        <h3>Schedule heatmap — day, time, and modality across the department</h3>
+        <p class="who">Requested by AZ</p>
+        <div class="meters">
+          <span class="meter"><span class="mlab">Feasibility</span><span class="pips" role="img" aria-label="Feasibility 5 of 5"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i></span></span>
+          <span class="meter"><span class="mlab">Impact</span><span class="pips" role="img" aria-label="Impact 4 of 5"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip"></i></span></span>
+        </div>
+        <div class="pc">
+          <div><span class="h">Pros</span><p>Zero dependencies. The schedule is already public, so no IR request, no PII, no governance review. Immediately answers which slots are overloaded and which are empty.</p></div>
+          <div><span class="h">Cons</span><p>Shows the current picture, not demand. Pairs best with #3 once historical data lands.</p></div>
+        </div>
+        <p class="verdict-line"><strong>Recommendation</strong>Build this week from a schedule export. Ships in an afternoon and buys credibility for the larger data ask.</p>
+      </div>
+    </article>
+
+    <article class="item">
+      <span class="rank">2</span>
+      <div>
+        <h3>Registration velocity — how big is the late surge, really?</h3>
+        <p class="who">Raised by email · ANTH-106 example: 10 in summer → ~20 at start</p>
+        <div class="meters">
+          <span class="meter"><span class="mlab">Feasibility</span><span class="pips" role="img" aria-label="Feasibility 4 of 5"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip"></i></span></span>
+          <span class="meter"><span class="mlab">Impact</span><span class="pips" role="img" aria-label="Impact 5 of 5"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i></span></span>
+        </div>
+        <div class="pc">
+          <div><span class="h">Pros</span><p>Directly changes cancellation decisions. Telling a dean that sections at 10 in mid-August historically land near 18 is the difference between holding a section and killing it. Nothing else here has that leverage.</p></div>
+          <div><span class="h">Cons</span><p>Entirely dependent on the IR extract. The decision window closes in about three weeks.</p></div>
+        </div>
+        <p class="verdict-line"><strong>Recommendation</strong>Most time-sensitive item on the list. Send the data request today, not after the meeting.</p>
+      </div>
+    </article>
+
+    <article class="item">
+      <span class="rank">3</span>
+      <div>
+        <h3>Year-over-year pacing by section, in the existing dashboard</h3>
+        <p class="who">Raised by email · extends current dashboard</p>
+        <div class="meters">
+          <span class="meter"><span class="mlab">Feasibility</span><span class="pips" role="img" aria-label="Feasibility 5 of 5"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i></span></span>
+          <span class="meter"><span class="mlab">Impact</span><span class="pips" role="img" aria-label="Impact 5 of 5"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i></span></span>
+        </div>
+        <div class="pc">
+          <div><span class="h">Pros</span><p>We already have the dashboard, the scraper, and the pipeline. This is an extension, not a new build. Answers "are we ahead or behind last fall" at the level people actually schedule at.</p></div>
+          <div><span class="h">Cons</span><p>Comparisons must be day-matched, not date-matched — the same calendar date sits at different points in the registration cycle year to year.</p></div>
+        </div>
+        <p class="verdict-line"><strong>Recommendation</strong>Highest impact-to-effort ratio in the set. Same extract as #2, so they ship together.</p>
+      </div>
+    </article>
+
+    <article class="item">
+      <span class="rank">4</span>
+      <div>
+        <h3>Course and department-level enrollment projection</h3>
+        <p class="who">Requested by SB</p>
+        <div class="meters">
+          <span class="meter"><span class="mlab">Feasibility</span><span class="pips" role="img" aria-label="Feasibility 3 of 5"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip"></i><i class="pip"></i></span></span>
+          <span class="meter"><span class="mlab">Impact</span><span class="pips" role="img" aria-label="Impact 5 of 5"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i></span></span>
+        </div>
+        <div class="pc">
+          <div><span class="h">Pros</span><p>We see FTE at the college level but not where scheduling decisions get made. Feeds instructional staffing and tutoring demand proactively rather than reactively.</p></div>
+          <div><span class="h">Cons</span><p>It is a forecast with real error bars, and small sections will have wide ones. One bad miss discredits the whole tool.</p></div>
+        </div>
+        <p class="verdict-line"><strong>Recommendation</strong>Build it, but present ranges rather than point estimates. Set that expectation with Academic Affairs up front.</p>
+      </div>
+    </article>
+
+    <article class="item">
+      <span class="rank">5</span>
+      <div>
+        <h3>Modality migration — how fast are we shifting online?</h3>
+        <p class="who">Raised by email</p>
+        <div class="meters">
+          <span class="meter"><span class="mlab">Feasibility</span><span class="pips" role="img" aria-label="Feasibility 4 of 5"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip"></i></span></span>
+          <span class="meter"><span class="mlab">Impact</span><span class="pips" role="img" aria-label="Impact 4 of 5"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip"></i></span></span>
+        </div>
+        <div class="pc">
+          <div><span class="h">Pros</span><p>Same extract, small additional effort. Quantifies a shift everyone senses but nobody has measured — including whether online sections are drawing new students or just relocating existing ones.</p></div>
+          <div><span class="h">Cons</span><p>Enrollment data shows <em>that</em> students are migrating. It cannot show <em>why</em>, and it cannot test the "they think it's easier because of AI" hypothesis at all. See the conditional tier.</p></div>
+        </div>
+        <p class="verdict-line"><strong>Recommendation</strong>Build the descriptive half now. Keep it clearly separated from the causal question, which is a different project.</p>
+      </div>
+    </article>
+
+    <article class="item">
+      <span class="rank">6</span>
+      <div>
+        <h3>Dual enrollment and high school segmentation</h3>
+        <p class="who">Raised by email · GEOG-115 runs ~⅓ high school</p>
+        <div class="meters">
+          <span class="meter"><span class="mlab">Feasibility</span><span class="pips" role="img" aria-label="Feasibility 4 of 5"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip"></i></span></span>
+          <span class="meter"><span class="mlab">Impact</span><span class="pips" role="img" aria-label="Impact 3 of 5"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip"></i><i class="pip"></i></span></span>
+        </div>
+        <div class="pc">
+          <div><span class="h">Pros</span><p>Answers a live worry with a concrete number. HS cohorts register on a different calendar than degree-seeking students, so blended counts actively mislead at this time of year.</p></div>
+          <div><span class="h">Cons</span><p>Depends on the student-type flag being clean and consistent in the extract. Worth spot-checking before drawing conclusions.</p></div>
+        </div>
+        <p class="verdict-line"><strong>Recommendation</strong>Cheap add-on to the same dataset. Separating these curves may fully explain the apparent shortfall.</p>
+      </div>
+    </article>
+
+    <article class="item">
+      <span class="rank">7</span>
+      <div>
+        <h3>PLO assessment analyzer</h3>
+        <p class="who">Submitted — recurring term deliverable to Katherine Edwards</p>
+        <div class="meters">
+          <span class="meter"><span class="mlab">Feasibility</span><span class="pips" role="img" aria-label="Feasibility 4 of 5"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip"></i></span></span>
+          <span class="meter"><span class="mlab">Impact</span><span class="pips" role="img" aria-label="Impact 3 of 5"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip"></i><i class="pip"></i></span></span>
+        </div>
+        <div class="pc">
+          <div><span class="h">Pros</span><p>One of the few genuinely AI-shaped requests here — synthesizing narrative assessment evidence is what language models are actually good at. Recurring pain with a known deadline and a known recipient.</p></div>
+          <div><span class="h">Cons</span><p>Needs a sample of the current data format before anything gets built. Output must stay reviewable; nobody should submit unread AI text as assessment evidence.</p></div>
+        </div>
+        <p class="verdict-line"><strong>Recommendation</strong>Ask for two prior submissions as samples. Paste-in, client-side, human reviews before it goes anywhere.</p>
+      </div>
+    </article>
+
+    <article class="item">
+      <span class="rank">8</span>
+      <div>
+        <h3>Teaching schedule option generator</h3>
+        <p class="who">Requested by GL</p>
+        <div class="meters">
+          <span class="meter"><span class="mlab">Feasibility</span><span class="pips" role="img" aria-label="Feasibility 5 of 5"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i></span></span>
+          <span class="meter"><span class="mlab">Impact</span><span class="pips" role="img" aria-label="Impact 2 of 5"><i class="pip on"></i><i class="pip on"></i><i class="pip"></i><i class="pip"></i><i class="pip"></i></span></span>
+        </div>
+        <div class="pc">
+          <div><span class="h">Pros</span><p>Pure constraint solving. No data, no PII, no dependencies. Can also place student help hours in the gaps. High personal goodwill for very little effort.</p></div>
+          <div><span class="h">Cons</span><p>Individual benefit rather than institutional. Not really an AI project, though nobody will mind.</p></div>
+        </div>
+        <p class="verdict-line"><strong>Recommendation</strong>Good filler build between the bigger items. Generalizes to any faculty member once it exists.</p>
+      </div>
+    </article>
+  </section>
+
+  <!-- ============ CHECK FIRST ============ -->
+  <section class="tier t-check" data-tier="check" aria-labelledby="h-check">
+    <div class="tier-head">
+      <h2 id="h-check">Check first</h2>
+      <span class="verdict">Answer one question, then decide</span>
+      <p class="gloss">Each of these has a single unknown that determines whether it is an afternoon or a semester. Do not commit in the meeting.</p>
+    </div>
+
+    <article class="item no-rank">
+      <div>
+        <h3>Modality <em>outcomes</em> — are online sections serving students well?</h3>
+        <p class="who">Raised by email · the causal half of #5</p>
+        <div class="meters">
+          <span class="meter"><span class="mlab">Feasibility</span><span class="pips" role="img" aria-label="Feasibility 2 of 5"><i class="pip on"></i><i class="pip on"></i><i class="pip"></i><i class="pip"></i><i class="pip"></i></span></span>
+          <span class="meter"><span class="mlab">Impact</span><span class="pips" role="img" aria-label="Impact 5 of 5"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i></span></span>
+        </div>
+        <div class="pc">
+          <div><span class="h">Pros</span><p>This is the question that actually matters. If we keep adding online sections, we should know whether we are serving students or relocating them. Requires DFW rates, next-course success, and persistence by modality.</p></div>
+          <div><span class="h">Cons</span><p>Badly confounded. Students who choose online differ systematically from those who don't, in ways unrelated to modality. A naive side-by-side produces a misleading number that gets quoted in meetings for three years.</p></div>
+        </div>
+        <p class="verdict-line"><strong>Recommendation</strong>Worth doing, but with IR as a partner, not alone. Do not promise a fast answer to a slow question.</p>
+      </div>
+    </article>
+
+    <article class="item no-rank">
+      <div>
+        <h3>GCD requirement progress tracker</h3>
+        <p class="who">Requested by EE</p>
+        <div class="meters">
+          <span class="meter"><span class="mlab">Feasibility</span><span class="pips" role="img" aria-label="Feasibility 3 of 5"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip"></i><i class="pip"></i></span></span>
+          <span class="meter"><span class="mlab">Impact</span><span class="pips" role="img" aria-label="Impact 3 of 5"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip"></i><i class="pip"></i></span></span>
+        </div>
+        <div class="pc">
+          <div><span class="h">Pros</span><p>As a self-service checklist students maintain themselves, this is a simple local-storage tool — an afternoon of work.</p></div>
+          <div><span class="h">Cons</span><p>If it needs to read actual transcripts from Colleague, it is a different project entirely and belongs to the registrar.</p></div>
+        </div>
+        <p class="verdict-line"><strong>Recommendation</strong>Ask first: does the degree audit module already do this? If yes, it's a configuration request, not a build.</p>
+      </div>
+    </article>
+
+    <article class="item no-rank">
+      <div>
+        <h3>GCD completion alerts and next-step suggestions</h3>
+        <p class="who">Requested by EE</p>
+        <div class="meters">
+          <span class="meter"><span class="mlab">Feasibility</span><span class="pips" role="img" aria-label="Feasibility 2 of 5"><i class="pip on"></i><i class="pip on"></i><i class="pip"></i><i class="pip"></i><i class="pip"></i></span></span>
+          <span class="meter"><span class="mlab">Impact</span><span class="pips" role="img" aria-label="Impact 3 of 5"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip"></i><i class="pip"></i></span></span>
+        </div>
+        <div class="pc">
+          <div><span class="h">Pros</span><p>Natural companion to the tracker, and the audit logic itself is simple rules.</p></div>
+          <div><span class="h">Cons</span><p>"Alerts students" means outbound messaging tied to real student records — authentication, a send mechanism, and an owner for when it misfires. That is squarely an enterprise system.</p></div>
+        </div>
+        <p class="verdict-line"><strong>Recommendation</strong>Build the audit logic, not the alerting. Advising owns proactive outreach.</p>
+      </div>
+    </article>
+
+    <article class="item no-rank">
+      <div>
+        <h3>Weekly discipline-specific news digest for chairs</h3>
+        <p class="who">Submitted — link curriculum to current events</p>
+        <div class="meters">
+          <span class="meter"><span class="mlab">Feasibility</span><span class="pips" role="img" aria-label="Feasibility 4 of 5"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip"></i></span></span>
+          <span class="meter"><span class="mlab">Impact</span><span class="pips" role="img" aria-label="Impact 2 of 5"><i class="pip on"></i><i class="pip on"></i><i class="pip"></i><i class="pip"></i><i class="pip"></i></span></span>
+        </div>
+        <div class="pc">
+          <div><span class="h">Pros</span><p>Low effort as a shared prompt pack or Claude Project rather than a hosted tool. Each chair runs it weekly for their own discipline.</p></div>
+          <div><span class="h">Cons</span><p>Cannot be a static single-file tool — it needs live search. And "credible" requires a human deciding, not a model asserting. Auto-sending unreviewed links to students is a liability.</p></div>
+        </div>
+        <p class="verdict-line"><strong>Recommendation</strong>Ship as a prompt template with a mandatory review step. Ten minutes to write, no infrastructure.</p>
+      </div>
+    </article>
+  </section>
+
+  <!-- ============ REDIRECT ============ -->
+  <section class="tier t-redirect" data-tier="redirect" aria-labelledby="h-redirect">
+    <div class="tier-head">
+      <h2 id="h-redirect">Redirect</h2>
+      <span class="verdict">Real need, wrong owner</span>
+      <p class="gloss">All legitimate. None of them ours. The common thread: multi-user persistence, authentication, and sensitive records — meaning whoever builds it supports it at 2am, forever.</p>
+    </div>
+
+    <article class="item no-rank">
+      <div>
+        <h3>Field placement / internship hour logging and assessment</h3>
+        <p class="who">Requested by CC</p>
+        <div class="pc">
+          <div><span class="h">Pros</span><p>Genuine pain, and the requirement is well understood. Likely tied to accreditation evidence, which raises its priority.</p></div>
+          <div><span class="h">Cons</span><p>Multi-user, supervisor sign-off, document upload, student PII. Commercial products own this space — Exxat, Tevera, InPlace.</p></div>
+        </div>
+        <p class="verdict-line"><strong>Recommendation</strong>Offer a prototype that <em>specifies the requirement</em> for procurement. Do not offer to run the production system.</p>
+      </div>
+    </article>
+
+    <article class="item no-rank">
+      <div>
+        <h3>Wellness Center centralized check-in</h3>
+        <p class="who">Requested by GG · bus passes, grocery bags, waivers</p>
+        <div class="pc">
+          <div><span class="h">Pros</span><p>Small scale, clear requirement, and the current multi-spreadsheet process is obviously broken. Solvable with modest tooling.</p></div>
+          <div><span class="h">Cons</span><p>Food insecurity and transit assistance data is about as sensitive as student records get. Needs a backend, real-time access, and an owner during grocery distribution.</p></div>
+        </div>
+        <p class="verdict-line"><strong>Recommendation</strong>Closest call in this tier. Help them scope and price it; route to IT for a supported platform rather than owning it personally.</p>
+      </div>
+    </article>
+
+    <article class="item no-rank">
+      <div>
+        <h3>Stoppage points — where students pause or drop out</h3>
+        <p class="who">Requested by SB</p>
+        <div class="pc">
+          <div><span class="h">Pros</span><p>Important question with real retention consequences. The underlying data exists in Colleague.</p></div>
+          <div><span class="h">Cons</span><p>This is an Institutional Research analysis, not a departmental tool. Doing it unilaterally risks producing numbers that contradict official reporting.</p></div>
+        </div>
+        <p class="verdict-line"><strong>Recommendation</strong>IR runs the analysis. We build the visualization layer if they want one. Right division of labor.</p>
+      </div>
+    </article>
+
+    <article class="item no-rank">
+      <div>
+        <h3>Transfer patterns — where, when, and into which programs</h3>
+        <p class="who">Requested by SB</p>
+        <div class="pc">
+          <div><span class="h">Pros</span><p>Highly actionable for articulation work if the data is current.</p></div>
+          <div><span class="h">Cons</span><p>Comes from National Student Clearinghouse StudentTracker, which the college likely already subscribes to. Rebuilding this from scratch duplicates an existing service.</p></div>
+        </div>
+        <p class="verdict-line"><strong>Recommendation</strong>Ask IR whether we already have StudentTracker access before anyone builds anything.</p>
+      </div>
+    </article>
+
+    <article class="item no-rank">
+      <div>
+        <h3>Nursing Skills Lab dashboard</h3>
+        <p class="who">Requested by GC · already underway with TLC, live in September</p>
+        <div class="pc">
+          <div><span class="h">Pros</span><p>Well-scoped, already resourced, and addresses early identification of at-risk students.</p></div>
+          <div><span class="h">Cons</span><p>Three weeks from launch with a team already on it. Adding people now creates risk, not capacity.</p></div>
+        </div>
+        <p class="verdict-line"><strong>Recommendation</strong>Stay out of the build. Offer to review after go-live.</p>
+      </div>
+    </article>
+  </section>
+
+  <!-- ============ DECLINE ============ -->
+  <section class="tier t-decline" data-tier="decline" aria-labelledby="h-decline">
+    <div class="tier-head">
+      <h2 id="h-decline">Out of scope</h2>
+      <span class="verdict">Say no clearly</span>
+      <p class="gloss">Technology is not the missing ingredient in either of these.</p>
+    </div>
+
+    <article class="item no-rank">
+      <div>
+        <h3>Alumni contact collection feeding a shared LinkedIn account</h3>
+        <p class="who">Submitted</p>
+        <div class="pc">
+          <div><span class="h">Pros</span><p>Program-level alumni networks have real value for current students.</p></div>
+          <div><span class="h">Cons</span><p>Two blockers. LinkedIn's terms prohibit most automated account activity. And alumni data belongs to Institutional Advancement, who almost certainly already run a CRM.</p></div>
+        </div>
+        <p class="verdict-line"><strong>Recommendation</strong>A governance and turf question wearing a technology costume. Refer to Advancement.</p>
+      </div>
+    </article>
+
+    <article class="item no-rank">
+      <div>
+        <h3>Streamlining PD applications, travel, and receipts</h3>
+        <p class="who">Submitted</p>
+        <div class="pc">
+          <div><span class="h">Pros</span><p>Universally disliked process. Everyone would cheer.</p></div>
+          <div><span class="h">Cons</span><p>A form-routing and approvals problem owned by Business Services and HR. The workflow has not been redesigned because nobody has decided to redesign it.</p></div>
+        </div>
+        <p class="verdict-line"><strong>Recommendation</strong>Politically fraught and not solvable from outside the process owner. Name the real blocker and move on.</p>
+      </div>
+    </article>
+  </section>
+
+  <section class="talk" aria-labelledby="h-talk">
+    <h2 id="h-talk">Five things to say in the room</h2>
+    <ol>
+      <li><strong>Most of these aren't AI projects.</strong> They're data, reporting, and workflow projects. That's fine — but naming it keeps expectations honest and stops "AI" from becoming the word we use when we mean "someone should fix this."</li>
+      <li><strong>One data request unlocks seven submissions.</strong> Rather than twenty parallel efforts, we're asking IR for one extract. That framing is much easier for everyone to support.</li>
+      <li><strong>Client-side processing is our governance answer.</strong> These tools are static HTML files; the data is processed in the browser and never transmitted. Lead with that the moment student records come up, because they will.</li>
+      <li><strong>The registration-surge question is urgent, not merely interesting.</strong> It's August 11. Section cancellation decisions get made in the next three weeks. This is the one item where a two-week delay costs something real.</li>
+      <li><strong>I can't be the college's software department.</strong> Anything with logins and a database has an owner obligation attached that outlasts the enthusiasm. The redirect tier isn't reluctance — it's making sure those needs reach people who can actually support them.</li>
+    </ol>
+  </section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Prepared for the AI project scoping meeting · Engineering &amp; Technology · Brookdale Community College · August 2026</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var buttons = Array.prototype.slice.call(document.querySelectorAll('.fbtn'));
+  var tiers = Array.prototype.slice.call(document.querySelectorAll('.tier'));
+  var live = document.getElementById('live');
+  var labels = {
+    all: 'Showing all 19 projects',
+    build: 'Showing 8 projects to build',
+    check: 'Showing 4 projects to check first',
+    redirect: 'Showing 5 projects to redirect',
+    decline: 'Showing 2 projects that are out of scope'
+  };
+
+  function apply(filter) {
+    tiers.forEach(function (t) {
+      var match = (filter === 'all' || t.getAttribute('data-tier') === filter);
+      t.hidden = !match;
+    });
+    buttons.forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.getAttribute('data-filter') === filter));
+    });
+    live.textContent = labels[filter] || labels.all;
+  }
+
+  buttons.forEach(function (b) {
+    b.addEventListener('click', function () {
+      apply(b.getAttribute('data-filter'));
+    });
+  });
+})();
+</script>
+</body>
+</html>
